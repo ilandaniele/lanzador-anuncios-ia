@@ -31,13 +31,13 @@ Hoy, sin la app, hacen todo a mano en Ads Manager: crean campaña, conjunto, sub
 
 ## Fuera de alcance (MVP)
 
-Cobro y planes pagos (el modelo de planes queda preparado), otras plataformas (TikTok, Google Ads), acciones automáticas sin aprobación, borrar campañas o anuncios, app móvil nativa, dominio propio, generación de imágenes o videos con IA, edición de creativos.
+Cobro y planes pagos (el modelo de planes queda preparado), otras plataformas (TikTok, Google Ads), acciones automáticas sin aprobación, borrar campañas o anuncios, app móvil nativa, dominio propio para la app (un dominio solo para enviar email queda pendiente, ver S4), generación de imágenes o videos con IA, edición de creativos.
 
 ## Decisiones
 
 - Plataforma: web responsive en español rioplatense.
-- Hosting: Cloudflare Workers + D1 + R2 + Queues/Workflows, en `*.workers.dev`.
-- IA: Workers AI para etiquetado de creativos y tareas baratas; Claude API para copys, piloto y chat.
+- Hosting: Cloudflare Workers + D1 + Workflows, en `*.workers.dev`; los medios van directo a Meta, sin almacenamiento propio.
+- IA: solo Workers AI para copys, etiquetado, piloto y chat (Claude más adelante).
 - App de Meta nueva, tipo Business, con Marketing API y Facebook Login for Business. El usuario la crea con su login.
 
 ## Guardrails heredados de la app anterior
@@ -62,7 +62,7 @@ Cobro y planes pagos (el modelo de planes queda preparado), otras plataformas (T
 - S1: El punto 3 del documento de origen no estuvo disponible; el alcance se basa en la app anterior y la entrevista.
 - S2: Escala beta: hasta 20 workspaces y 10 usuarios concurrentes. Alcanza el free tier de Cloudflare.
 - S3: Cuentas publicitarias en USD como en la app anterior; se muestra la moneda de cada cuenta y no se convierte.
-- S4: Emails de magic link con Resend (plan gratis). Requiere que el usuario cree la cuenta.
-- S5: La clave de Claude API la carga el usuario; el consumo se limita por workspace con un tope mensual de tokens.
+- S4: Emails de magic link con Resend (plan gratis). Requiere que el usuario cree la cuenta. Sin dominio verificado, Resend solo entrega al dueño de la cuenta, así que solo el superadmin puede iniciar sesión. Decisión pendiente: comprar un dominio (~US$10/año, costo a aprobar) antes de invitar clientes beta.
+- S5: Workers AI no necesita clave de nadie; el consumo se limita con créditos de IA por workspace (por día y por mes) más un tope global diario.
 - S6: Mientras Meta no apruebe el App Review, solo usuarios agregados como testers de la app de Meta pueden conectar su cuenta.
 - S7: Nombre de trabajo del producto: "Lanzador".

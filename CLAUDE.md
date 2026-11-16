@@ -165,10 +165,10 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - Ask before anything that costs money or deletes data or remote resources.
 
 
-# Project: <Nombre de la app>
+# Project: Lanzador de anuncios con IA
 
-- **What it is:** <one sentence from the PRD>.
-- **Stack:** <from docs/02-TRD.md>.
+- **What it is:** multi-tenant SaaS that lets agencies and businesses connect Meta, upload creatives and launch, monitor and scale Meta Ads campaigns with AI help (copy, creative analysis, autopilot, chat), always paused and under human control.
+- **Stack:** one Cloudflare Worker (Hono API under /api plus React 19 + Vite SPA as static assets), D1 + Drizzle, Workflows, cron, Workers AI, Zod, Vitest (vitest-pool-workers), Playwright; Meta Graph API v24.0.
 - **Source of truth:** `docs/01-PRD.md` … `docs/06-plan-implementacion.md`. Read only the doc the current task needs.
 - **Status:** `docs/ESTADO.md`. Handoffs: `.claude/handoff/` (gitignored).
 - **Commands:** `npm run dev` · `npm run lint` · `npm run typecheck` · `npm test` · `npm run test:e2e` · `npm run build` · `npx wrangler deploy`.

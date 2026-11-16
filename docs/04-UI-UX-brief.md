@@ -302,7 +302,7 @@ Reglas: sentence case en todo; nada de mayúsculas sostenidas; tracking 0 salvo 
 | 8 | 32 | Separación entre secciones |
 | 12 | 48 | Margen superior de estados vacíos |
 
-Densidad: la tabla de Métricas tiene toggle **Compacta** (fila 36 px) / **Cómoda** (fila 44 px, default). En pantallas táctiles siempre Cómoda.
+Densidad (post-MVP; en el MVP la fila es siempre Cómoda): la tabla de Métricas tiene toggle **Compacta** (fila 36 px) / **Cómoda** (fila 44 px, default). En pantallas táctiles siempre Cómoda.
 
 ### Radios (por tamaño del elemento, no uno para todo)
 
@@ -378,7 +378,7 @@ Alturas: 36 px (sm, solo en tablas desktop), 40 px (default desktop), 44 px (mí
 | Read-only | Sin borde, fondo `paper`, copiable |
 | Con contador | Contador `n / límite` a la derecha del label; pasa a `warn` al 90 % del límite recomendado por Meta y a `loss` al superarlo (no bloquea, avisa) |
 | Monetario | Prefijo de moneda fijo dentro del campo, cifras tabulares, alineado a la derecha, acepta coma decimal |
-| Con placeholders de nombre | Chips `{producto}` `{fecha}` `{hora}` insertables y vista previa debajo en `ink-subtle` |
+| Con placeholders de nombre | Chips `{producto}` `{fecha}` `{hora}` `{n}` insertables y vista previa debajo en `ink-subtle` |
 
 ### Select y combobox
 
@@ -408,8 +408,8 @@ Solo para unidades de decisión: alerta en Hoy, propuesta del piloto, cuenta en 
 | Acciones | **Usar** (secundario), **Editar** (fantasma), **Guardar en el producto** (fantasma), estrella favorita (botón ícono `aria-pressed`) |
 | Al tocar Usar | Pasa a tinta: borde sólido `primary`, ícono lápiz cambia por tilde, texto "En uso"; `aria-live="polite"` anuncia "Copy agregado" |
 | Al tocar Editar | El contenido se vuelve textarea en el lugar; **Listo** confirma y pasa a tinta; `Esc` cancela |
-| Loading (generando) | 5 skeletons punteados que se reemplazan a medida que llegan |
-| Error / tope de IA | Mensaje en la zona de las tarjetas: "Llegaste al tope de IA del mes. Se renueva el 1/12." sin botón de reintentar |
+| Loading (generando) | 5 skeletons punteados que se reemplazan todos juntos al llegar la respuesta |
+| Error / tope de IA | Mensaje en la zona de las tarjetas, sin botón de reintentar. Tope diario: "Usaste toda la IA de hoy. Se renueva a las 21 h." Tope mensual: "Llegaste al tope de IA del mes. Se renueva el 1/12." Si se agotó el tope global: "IA en pausa hasta las 21 h." |
 
 ### Modal y diálogo de confirmación ("comprobante")
 
@@ -446,7 +446,7 @@ Arriba al centro en mobile, abajo a la derecha en desktop (encima del chat si es
 | Números | Alineados a la derecha, cifras tabulares, ancho 87; delta en línea debajo del valor en `--text-2xs` |
 | Acciones de fila | En ≥ lg aparecen al hover o foco de la fila (Pausar/Activar, Escalar, Proteger) y siempre en el menú `⋯` (accesible por teclado); en táctil solo el menú |
 | Selección | Checkbox por fila cuando hay acción múltiple (Creativos); fila seleccionada `primary-soft` |
-| Virtualización | TanStack Virtual con alto de fila fijo (36/44 px), overscan 10; `aria-rowcount` y `aria-rowindex` correctos; la API pagina de a 50 y se carga la siguiente página al acercarse al final |
+| Virtualización | TanStack Virtual con alto de fila fijo (36/44 px), overscan 10; `aria-rowcount` y `aria-rowindex` correctos; el cliente pide `limit=50` (la API usa 25 por defecto) y se carga la siguiente página al acercarse al final |
 | Teclado | Tab entra a la tabla en la primera fila; flechas arriba/abajo mueven entre filas; Enter abre el detalle; `Shift+F10` o tecla menú abre acciones |
 | Totales | Fila de totales fija abajo en `surface-sunken`, peso 600 |
 | Estados | Loading: 8 filas skeleton con anchos reales; vacío: mensaje en la tabla con acción; error: fila única con mensaje y **Reintentar**; actualizando: barra fina de 2 px `primary` bajo el encabezado, los datos viejos siguen visibles |
@@ -463,26 +463,28 @@ Barra horizontal de 6 pasos numerados (acá sí es secuencia). En < md se colaps
 | Pendiente | Círculo con borde `rule-strong`, label `ink-subtle`, no clickeable |
 | Bloqueado | Ícono de error `loss` y motivo en tooltip y debajo del label en mobile |
 
-Pie fijo del wizard: **Atrás** (secundario), estado del autoguardado ("Guardado" / "Guardando…" / "No se pudo guardar, reintentando") en `--text-2xs`, **Siguiente** (primario) a la derecha.
+Pie fijo del wizard: **Atrás** (secundario), estado del autoguardado ("Guardado" / "Guardando…" / "Sin conexión") en `--text-2xs`, **Siguiente** (primario) a la derecha.
 
 ### Dropzone de subida con progreso por archivo
 
 | Estado | Tratamiento |
 |---|---|
-| Idle | Área `surface-sunken`, borde 1,5 px punteado `rule-strong`, alto 160 px, texto "Arrastrá videos o imágenes, o elegí archivos" + botón **Elegir archivos** (el área entera también es botón) |
+| Sin cuenta elegida | Dropzone deshabilitada con el texto "Elegí la cuenta publicitaria para subir" (la subida va directo a esa cuenta de Meta) |
+| Idle | Área `surface-sunken`, borde 1,5 px punteado `rule-strong`, alto 160 px, texto "Arrastrá videos o imágenes, o elegí archivos" + botón **Elegir archivos** (el área entera también es botón) y aviso "No cierres esta pestaña mientras sube" |
 | Drag over | Borde sólido `primary`, fondo `primary-soft` |
 | Rechazo | Borde `loss`, mensaje con el archivo y motivo ("tienda.pdf no es video ni imagen") |
 | Por archivo | Fila: miniatura 40 px, nombre (truncado al medio), tamaño, barra de progreso 4 px, `%` y MB subidos, **Cancelar** |
-| Reintentando parte | Texto `warn` "Reintentando parte 4 de 12" |
+| Reintentando bloque | Texto `warn` "Reintentando bloque 4 de 12" |
 | Procesando | "Sacando cuadros" / "Etiquetando con IA" con spinner chico |
+| Procesando en Meta | "Procesando en Meta" con spinner chico; el video ya está subido y la fila se actualiza sola (consulta cada 3 s mientras esté en `importing` o `processing`) |
 | Listo | Tilde `gain`, etiquetas de IA a lápiz |
-| Error | Cruz `loss`, motivo y **Reintentar** |
+| Error | Cruz `loss`, motivo y **Volver a subir**: se manda de nuevo desde tu compu; si cerraste la pestaña, elegí el archivo otra vez. |
 
 Barra de progreso con `role="progressbar"` y `aria-valuenow`; el resumen "7 de 20 subidos" en región `aria-live="polite"` actualizada como máximo cada 5 s.
 
 ### Lista de progreso del lanzamiento
 
-Lista reglada, una fila por anuncio: miniatura, nombre, chip de estado con ícono y texto, detalle a la derecha (porcentaje, "esperando a Meta", código de error). Arriba, resumen grande: "14 de 20 listos · 1 con error" con barra segmentada (verde listo, azul en curso, rojo error, gris pendiente) que también tiene texto. Filtro rápido **Solo errores**. Estados de fila: subiendo, procesando video, creando, verificando, listo, error. Error expande en el lugar con el mensaje de Meta, código y qué hacer. Región `aria-live` anuncia solo cambios de resumen y errores, no cada fila.
+Lista reglada, una fila por anuncio: miniatura, nombre, chip de estado con ícono y texto, detalle a la derecha (porcentaje, "esperando a Meta", código de error). Arriba, resumen grande: "14 de 20 listos · 1 con error" con barra segmentada (verde listo, azul en curso, rojo error, gris pendiente) que también tiene texto. Filtro rápido **Solo errores**. Estados de fila: procesando video, creando, verificando, listo, error. Error expande en el lugar con el mensaje de Meta, código y qué hacer. Región `aria-live` anuncia solo cambios de resumen y errores, no cada fila.
 
 ### Skeleton
 
@@ -509,11 +511,9 @@ Ilustración mínima de una línea (un renglón de libro contable con un ítem f
 | Contenedor | Drawer derecho 400 px (acoplado en ≥ xl), pantalla completa en < md; `role="complementary"` con `aria-label="Chat con la IA"`; `Esc` cierra y devuelve el foco |
 | Encabezado | "Pedile a la IA", aviso fijo de una línea: "Arma borradores. No lanza ni cambia presupuestos.", botón nueva conversación, cerrar |
 | Mensajes | Usuario: alineado a la derecha, fondo `primary-soft`. IA: a la izquierda, sin burbuja, texto `ink` con borde izquierdo punteado `pencil` |
-| Streaming | Cursor de bloque al final del texto; el mensaje se anuncia completo al terminar (`aria-live="polite"` sobre el último mensaje, no token a token) |
-| Pasos de consulta | Línea `ink-subtle` con ícono: "Mirando campañas de Cuenta Principal" |
-| Preguntas de la IA | Chips de respuesta rápida debajo cuando aplica |
+| Respondiendo | La respuesta llega completa en JSON (sin streaming): indicador de tres puntos mientras espera; el mensaje se anuncia completo al aparecer (`aria-live="polite"` sobre el último mensaje) |
 | Borrador listo | Tarjeta a lápiz con resumen (producto, cuenta, creativos, presupuesto, países) y botón primario **Abrir en el lanzador** |
-| Compositor | Textarea autoajustable (1–6 líneas), `Enter` envía, `Shift+Enter` salto, botón **Enviar** 44 px; deshabilitado mientras responde con **Detener** |
+| Compositor | Textarea autoajustable (1–6 líneas), `Enter` envía, `Shift+Enter` salto, botón **Enviar** 44 px; deshabilitado mientras responde |
 | Error / tope | Franja `loss-soft` o `warn-soft` con la causa |
 
 ## 7. Pantallas: layout y jerarquía
@@ -541,13 +541,14 @@ Orden de lectura = orden de tab = orden de importancia. Cada pantalla tiene tít
 | Estados | Error de formato inline; 429 → franja `warn-soft` "Probá en unos minutos"; enviado → misma columna cambia a "Revisá tu email" con el email en negrita y **Reenviar** con cuenta regresiva visible ("Reenviar en 42 s") |
 | Mobile | Igual, gutter 16 px, botón 48 px |
 
-### Verificar `/auth/verify`
+### Verificar `/ingresar/confirmar`
 
 | Aspecto | Detalle |
 |---|---|
-| Layout | Misma columna que Login |
-| Cargando | Skeleton de una línea + "Verificando tu link" |
-| Vencido o usado | Título "Link vencido", frase "Los links duran 15 minutos y sirven una vez.", primario **Pedir otro** (lleva a Login con el email precargado si se conoce) |
+| Layout | Misma columna que Login; el token viaja en `#t=` |
+| Listo | Título "Confirmá tu ingreso" y primario **Entrar como `<email>`**; no hay POST automático al abrir la página |
+| Cargando | Botón en loading ("Entrando…") tras el clic |
+| Error (vencido o usado) | Título "Link vencido", frase "Los links duran 15 minutos y sirven una vez.", primario **Pedir otro** (lleva a Login con el email precargado si se conoce) |
 
 ### Onboarding `/onboarding`
 
@@ -580,21 +581,21 @@ Orden de lectura = orden de tab = orden de importancia. Cada pantalla tiene tít
 | 1 | Alertas | Franjas de ancho completo: error (`loss-soft`) primero, aviso después; cada una con acción directa (**Reconectar Meta**, **Ver anuncios rechazados**). Sin alertas, el bloque no se muestra |
 | 2 | Total de hoy | Gasto total vs ayer con delta semántico |
 | 3 | Cuentas | Grilla de cards (1 col mobile, 2 md, 3 xl): nombre, estado, gasto hoy, delta, ROAS de hoy con marca de equilibrio |
-| 4 | Propuestas | Hasta 3 tarjetas de propuesta con **Aprobar** / **Descartar**, link **Ver todas en Piloto** |
+| 4 | Propuestas | Hasta 5 tarjetas de propuesta con **Aprobar** / **Descartar**, link **Ver todas en Piloto** |
 | 5 | Últimos lanzamientos | 5 filas regladas: fecha, producto, estado; **Activar** en los que están en pausa |
-| Actualizar | Botón secundario; deshabilitado con cuenta regresiva "Actualizar en 4:12" |
+| Actualizar | Botón secundario; deshabilitado con cuenta regresiva "Actualizar en 0:45" |
 | Mobile | Una columna en el orden de la tabla; propuestas antes que cuentas si hay pendientes (aprobar es la tarea principal en el teléfono); botones de aprobar a 44 px de alto y ancho completo |
 
-### Lanzador `/w/:id/lanzador`
+### Lanzador `/w/:id/lanzador/:launchId?paso=n`
 
-Layout común: stepper arriba, contenido en columna de 720 px a la izquierda, **resumen vivo** en columna derecha de 320 px desde xl (cuenta, estructura, producto, cantidad de creativos, presupuesto, países; cada dato clickeable lleva al paso). En < xl el resumen va colapsado en un desplegable bajo el stepper. Pie fijo con Atrás / autoguardado / Siguiente.
+`/w/:id/lanzador` crea o reabre el borrador y redirige a esta ruta; el retorno de Google llega a `/w/:id/lanzador/:launchId?google=ok|error`. Layout común: stepper arriba, contenido en columna de 720 px a la izquierda, **resumen vivo** en columna derecha de 320 px desde xl (cuenta, estructura, producto, cantidad de creativos, presupuesto, países; cada dato clickeable lleva al paso). En < xl el resumen va colapsado en un desplegable bajo el stepper. Pie fijo con Atrás / autoguardado / Siguiente.
 
 | Paso | Layout y jerarquía |
 |---|---|
 | 1 Cuenta y píxel | 4 combobox apilados (cuenta, página, Instagram, píxel). Debajo de cuenta, chip de salud de la cuenta; si está deshabilitada o con problema de pago, franja `loss-soft` con el motivo y **Siguiente** deshabilitado con explicación |
 | 2 Estructura | Dos opciones grandes tipo radio-card (**CBO nueva** / **Conjunto nuevo en CBO existente**) con una línea de explicación cada una. Existente: combobox de campañas y, al elegir, bloque reglado "Se copia de CONJ 4": público, evento, límite de costo. Nombres de campaña y conjunto con chips de placeholders y vista previa |
 | 3 Producto y copys | Combobox de producto + **Crear producto** (modal). Línea de estado de landing con ícono (verificada / falló con motivo, que bloquea). Lista de copys guardados con checkboxes. **Generar con IA** abre panel inline debajo: chips de ángulo + **Generar**, 5 tarjetas a lápiz. Toggle "Rotar copys entre anuncios / Un copy por anuncio" con explicación |
-| 4 Creativos | Pestañas **Subir** / **Google Drive** / **Copiar de otra campaña** (patrón tabs ARIA). Debajo, la lista final ordenable: asa de arrastre (y botones Subir/Bajar para teclado), miniatura, nombre propuesto a lápiz editable, etiquetas, **Quitar**. Contador "20 creativos" |
+| 4 Creativos | Pestañas **Subir** / **Google Drive** / **Copiar de otra campaña** (patrón tabs ARIA). Debajo, la lista final ordenable: asa de arrastre (y botones Subir/Bajar para teclado), miniatura, nombre propuesto a lápiz editable, etiquetas, **Quitar**. Contador "20 creativos". Sin conexión de Google, la pestaña **Google Drive** muestra **Conectar Google** y el callback vuelve al mismo borrador (`?google=ok\|error`) |
 | 5 Presupuesto y entrega | Input monetario de presupuesto diario (solo CBO nueva) con tope visible debajo ("Tope del workspace: US$ 300,00") y error si lo supera; radio Mayor volumen / Límite de costo + monto; chips de países (AR preseleccionado) con buscador; select de evento; **Programar inicio** colapsable con fecha y hora local y zona horaria escrita |
 | 6 Revisión | Comprobante grande en página (no modal) con todo lo que se crea: campaña/conjunto, nombres finales, N anuncios con su copy y link final con UTM, presupuesto, países, programación, "Advantage+ creative: desactivado". Alertas arriba. Acciones: **Simular** (secundario) y **Lanzar en pausa** (primario, abre comprobante de confirmación). Resultado de simular: lista de errores por campo con link al paso, o "Plan válido: se crean 1 campaña, 1 conjunto, 20 anuncios" |
 | Vista de progreso | Reemplaza stepper por encabezado "Lanzando: CBO 16-11 Crema X". Lista de progreso del lanzamiento a todo el ancho. Al terminar en verde: bloque de decisión con tres opciones (**Activar ahora** primario, **Programar**, **Dejar en pausa**) y **Ver en Meta**. Con errores: **Reintentar fallidos** primario y filtro "Solo errores" activado |
@@ -604,7 +605,7 @@ Layout común: stepper arriba, contenido en columna de 720 px a la izquierda, **
 
 ```
 ┌ Métricas ────────────────────────── [Exportar CSV] ┐
-│ [Rango ▾] [Cuenta ▾] [Producto ▾] [Nivel: Camp|Conj|Anun] │
+│ [Rango ▾] [Cuenta ▾] [Producto ▾] [Nivel: Cuenta|Camp|Conj|Anun] │
 │ Pestañas: Rendimiento · Mejores anuncios · Qué gana  │
 │ Resumen: Gasto | Compras | Valor | ROAS | CPA         │  fila de 5 KPIs
 │ ┌───────────────╫──────┬──────┬──────┬──────┬────┐   │
@@ -616,9 +617,9 @@ Layout común: stepper arriba, contenido en columna de 720 px a la izquierda, **
 
 | Aspecto | Detalle |
 |---|---|
-| Barra de filtros | Fija bajo la barra superior al scrollear; filtros como combobox y segmented control para nivel; refleja la URL; chip "Comparando con 1/11–7/11" |
+| Barra de filtros | Fija bajo la barra superior al scrollear; rango (Hoy, Ayer, 7 d, 14 d, 30 d, Este mes, personalizado) y filtros como combobox; segmented control para nivel (Cuenta, Campaña, Conjunto, Anuncio); refleja la URL; chip "Comparando con 1/11–7/11" |
 | KPIs | 5 cifras en fila (2 × 3 en mobile, la sexta celda es la hora de actualización), cada una con delta semántico |
-| Tabla Rendimiento | Columnas: nombre (+ estado y candado), gasto, compras, valor, ROAS (con barra de equilibrio), CPA, CTR, CPM; delta bajo cada valor. Acciones por fila: Pausar/Activar optimista con toast **Deshacer**, Escalar (comprobante con slider 10–50 % en pasos de 5 y monto resultante), Proteger |
+| Tabla Rendimiento | Columnas: nombre (+ estado y candado), gasto, compras, valor, ROAS (con barra de equilibrio), CPA, CTR, CPM; delta bajo cada valor. Acciones por fila: Pausar/Activar optimista con toast **Deshacer**, Escalar (comprobante con slider 1–50 % y monto resultante), Proteger |
 | Mejores anuncios | Grilla de miniaturas (2 col mobile, 4 lg, 6 2xl) con ROAS grande, gasto y etiquetas; checkbox de selección; barra de acción inferior "3 elegidos · **Usar en un lanzamiento**" |
 | Qué gana | Por dimensión de etiqueta (hook, ángulo, formato, idioma): tabla reglada con barra horizontal de ROAS por etiqueta y línea de equilibrio; CPA al lado. Sin gráficos decorativos |
 | Mobile | Filtros en hoja "Filtros (3)"; tabla pasa a lista; acciones en la hoja de detalle; solo lectura cómoda es el objetivo |
@@ -671,9 +672,9 @@ Layout: navegación secundaria a la izquierda (General, Conexiones, Miembros, IA
 | Sección | Layout y jerarquía |
 |---|---|
 | General | Grupos: Workspace (nombre, zona horaria, moneda de referencia), Límites (tope de presupuesto por campaña, input monetario), Anuncios (switch "Permitir mejoras de Advantage+ creative" con explicación del riesgo), Plantillas de nombres. **Guardar cambios** en pie fijo que aparece solo con cambios |
-| Conexiones | Bloque Meta: estado con chip (Conectado / Vence en 5 días / Reconectar), cuentas habilitadas (lista), vencimiento, acciones **Reconectar**, **Elegir activos**, **Desconectar** (peligro, comprobante). Elegir activos: cuatro grupos (cuentas, páginas, Instagram, píxeles) con checkbox "Todos" por grupo, buscador, contador "3 de 7", **Guardar** fijo. Bloque Google: estado + **Conectar** / **Desconectar** |
+| Conexiones | Bloque Meta: estado con chip (Conectado / Vence en 5 días / Reconectar), cuentas habilitadas (lista), vencimiento, acciones **Reconectar**, **Elegir activos**, **Desconectar** (peligro, comprobante que avisa "Se van de la biblioteca N creativos de esas cuentas (siguen en Meta)."). Elegir activos: cuatro grupos (cuentas, páginas, Instagram, píxeles) con checkbox "Todos" por grupo, buscador, contador "3 de 7", **Guardar** fijo. Bloque Google: estado + **Conectar** (el callback vuelve a Conexiones con `?google=ok\|error`) / **Desconectar** |
 | Miembros | Tabla: email, nombre, rol (select inline), estado (activo / invitación pendiente), **Quitar** (comprobante). Primario **Invitar** abre modal con email + rol y descripción de cada rol |
-| IA | Barra de consumo del mes vs tope con cifras ("412.000 de 1.000.000 tokens · se renueva el 1/12"); pasa a `warn` al 80 % |
+| IA | Dos barras: hoy y mes, vs tope, con cifras ("1.240 de 2.000 créditos de IA hoy · 8.300 de 30.000 este mes"); cada barra pasa a `warn` al 80 %. Si `globalExhausted`: "IA en pausa hasta las 21 h." |
 | Cuenta | Tema (Claro / Oscuro / Sistema), **Cerrar sesión**, **Cerrar todas las sesiones** (comprobante simple) |
 | Peligro | Borde `loss` en el bloque, explicación de qué se borra y qué no ("No toca nada en Meta"), **Borrar workspace** abre comprobante con tipeo del nombre |
 
@@ -691,7 +692,7 @@ Layout: navegación secundaria a la izquierda (General, Conexiones, Miembros, IA
 | Aspecto | Detalle |
 |---|---|
 | Layout | Sin sidebar de workspace; barra superior con "Admin" y salir a mis workspaces |
-| Tabla | Workspaces: nombre, miembros, último uso, consumo de IA del mes (cifra + barra), estado de conexión Meta (chip), estado (activo / suspendido), acción **Suspender** (comprobante) |
+| Tabla | Workspaces: nombre, miembros, último uso, consumo de IA del mes (cifra + barra), estado de conexión Meta (chip), estado (activo / suspendido / en borrado), acciones **Suspender** (comprobante), **Restaurar** (solo en estado "en borrado") y **Editar créditos de IA (día/mes)** |
 | Primario | **Invitar beta** abre modal con email |
 | Mobile | Lista; no es prioridad |
 
@@ -753,11 +754,11 @@ Cosas que `03-app-flow.md` no define y que afectan la UX. No cambian alcance; qu
 
 | # | Pantalla | Sugerencia | Por qué |
 |---|---|---|---|
-| 1 | Lanzador › progreso | Si el usuario sale de la vista mientras corre, mostrar un indicador persistente en la barra superior ("Lanzando 14/20") y un toast al terminar, sin polling extra (consultar al volver el foco) | Hoy el polling se corta al salir y el usuario no se entera del final |
-| 2 | Hoy y Métricas | **Deshacer** en el toast de Pausar/Activar optimista (6 s) | Pausar por error una campaña que vende es caro; deshacer es más rápido que buscarla |
-| 3 | Lanzador | Indicador de autoguardado visible en el pie ("Guardado", "Guardando…", "Sin conexión") | El borrador se guarda solo, pero el usuario no lo sabe |
+| 1 | Lanzador › progreso | **Adoptada en 03/06.** Si el usuario sale de la vista mientras corre, mostrar un indicador persistente en la barra superior ("Lanzando 14/20") y un toast al terminar, sin polling extra (consultar al volver el foco) | Hoy el polling se corta al salir y el usuario no se entera del final |
+| 2 | Hoy y Métricas | **Adoptada en 03/06.** **Deshacer** en el toast de Pausar/Activar optimista (6 s) | Pausar por error una campaña que vende es caro; deshacer es más rápido que buscarla |
+| 3 | Lanzador | **Adoptada en 03/06.** Indicador de autoguardado visible en el pie ("Guardado", "Guardando…", "Sin conexión") | El borrador se guarda solo, pero el usuario no lo sabe |
 | 4 | Métricas | Elegir columnas visibles y densidad (Compacta/Cómoda), recordado por usuario | Sesiones largas con datos densos; distintas pantallas |
-| 5 | Global | Selector de tema Claro/Oscuro/Sistema en Ajustes › Cuenta | Sesiones largas de noche |
+| 5 | Global | **Adoptada en 03/06.** Selector de tema Claro/Oscuro/Sistema en Ajustes › Cuenta | Sesiones largas de noche |
 | 6 | Piloto en mobile | Desde Hoy, abrir directamente la propuesta en una hoja con el comprobante, sin pasar por Piloto | Aprobar desde el teléfono es el uso principal en mobile |
 | 7 | Lanzador › Revisión | Mostrar la vista previa de un anuncio (copy + creativo + CTA) como se verá en el feed | Reduce errores de copy y link antes de lanzar |
 | 8 | Chat | Si el workspace llegó al tope de IA, deshabilitar **Pedile a la IA** con el motivo en tooltip, en vez de fallar al enviar | Evita escribir un pedido largo que no se puede procesar |

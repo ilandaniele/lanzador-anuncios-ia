@@ -8,14 +8,14 @@ Fecha: 2026-11-16. Base: D1 (SQLite) con Drizzle ORM. Endpoints y flujos en `02-
 |---|---|
 | Ids | `TEXT` UUIDv7 generado en la app (ordenado por tiempo: el id sirve de cursor y de orden de creación). Ids de Meta y Google se guardan como `TEXT` tal cual (`act_123`, `1203...`). |
 | Tiempo | `INTEGER` epoch en milisegundos UTC. `created_at` en todas las tablas; `updated_at` donde hay updates. |
-| Dinero | `INTEGER` en unidades menores (centavos) + `currency TEXT` (ISO 4217). Sufijo `_minor`. Costos de IA en micro-USD (`_microusd`). |
+| Dinero | `INTEGER` en unidades menores (centavos) + `currency TEXT` (ISO 4217). Sufijo `_minor`. La IA no se mide en plata sino en neurons de Workers AI (`neurons`). |
 | Booleanos | `INTEGER` 0/1 con `CHECK (col IN (0,1))`. |
 | Enums | `TEXT` con `CHECK (col IN (...))`; los valores viven también en `src/shared/constants.ts`. |
 | JSON | `TEXT` con `CHECK (json_valid(col))`, validado con Zod al escribir y al leer. |
 | Tenancy | Toda tabla con datos de un cliente tiene `workspace_id TEXT NOT NULL` (también las tablas hijas), para que el helper filtre siempre por la misma columna. |
 | FKs | D1 aplica `foreign_keys` por defecto. `ON DELETE CASCADE` desde `workspaces` hacia todo lo del tenant (la purga de un workspace es un único `DELETE`). |
 | Soft delete | Solo donde hay producto: `workspaces.deleted_at` (purga a 7 días), `products.archived`, `creatives.status='archived'`, `product_copies.status='discarded'`, revocaciones (`revoked_at`). Nada de Meta se borra nunca. |
-| Contadores | Nunca `COUNT(*)` por request: `launches.items_*`, `chat_sessions.message_count`, `pilot_runs.proposals_created`, `workspaces.storage_bytes_used`, `usage_counters`. |
+| Contadores | Nunca `COUNT(*)` por request: `launches.items_*`, `chat_sessions.message_count`, `pilot_runs.proposals_created`, `usage_counters`. |
 
 ## 2. Diagrama ER
 
@@ -37,10 +37,8 @@ erDiagram
   workspaces ||--o{ products : "workspace_id"
   products ||--o{ product_copies : "product_id"
   workspaces ||--o{ creatives : "workspace_id"
+  meta_assets ||--o{ creatives : "ad_account_asset_id"
   creatives ||--o| uploads : "creative_id"
-  uploads ||--o{ upload_parts : "upload_id"
-  creatives ||--o{ creative_frames : "creative_id"
-  creatives ||--o{ creative_meta_media : "creative_id"
   workspaces ||--o{ launches : "workspace_id"
   products ||--o{ launches : "product_id"
   meta_assets ||--o{ launches : "ad_account_asset_id"
@@ -77,8 +75,8 @@ Formato: columna · tipo · null · default · único/check · nota. `NN` = NOT 
 | max_members | INTEGER | NN | 10 | | |
 | max_ad_accounts | INTEGER | NN | 10 | | cuentas publicitarias habilitadas |
 | max_creatives_per_launch | INTEGER | NN | 30 | | |
-| storage_bytes_limit | INTEGER | NN | 1610612736 | | 1,5 GiB de originales |
-| ai_monthly_budget_microusd | INTEGER | NN | 20000000 | | US$20 |
+| ai_daily_neurons | INTEGER | NN | 2000 | | créditos de IA por día (neurons de Workers AI, día UTC) |
+| ai_monthly_neurons | INTEGER | NN | 30000 | | créditos de IA por mes |
 | price_monthly_minor | INTEGER | NN | 0 | | para la fase 2 |
 | currency | TEXT | NN | 'USD' | | |
 | is_active | INTEGER | NN | 1 | 0/1 | |
@@ -163,8 +161,8 @@ Formato: columna · tipo · null · default · único/check · nota. `NN` = NOT 
 | owner_user_id | TEXT | NN | — | FK `users.id` ON DELETE RESTRICT | |
 | status | TEXT | NN | 'active' | `active`,`disabled`,`deleting` | |
 | disabled_reason | TEXT | sí | NULL | | |
-| ai_budget_override_microusd | INTEGER | sí | NULL | | pisa el del plan |
-| storage_bytes_used | INTEGER | NN | 0 | ≥ 0 | contador de originales en R2 |
+| ai_daily_neurons_override | INTEGER | sí | NULL | | pisa `plans.ai_daily_neurons` |
+| ai_monthly_neurons_override | INTEGER | sí | NULL | | pisa `plans.ai_monthly_neurons` |
 | last_activity_at | INTEGER | sí | NULL | | se actualiza como máximo 1 vez por hora; usado por el cron |
 | created_at | INTEGER | NN | — | | |
 | updated_at | INTEGER | NN | — | | |
@@ -176,6 +174,8 @@ Formato: columna · tipo · null · default · único/check · nota. `NN` = NOT 
 | `workspaces_status_created_idx (status, created_at)` | Superadmin: `WHERE status = ? ORDER BY created_at DESC LIMIT ?`; cron de purga: `WHERE status = 'deleting' AND deleted_at < ?` |
 | `workspaces_owner_idx (owner_user_id)` | Tope de 3 workspaces por usuario: `SELECT id FROM workspaces WHERE owner_user_id = ? AND status != 'deleting' LIMIT 4` |
 | `workspaces_activity_idx (status, last_activity_at)` | Cron de precalentado y piloto: `WHERE status = 'active' AND last_activity_at > ?` |
+
+Un workspace `deleting` vuelve a `active` con `PATCH /api/admin/workspaces/:id {status:"active"}` dentro de los 7 días: limpia `deleted_at`.
 
 #### `workspace_settings`
 | Columna | Tipo | Null | Default | Único / check | Nota |
@@ -246,11 +246,12 @@ Regla: un solo `owner` por workspace (se garantiza en el service y con índice �
 | provider | TEXT | NN | — | `meta`,`google` | |
 | workspace_id | TEXT | NN | — | FK `workspaces.id` ON DELETE CASCADE | |
 | user_id | TEXT | NN | — | FK `users.id` ON DELETE CASCADE | debe coincidir con la sesión del callback |
+| launch_id | TEXT | sí | NULL | FK `launches.id` ON DELETE SET NULL | solo `google`; borrador al que vuelve el callback |
 | created_at | INTEGER | NN | — | | |
 | expires_at | INTEGER | NN | — | | `+10 min` |
 | used_at | INTEGER | sí | NULL | | |
 
-Índices: `UNIQUE(state_hash)` — callback: `UPDATE oauth_states SET used_at = ? WHERE state_hash = ? AND provider = ? AND used_at IS NULL AND expires_at > ? RETURNING workspace_id, user_id`. `oauth_states_expires_idx (expires_at)` — cron.
+Índices: `UNIQUE(state_hash)` — callback: `UPDATE oauth_states SET used_at = ? WHERE state_hash = ? AND provider = ? AND used_at IS NULL AND expires_at > ? RETURNING workspace_id, user_id, launch_id`. `oauth_states_expires_idx (expires_at)` — cron.
 
 ### 3.2 Conexiones externas
 
@@ -275,7 +276,7 @@ Regla: un solo `owner` por workspace (se garantiza en el service y con índice �
 | created_at | INTEGER | NN | — | | |
 | updated_at | INTEGER | NN | — | | |
 
-Desconectar borra la fila (y en cascada sus activos e insights). La historia queda en `audit_log`.
+Desconectar borra la fila (y en cascada sus activos, insights, subidas y creativos de esas cuentas: el medio sigue en la cuenta de Meta, pero sin token la app no puede usarlo). La confirmación de desconectar avisa cuántos creativos se van de la biblioteca. La historia queda en `audit_log`; los lanzamientos quedan con `ad_account_meta_id`.
 
 Índices:
 | Índice | Query |
@@ -399,21 +400,24 @@ ROAS de equilibrio (`price / (price − cost)`) y ganancia por venta se calculan
 |---|---|---|---|---|---|
 | id | TEXT | NN | — | PK | |
 | workspace_id | TEXT | NN | — | FK `workspaces.id` ON DELETE CASCADE | |
+| ad_account_asset_id | TEXT | NN | — | FK `meta_assets.id` ON DELETE CASCADE | cada creativo pertenece a una sola cuenta publicitaria (el medio vive en esa cuenta de Meta) |
 | kind | TEXT | NN | — | `video`,`image` | |
 | original_filename | TEXT | NN | — | | |
 | content_type | TEXT | NN | — | `video/mp4`,`video/quicktime`,`video/x-m4v`,`image/jpeg`,`image/png` | |
 | size_bytes | INTEGER | NN | — | > 0 | |
 | sha256 | TEXT | sí | NULL | | aviso de duplicado |
-| r2_key | TEXT | NN | — | UNIQUE | `ws/<wid>/creatives/<id>/original.<ext>` |
-| width | INTEGER | sí | NULL | | lo informa el navegador |
+| meta_video_id | TEXT | sí | NULL | | solo `video`; lo reutiliza `LaunchItemWorkflow` |
+| meta_image_hash | TEXT | sí | NULL | | solo `image` |
+| thumbnail_url | TEXT | sí | NULL | | `/thumbnails` (video) o `url` de `adimages` (imagen); URL de fbcdn que vence |
+| thumbnail_refreshed_at | INTEGER | sí | NULL | | el cron horario la renueva si pasaron más de 20 h |
+| format_warning | TEXT | sí | NULL | `horizontal` | aviso 9:16 / 4:5 |
+| width | INTEGER | sí | NULL | | lo informa el navegador; el job `meta_video_status` lo corrige con el de Meta |
 | height | INTEGER | sí | NULL | | |
 | duration_ms | INTEGER | sí | NULL | | |
 | source | TEXT | NN | — | `browser`,`drive` | |
-| status | TEXT | NN | — | `uploading`,`importing`,`ready`,`failed`,`archived` | |
-| error | TEXT | sí | NULL | | |
-| storage_state | TEXT | NN | 'present' | `present`,`purged` | |
-| purge_after | INTEGER | sí | NULL | | 7 días tras subir; 48 h tras quedar en Meta en un lanzamiento verificado |
-| ai_status | TEXT | NN | 'pending_frames' | `pending_frames`,`queued`,`done`,`failed`,`skipped` | |
+| status | TEXT | NN | — | `uploading`,`importing`,`processing`,`ready`,`failed`,`archived` | `processing`: video en Meta esperando el job `meta_video_status` |
+| error | TEXT | sí | NULL | | `UPLOAD_EXPIRED` si el cron venció su subida |
+| ai_status | TEXT | NN | 'pending' | `pending`,`queued`,`done`,`failed`,`skipped` | |
 | tag_hook | TEXT | sí | NULL | | |
 | tag_angle | TEXT | sí | NULL | | |
 | tag_format | TEXT | sí | NULL | `ugc`,`demo`,`testimonio`,`estatico`,`otro` | |
@@ -431,78 +435,32 @@ ROAS de equilibrio (`price / (price − cost)`) y ganancia por venta se calculan
 Índices:
 | Índice | Query |
 |---|---|
-| `creatives_ws_status_created_idx (workspace_id, status, created_at)` | Biblioteca del lanzador: `WHERE workspace_id = ? AND status IN ('ready','importing') ORDER BY created_at DESC LIMIT ?`; `?ids=` va por PK + `workspace_id` |
+| `creatives_ws_status_created_idx (workspace_id, status, created_at)` | Biblioteca del lanzador: `WHERE workspace_id = ? AND status IN ('ready','processing','importing') ORDER BY created_at DESC LIMIT ?` (con `adAccountAssetId` filtra sobre ese rango); `?ids=` va por PK + `workspace_id`. El orden `most_used` cuenta `launch_items` en la misma query |
 | `creatives_ws_sha_idx (workspace_id, sha256)` | Aviso de duplicado en `POST /uploads` |
-| `creatives_purge_idx (storage_state, purge_after)` | Cron: `WHERE storage_state = 'present' AND purge_after < ? LIMIT 100` |
+| `creatives_status_thumbnail_idx (status, thumbnail_refreshed_at)` | Cron horario: `WHERE status = 'ready' AND thumbnail_refreshed_at < ? LIMIT 50` (renueva miniaturas vencidas) |
 | `creatives_ai_status_idx (ai_status, created_at)` | Reencolar etiquetado pendiente cuando vuelve el cupo diario |
 
 #### `uploads`
+Sesión de subida del navegador a Meta a través del Worker (sin almacenamiento propio). Los imports de Drive no crean fila acá: su avance vive en el job `drive_import_file` y en `creatives.status`.
+
 | Columna | Tipo | Null | Default | Único / check | Nota |
 |---|---|---|---|---|---|
-| id | TEXT | NN | — | PK | |
+| id | TEXT | NN | — | PK | `uploadId` en la API |
 | workspace_id | TEXT | NN | — | FK `workspaces.id` ON DELETE CASCADE | |
-| creative_id | TEXT | NN | — | UNIQUE, FK `creatives.id` ON DELETE CASCADE | |
-| source | TEXT | NN | — | `browser`,`drive` | |
-| r2_upload_id | TEXT | sí | NULL | | multipart de R2 (solo `browser`) |
-| drive_file_id | TEXT | sí | NULL | | solo `drive` |
-| google_connection_id | TEXT | sí | NULL | FK `google_connections.id` ON DELETE SET NULL | |
-| size_bytes | INTEGER | NN | — | | |
-| part_size_bytes | INTEGER | NN | 10485760 | | |
-| part_count | INTEGER | NN | — | ≤ 10000 | |
-| status | TEXT | NN | 'uploading' | `uploading`,`completed`,`aborted`,`failed` | |
-| error | TEXT | sí | NULL | | |
+| creative_id | TEXT | sí | NULL | UNIQUE, FK `creatives.id` ON DELETE SET NULL | NULL tras `abort` (SQLite admite varios NULL en UNIQUE) |
+| ad_account_asset_id | TEXT | NN | — | FK `meta_assets.id` ON DELETE CASCADE | cuenta elegida antes de subir |
+| kind | TEXT | NN | — | `video`,`image` | |
+| size_bytes | INTEGER | NN | — | > 0 | video ≤ 500 MB, imagen ≤ 30 MB |
+| sha256 | TEXT | NN | — | | lo informa el navegador; aviso de duplicado |
+| meta_upload_session_id | TEXT | sí | NULL | | `upload_session_id` de Meta (solo video) |
+| start_offset | INTEGER | NN | 0 | ≥ 0 | próximo byte que espera Meta; el `?start=` del chunk debe coincidir (si no, 409 `UPLOAD_OFFSET_MISMATCH`) |
+| end_offset | INTEGER | NN | 0 | ≥ 0 | tope del chunk actual: `min(end_offset de Meta, start + 10 MiB)` |
+| status | TEXT | NN | 'uploading' | `uploading`,`completed`,`aborted`,`expired` | |
+| expires_at | INTEGER | NN | — | | `created_at + 24 h`; vencida: 410 `UPLOAD_EXPIRED` |
 | created_by | TEXT | sí | NULL | FK `users.id` ON DELETE SET NULL | |
 | created_at | INTEGER | NN | — | | |
-| updated_at | INTEGER | NN | — | | |
-| expires_at | INTEGER | NN | — | | `created_at + 24 h` |
 
-Índices: `uploads_status_expires_idx (status, expires_at)` — cron: `WHERE status = 'uploading' AND expires_at < ?` (aborta en R2 y marca `aborted`). PK + `workspace_id` para las rutas de partes.
-
-#### `upload_parts`
-| Columna | Tipo | Null | Default | Único / check | Nota |
-|---|---|---|---|---|---|
-| upload_id | TEXT | NN | — | PK (1/2), FK `uploads.id` ON DELETE CASCADE | |
-| part_number | INTEGER | NN | — | PK (2/2), `BETWEEN 1 AND 10000` | |
-| workspace_id | TEXT | NN | — | FK `workspaces.id` ON DELETE CASCADE | |
-| etag | TEXT | NN | — | | |
-| size_bytes | INTEGER | NN | — | | |
-| created_at | INTEGER | NN | — | | |
-
-Índices: PK `(upload_id, part_number)` — `complete`: `SELECT part_number, etag FROM upload_parts WHERE upload_id = ? ORDER BY part_number`; `INSERT ... ON CONFLICT DO UPDATE` en reintentos de una parte.
-
-#### `creative_frames`
-| Columna | Tipo | Null | Default | Único / check | Nota |
-|---|---|---|---|---|---|
-| creative_id | TEXT | NN | — | PK (1/2), FK `creatives.id` ON DELETE CASCADE | |
-| idx | INTEGER | NN | — | PK (2/2), `BETWEEN 0 AND 2` | |
-| workspace_id | TEXT | NN | — | FK `workspaces.id` ON DELETE CASCADE | |
-| time_ms | INTEGER | NN | 0 | | |
-| r2_key | TEXT | NN | — | | `ws/<wid>/creatives/<id>/frame-<idx>.jpg` |
-| width | INTEGER | NN | — | ≤ 512 | |
-| height | INTEGER | NN | — | ≤ 512 | |
-| size_bytes | INTEGER | NN | — | ≤ 307200 | |
-| created_at | INTEGER | NN | — | | |
-
-Índices: PK — job de etiquetado y detalle: `WHERE creative_id = ? ORDER BY idx`.
-
-#### `creative_meta_media`
-| Columna | Tipo | Null | Default | Único / check | Nota |
-|---|---|---|---|---|---|
-| id | TEXT | NN | — | PK | |
-| workspace_id | TEXT | NN | — | FK `workspaces.id` ON DELETE CASCADE | |
-| creative_id | TEXT | NN | — | FK `creatives.id` ON DELETE CASCADE | |
-| ad_account_meta_id | TEXT | NN | — | | |
-| meta_video_id | TEXT | sí | NULL | | |
-| meta_image_hash | TEXT | sí | NULL | | |
-| upload_method | TEXT | NN | — | `file_url`,`resumable`,`image` | |
-| status | TEXT | NN | — | `uploading`,`processing`,`ready`,`error` | |
-| thumbnail_url | TEXT | sí | NULL | | |
-| is_horizontal | INTEGER | sí | NULL | 0/1 | aviso 9:16 / 4:5 |
-| error | TEXT | sí | NULL | | |
-| created_at | INTEGER | NN | — | | |
-| updated_at | INTEGER | NN | — | | |
-
-Índices: `UNIQUE(creative_id, ad_account_meta_id)` — `LaunchItemWorkflow` reusa el video si ya está en esa cuenta: `WHERE creative_id = ? AND ad_account_meta_id = ? AND status = 'ready'`.
+Índices: `uploads_status_expires_idx (status, expires_at)` — cron horario: `UPDATE uploads SET status = 'expired' WHERE status = 'uploading' AND expires_at < ?`. PK + `workspace_id` para las rutas `chunk`, `complete` y `abort`; `UNIQUE(creative_id)` para ir del creativo a su subida. `POST /uploads/:id/abort` (el usuario canceló) borra el `creatives` creado por esa subida (`uploads.creative_id` pasa a NULL por `SET NULL`) y deja `uploads.status = 'aborted'`; el cron, al vencer, deja `uploads.status = 'expired'` y su `creatives.status = 'failed'` con `error = 'UPLOAD_EXPIRED'`. Reintentar siempre es volver a mandar desde el navegador, así que no hay tabla de partes: el progreso es `start_offset`.
 
 ### 3.5 Lanzamientos
 
@@ -564,7 +522,7 @@ ROAS de equilibrio (`price / (price − cost)`) y ganancia por venta se calculan
 | clone_story_id | TEXT | sí | NULL | | |
 | copy_id | TEXT | sí | NULL | FK `product_copies.id` ON DELETE SET NULL | |
 | ad_name | TEXT | NN | — | | |
-| status | TEXT | NN | 'pending' | `pending`,`uploading_media`,`processing_media`,`creating_creative`,`creating_ad`,`done`,`failed` | |
+| status | TEXT | NN | 'pending' | `pending`,`processing_media`,`creating_creative`,`creating_ad`,`done`,`failed` | |
 | attempt | INTEGER | NN | 0 | | |
 | meta_video_id | TEXT | sí | NULL | | |
 | meta_image_hash | TEXT | sí | NULL | | |
@@ -712,6 +670,7 @@ El "pendingCount" de Hoy se lee con `LIMIT 51` sobre el índice anterior y se mu
 |---|---|
 | `audit_ws_created_idx (workspace_id, created_at)` | `GET /audit`: `WHERE workspace_id = ? ORDER BY created_at DESC LIMIT ?` |
 | `audit_ws_origin_created_idx (workspace_id, origin, created_at)` | Filtro por origen |
+| `audit_log_actor_idx (workspace_id, actor_user_id, created_at)` | Filtro `actorUserId` de `GET /audit` |
 | `audit_ws_object_created_idx (workspace_id, object_meta_id, created_at)` | Historia de un objeto y última escala (piloto `minHoursBetween`, "subió hace N h"): `WHERE workspace_id = ? AND object_meta_id = ? AND action = 'meta.budget.scale' ORDER BY created_at DESC LIMIT 1` |
 
 Retención: mientras exista el workspace. No hay endpoint de edición ni borrado.
@@ -723,29 +682,28 @@ Retención: mientras exista el workspace. No hay endpoint de edición ni borrado
 | workspace_id | TEXT | NN | — | FK `workspaces.id` ON DELETE CASCADE | |
 | user_id | TEXT | sí | NULL | FK `users.id` ON DELETE SET NULL | NULL en cron |
 | feature | TEXT | NN | — | `copy`,`tagging`,`pilot`,`chat` | |
-| provider | TEXT | NN | — | `anthropic`,`workers_ai` | |
-| model | TEXT | NN | — | | |
+| provider | TEXT | NN | — | `workers_ai` | otros proveedores se suman acá más adelante |
+| model | TEXT | NN | — | | id del modelo de Workers AI |
 | input_tokens | INTEGER | NN | 0 | | |
 | output_tokens | INTEGER | NN | 0 | | |
-| neurons | INTEGER | NN | 0 | | |
-| cost_microusd | INTEGER | NN | 0 | | |
+| neurons | INTEGER | NN | 0 | | consumo estimado con `src/shared/ai-neuron-rates.ts` |
 | status | TEXT | NN | — | `ok`,`error`,`blocked_budget` | |
 | ref_id | TEXT | sí | NULL | | producto, creativo, corrida o sesión de chat |
 | created_at | INTEGER | NN | — | | |
 
-Índices: `ai_usage_ws_created_idx (workspace_id, created_at)` — detalle mensual del superadmin: `WHERE workspace_id = ? AND created_at BETWEEN ? AND ?`.
+Índices: `ai_usage_ws_created_idx (workspace_id, created_at)` — detalle mensual del superadmin y neurons por workspace: `WHERE workspace_id = ? AND created_at BETWEEN ? AND ?`.
 
 #### `usage_counters`
 | Columna | Tipo | Null | Default | Único / check | Nota |
 |---|---|---|---|---|---|
 | scope | TEXT | NN | — | PK (1/4), `workspace`,`global` | |
 | scope_id | TEXT | NN | — | PK (2/4) | `workspace_id` o `app` |
-| period | TEXT | NN | — | PK (3/4) | `YYYY-MM` (workspace) o `YYYY-MM-DD` (global) |
-| metric | TEXT | NN | — | PK (4/4) | `ai_cost_microusd`, `claude_input_tokens`, `claude_output_tokens`, `neurons`, `meta_calls`, `launches`, `ads_created` |
+| period | TEXT | NN | — | PK (3/4) | `YYYY-MM` o `YYYY-MM-DD` (día UTC, el reinicio de Cloudflare: 21 h en Argentina) |
+| metric | TEXT | NN | — | PK (4/4) | `ai_neurons`, `meta_calls`, `launches`, `ads_created` |
 | value | INTEGER | NN | 0 | | |
 | updated_at | INTEGER | NN | — | | |
 
-Sin FK (alcance libre). Se purga con el workspace por código en `purge_workspace`. Índices: PK — chequeo de presupuesto: `WHERE scope='workspace' AND scope_id=? AND period=? AND metric='ai_cost_microusd'`; tope global de neurons: `WHERE scope='global' AND scope_id='app' AND period=? AND metric='neurons'`; incremento `INSERT ... ON CONFLICT DO UPDATE SET value = value + ?` (una escritura por invocación, sumando todas las llamadas de esa invocación).
+Sin FK (alcance libre). Se purga con el workspace por código en `purge_workspace`. Los neurons del workspace se acumulan en dos filas (`period` día y `period` mes) y los globales en una (`period` día). Índices: PK — chequeo de presupuesto (`assertAiBudget`): `WHERE scope='workspace' AND scope_id=? AND period IN (?, ?) AND metric='ai_neurons'`; tope global diario: `WHERE scope='global' AND scope_id='app' AND period=? AND metric='ai_neurons'`; incremento `INSERT ... ON CONFLICT DO UPDATE SET value = value + ?` (un batch por invocación, sumando todas las llamadas de esa invocación). `GET /api/w/:wid` arma `aiUsage` con estas mismas lecturas.
 
 #### `chat_sessions`
 | Columna | Tipo | Null | Default | Único / check | Nota |
@@ -831,7 +789,7 @@ No hay contraseñas: no aplican registro con contraseña, recuperación, cambio 
 | Sesión | Token de sesión 32 bytes aleatorios; en D1 solo `token_hash`. Cookie `__Host-lanzador_sid=<token>; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`. Vence a los 30 días absolutos o a los 7 días sin uso. |
 | Validar request | Hash del cookie → `sessions` por `token_hash` (o `previous_token_hash` dentro de 60 s de una rotación) → `expires_at` y `last_seen_at` vigentes → usuario `active`. `last_seen_at` se escribe solo si pasó más de 1 h. |
 | Rotación | Al login (sesión nueva) y cada 24 h de uso: nuevo token, `previous_token_hash = token_hash`, `token_hash = nuevo`, `rotated_at = ahora`, nueva cookie. La ventana de 60 s evita cortar requests en paralelo. |
-| Logout | `DELETE FROM sessions WHERE id = ?` + cookie con `Max-Age=0`. Desactivar un usuario borra todas sus sesiones. |
+| Logout | `DELETE FROM sessions WHERE id = ?` + cookie con `Max-Age=0`. `POST /api/auth/logout-all` borra todas las sesiones del usuario (`WHERE user_id = ?`). Desactivar un usuario también borra todas sus sesiones. |
 | Invitación | `POST /api/invitations/accept {token}`: `UPDATE ... RETURNING` atómico sobre `invitations`; si hay sesión con otro email: 409 `EMAIL_MISMATCH`; si no hay sesión: crea o busca el usuario por email (la posesión del link prueba el email) y crea sesión; inserta `memberships` con el rol. Vence a los 7 días. |
 | Beta cerrada | `POST /api/workspaces` exige `beta_invites` no revocada para el email (o superadmin); marca `used_at` en el primer workspace. |
 | Bloqueo por intentos | `RL_AUTH` 5/min por IP en `magic-link`, `verify`, `accept` y callbacks; 5 links por email cada 15 min. Tokens de 256 bits hacen inviable la fuerza bruta. |
@@ -846,9 +804,9 @@ No hay contraseñas: no aplican registro con contraseña, recuperación, cambio 
 | Refresh token de Google (`google_connections.refresh_token_ciphertext`) | Igual | Nunca |
 | Access token de Google | No se guarda; se pide al usar | Solo `/picker-token` (efímero, `drive.file`) |
 | Tokens de sesión, magic link, invitación, `state` OAuth | Solo SHA-256 | Nunca (el token en claro viaja una vez: cookie o email) |
-| `META_APP_SECRET`, claves de cifrado y firma, `RESEND_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_CLIENT_SECRET` | `wrangler secret` | Nunca; no se loguean |
+| `META_APP_SECRET`, claves de cifrado, `RESEND_API_KEY`, `GOOGLE_CLIENT_SECRET`, `E2E_SECRET` (solo preview) | `wrangler secret` | Nunca; no se loguean |
 | IP | Solo `ip_hash` (SHA-256 con la fecha) | Nunca |
-| `sessions.id`, `*_hash`, `*_iv`, `token_key_version`, `r2_key`, `workflow_instance_id` | Internos | Nunca (DTOs explícitos) |
+| `sessions.id`, `*_hash`, `*_iv`, `token_key_version`, `meta_upload_session_id`, `workflow_instance_id` | Internos | Nunca (DTOs explícitos) |
 | Emails | En claro (los necesita el login) | Solo a miembros del mismo workspace y al superadmin |
 | Payloads de insights | En claro (datos de la cuenta del cliente) | Solo al workspace dueño |
 
@@ -856,12 +814,12 @@ No hay contraseñas: no aplican registro con contraseña, recuperación, cambio 
 
 | Tema | Regla |
 |---|---|
-| Herramienta | Schema en `src/db/schema/*.ts` (un archivo por área: `auth.ts`, `workspaces.ts`, `meta.ts`, `creatives.ts`, `launches.ts`, `pilot.ts`, `ops.ts`). `npm run db:generate` (drizzle-kit) genera SQL en `src/db/migrations/`. `npm run db:migrate` = `wrangler d1 migrations apply lanzador-db --local`; en remoto `--remote` (preview primero, producción después). |
+| Herramienta | Schema en `src/db/schema/*.ts` (un archivo por área: `auth.ts`, `workspaces.ts`, `meta.ts`, `products.ts` (`products` y `product_copies`), `creatives.ts`, `launches.ts`, `pilot.ts`, `ops.ts`). `npm run db:generate` (drizzle-kit) genera SQL en `src/db/migrations/`. `npm run db:migrate` = `wrangler d1 migrations apply lanzador-db --local`; en remoto `--remote` (preview `lanzador-db-preview` primero, producción `lanzador-db` después). |
 | Nombres | `NNNN_<verbo>_<objeto>.sql` en snake_case, numeración de 4 dígitos (`0001_create_auth.sql`, `0002_create_workspaces.sql`, `0003_seed_plans.sql`). |
 | Reglas | Nunca editar una migración aplicada. Cambios destructivos en dos pasos (agregar columna nueva y migrar datos; borrar la vieja en una migración posterior). Índices parciales y `CHECK` que drizzle-kit no genere se agregan a mano en la misma migración. Toda migración pasa por la D1 local de los tests de integración. |
 | Datos de producción | `0003_seed_plans.sql` inserta `plans` (`beta` activo; `starter` y `pro` inactivos con precio 0 hasta la fase 2). |
 | Seed de desarrollo | `npm run db:seed` ejecuta `src/db/seed.ts`, que genera `seed.sql` y lo aplica con `wrangler d1 execute lanzador-db --local --file`. Se niega a correr si `ENVIRONMENT` es `production`. |
-| Contenido del seed | Superadmin `admin@lanzador.test`; workspaces **A** ("Marca Demo") y **B** ("Agencia Demo"), cada uno con un usuario por rol (`owner-a@…`, `admin-a@…`, `editor-a@…`, `viewer-a@…` y lo mismo para B); `beta_invites` para un email nuevo; `workspace_settings` y `pilot_rules` por defecto; una `meta_connections` por workspace con token falso cifrado con la clave de `.dev.vars`; activos (2 cuentas `act_` USD, 1 página, 1 Instagram, 2 píxeles); 3 productos con precio y costo; 6 creativos `ready` con frames y etiquetas (los objetos de R2 se suben desde `tests/fixtures/media/` al R2 local); 2 lanzamientos (uno `paused_verified`, uno `verified_with_errors` con un ítem fallido); `insights_cache` de `today`, `yesterday` y `last_7d` con payloads de `tests/fixtures/insights/`; 3 propuestas `pending`; 1 campaña protegida; entradas de `audit_log`, `ai_usage` y `usage_counters`. |
+| Contenido del seed | Superadmin `admin@lanzador.test`; workspaces **A** ("Marca Demo") y **B** ("Agencia Demo"), cada uno con un usuario por rol (`owner-a@…`, `admin-a@…`, `editor-a@…`, `viewer-a@…` y lo mismo para B); `beta_invites` para un email nuevo; `workspace_settings` y `pilot_rules` por defecto; una `meta_connections` por workspace con token falso cifrado con la clave de `.dev.vars`; activos (2 cuentas `act_` USD, 1 página, 1 Instagram, 2 píxeles); 3 productos con precio y costo; 6 creativos `ready` con `meta_video_id` o `meta_image_hash` falsos, `thumbnail_url` y etiquetas (sin archivos: no hay almacenamiento propio); 2 lanzamientos (uno `paused_verified`, uno `verified_with_errors` con un ítem fallido); `insights_cache` de `today`, `yesterday` y `last_7d` con payloads de `tests/fixtures/insights/`; 3 propuestas `pending`; 1 campaña protegida; entradas de `audit_log`, `ai_usage` (con `neurons`) y `usage_counters` (`ai_neurons`). |
 
 ## 8. Mapa endpoint → tabla
 
@@ -869,26 +827,23 @@ Cada función del PRD tiene al menos un endpoint (columna F) y cada tabla la usa
 
 | Tabla | Endpoints / jobs que la usan | F |
 |---|---|---|
-| `plans` | `POST /api/workspaces`, `GET /api/w/:wid`, `PATCH /api/admin/workspaces/:id`, `POST /uploads` (tope de almacenamiento), `PATCH /meta/assets` (tope de cuentas), `POST /invitations` (tope de miembros), chequeo de presupuesto de IA | F1, F2, F4, F5 |
+| `plans` | `POST /api/workspaces`, `GET /api/w/:wid`, `PATCH /api/admin/workspaces/:id`, `PATCH /meta/assets` (tope de cuentas), `POST /invitations` (tope de miembros), `assertAiBudget` (`ai_daily_neurons`, `ai_monthly_neurons`) | F1, F2, F5 |
 | `users` | `/api/auth/verify`, `/api/me`, `/members`, `/api/invitations/accept`, `/api/admin/*` | F1 |
-| `sessions` | Todos los endpoints con sesión, `/api/auth/verify`, `/api/auth/logout` | F1 |
+| `sessions` | Todos los endpoints con sesión, `/api/auth/verify`, `/api/auth/logout`, `/api/auth/logout-all` | F1 |
 | `magic_links` | `/api/auth/magic-link`, `/api/auth/verify`, `/api/test/magic-link` | F1 |
 | `beta_invites` | `/api/admin/beta-invites*`, `POST /api/workspaces`, `/api/auth/magic-link` | F1 |
-| `workspaces` | `/api/w/:wid` (GET, PATCH, DELETE), `/api/admin/workspaces*`, middleware `workspace`, cron | F1 |
+| `workspaces` | `/api/w/:wid` (GET con `aiUsage`, PATCH, DELETE), `/api/admin/workspaces*` (incluye restaurar un `deleting`), middleware `workspace` (`last_activity_at`), cron | F1 |
 | `workspace_settings` | `/api/w/:wid/settings`, `/launches/:id/simulate`, `/start`, `/scale` | F1, F4, F7 |
 | `memberships` | Middleware `workspace`, `/api/me`, `/members*`, `/transfer-ownership`, `/api/invitations/accept` | F1 |
 | `invitations` | `/api/w/:wid/invitations*`, `/api/invitations/accept`, `/api/auth/magic-link` | F1 |
 | `oauth_states` | `/meta/connect`, `/api/meta/oauth/callback`, `/google/connect`, `/api/google/oauth/callback` | F2, F4 |
 | `meta_connections` | `/meta/connect`, callback, `/meta/connections*`, `/api/meta/deauthorize`, `/api/meta/data-deletion`, todo lo que llama a Meta | F2, F4, F7, F8 |
-| `meta_assets` | `/meta/assets*`, `/meta/ad-accounts/:assetId/campaigns`, `/meta/campaigns/:id/*`, `/launches*`, `/today`, `/metrics*` | F2, F4, F7 |
+| `meta_assets` | `/meta/assets*`, `/meta/ad-accounts/:assetId/campaigns`, `/meta/campaigns/:id/*`, `/uploads`, `/creatives*` (`adAccountAssetId`), `/google/imports`, `/launches*`, `/today`, `/metrics*` | F2, F4, F7 |
 | `google_connections` | `/google/connect`, callback, `/google/connection`, `/google/picker-token`, `/google/imports` | F4 |
 | `products` | `/products*`, `/launches/:id/simulate`, `/start`, `/metrics?productId` | F3, F4, F7 |
 | `product_copies` | `/products/:id/copies*`, `/copies/:copyId`, `/launches*` | F5, F4 |
-| `creatives` | `/uploads*`, `/creatives*`, `/api/m/:creativeId/...`, `/google/imports`, `/metrics/winning-tags` | F4, F6 |
-| `uploads` | `/uploads`, `/uploads/:id/parts/:n`, `/complete`, `/abort`, `/google/imports` | F4 |
-| `upload_parts` | `/uploads/:id/parts/:n`, `/uploads/:id/complete` | F4 |
-| `creative_frames` | `/creatives/:id/frames/:idx`, `/creatives/:id`, `/creatives/:id/media`, job `tag_creative` | F6 |
-| `creative_meta_media` | `LaunchItemWorkflow`, `GET /creatives/:id` | F4 |
+| `creatives` | `/uploads*`, `GET /creatives` (`?ids=`, `?tag=`, `?adAccountAssetId=`, `sort`), `GET/PATCH /creatives/:id`, `/creatives/:id/tag`, `/creatives/:id/retag`, `/google/imports`, `/launches/:id/simulate` (`MEDIA_NOT_IN_ACCOUNT`), `/metrics/winning-tags`; jobs `meta_video_status`, `drive_import_file`, `tag_creative`; `LaunchItemWorkflow` (reusa `meta_video_id` / `meta_image_hash`); cron (miniaturas, reencolar etiquetado) | F4, F6 |
+| `uploads` | `POST /uploads`, `PUT /uploads/:id/chunk`, `/uploads/:id/complete`, `/uploads/:id/abort`; cron (vence a las 24 h) | F4 |
 | `launches` | `/launches*`, `/today`, `/metrics` (mapa campaña → producto), `/chat/.../messages` (borrador), `/pilot/proposals/:id/approve` (duplicar) | F4, F7, F8, F9, F10 |
 | `launch_items` | `/launches/:id`, `/progress`, `/retry-failed`, `/metrics/winning-tags` | F4, F6, F10 |
 | `insights_cache` | `/today`, `/metrics*`, `/metrics/top-ads`, `/metrics/winning-tags`, `/metrics/refresh`, `/pilot/run`, job `insights_refresh` | F6, F7, F8 |
@@ -897,11 +852,11 @@ Cada función del PRD tiene al menos un endpoint (columna F) y cada tabla la usa
 | `pilot_proposals` | `/pilot/proposals*`, `/today` | F7, F8 |
 | `protected_campaigns` | `/protected-campaigns*`, `/metrics`, `/pilot/run` | F7, F8 |
 | `audit_log` | `/audit`; escriben: toda acción en Meta, miembros, ajustes, conexiones; `/metrics` (escalado hace N h) | F10, F7, F8 |
-| `ai_usage` | `/copies/generate`, `/creatives/:id/retag`, `/pilot/run`, `/chat/.../messages`, `/api/admin/usage` | F5, F6, F8, F9, F1 |
-| `usage_counters` | Igual que `ai_usage` + todo cliente de Meta (`meta_calls`), `/api/admin/usage` | F1, F5 |
+| `ai_usage` | `/copies/generate`, `/creatives/:id/tag`, `/creatives/:id/retag`, job `tag_creative`, `/pilot/run`, `/chat/.../messages`, `/api/admin/usage` | F5, F6, F8, F9, F1 |
+| `usage_counters` | Igual que `ai_usage` (`ai_neurons`) + `GET /api/w/:wid` (`aiUsage`) + todo cliente de Meta (`meta_calls`), `/api/admin/usage` | F1, F5 |
 | `chat_sessions` | `/chat/sessions*` | F9 |
 | `chat_messages` | `/chat/sessions/:id/messages` | F9 |
-| `error_events` | `/api/client-errors`, `/api/admin/errors`, middleware de errores, Workflows y cron | F10 |
+| `error_events` | `/api/client-errors` (`RL_CLIENT_ERR`), `/api/admin/errors`, middleware de errores, Workflows y cron | F10 |
 | `data_deletion_requests` | `/api/meta/data-deletion`, `/api/meta/data-deletion/:code` | F2 |
 
-Cobertura de funciones del PRD: F1 → `/api/auth/*`, `/api/workspaces`, `/api/w/:wid`, `/members`, `/invitations`, `/api/admin/*`; F2 → `/meta/connect`, `/api/meta/*`, `/meta/assets`, `/meta/connections`; F3 → `/products*`; F4 → `/uploads*`, `/creatives*`, `/google/*`, `/launches*`, `/api/m/*`, `/meta/campaigns/*`; F5 → `/copies*`; F6 → `/frames`, `/retag`, `PATCH /creatives/:id`, `/metrics/winning-tags`; F7 → `/today`, `/metrics*`, `/meta/objects/:id/status`, `/meta/campaigns/:id/scale`; F8 → `/pilot/*`, `/protected-campaigns*`; F9 → `/chat/*`; F10 → `GET /launches`, `/launches/:id/activate`, `/audit`.
+Cobertura de funciones del PRD: F1 → `/api/auth/*`, `/api/workspaces`, `/api/w/:wid`, `/members`, `/invitations`, `/api/admin/*`; F2 → `/meta/connect`, `/api/meta/*`, `/meta/assets`, `/meta/connections`; F3 → `/products*`; F4 → `/uploads*`, `/creatives*`, `/google/*`, `/launches*`, `/meta/campaigns/*`; F5 → `/copies*`; F6 → `/creatives/:id/tag`, `/retag`, `PATCH /creatives/:id`, `/metrics/winning-tags`; F7 → `/today`, `/metrics*`, `/meta/objects/:id/status`, `/meta/campaigns/:id/scale`; F8 → `/pilot/*`, `/protected-campaigns*`; F9 → `/chat/*`; F10 → `GET /launches`, `/launches/:id/activate`, `/audit`.

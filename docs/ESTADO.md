@@ -1,12 +1,12 @@
 # Estado del proyecto — Lanzador de anuncios con IA
 
-Fase actual: **1 — Entrevista** (falta el texto del punto 3 del doc de origen).
+Fase actual: **3 — Arquitectura**.
 
 ## Checklist
 
 - [x] 0 Bootstrap: git (`main` + `dev`), `CLAUDE.md`, `.gitignore`. CLIs: wrangler 4.163 logueado, gcloud logueado, gh logueado (`ilandaniele`), k6 2.3. El token de `cf` venció el 2026-11-14; el proyecto usará `wrangler`, así que no bloquea.
-- [ ] 1 Entrevista → `docs/00-brief.md`
-- [ ] 2 Documentos `docs/01..06`
+- [x] 1 Entrevista → `docs/00-brief.md`
+- [x] 2 Documentos `docs/01..06`
 - [ ] 3 Arquitectura y esqueleto
 - [ ] 4 Infra y secretos
 - [ ] 5 Desarrollo
@@ -21,10 +21,14 @@ Fase actual: **1 — Entrevista** (falta el texto del punto 3 del doc de origen)
 - Cobro: no en el MVP; modelo de planes preparado para fase 2.
 - Dominio: `*.workers.dev` por ahora.
 - App de Meta: crear una nueva (el usuario hace login y aprueba; se guía paso a paso).
-- IA: copys y títulos, piloto inteligente, análisis de creativos, lanzar por chat. Proveedor: Workers AI para tareas baratas, Claude API para copy y piloto.
+- IA: copys y títulos, piloto inteligente, análisis de creativos, lanzar por chat. Proveedor: solo Workers AI (texto, chat y visión), sin API de Claude; Claude se puede sumar más adelante como un segundo `AiProvider`.
+- Medios: sin R2 (la cuenta no tiene medio de pago); los archivos van del navegador al Worker y a Meta, o de Drive al Workflow y a Meta, sin guardarse.
+- Email: dominio pospuesto. Resend sin dominio verificado entrega solo al dueño de la cuenta, así que por ahora solo el superadmin puede iniciar sesión.
+
+## Hecho
+
+- Inventario de la app vieja → `docs/legacy/inventario-app-vieja.md`.
 
 ## Pendiente
 
-- Texto del punto 3 del doc "lanzador de anuncios con IA" (no accesible desde esta sesión).
-- Inventario de la app vieja → `docs/legacy/inventario-app-vieja.md` (en curso). Después se borran `app.py`, `subir.py`, `static/`, `LEEME*.md/txt`, `iniciar.command`, `.env.ejemplo`.
-- Proveedor de email para magic links (propuesta: Resend, plan gratis; requiere cuenta del usuario).
+- Proveedor de email para magic links (Resend, plan gratis; requiere cuenta del usuario). Dominio verificado pendiente (~US$10/año): sin él no se pueden invitar clientes beta reales.
