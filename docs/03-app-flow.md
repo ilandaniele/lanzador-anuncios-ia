@@ -167,6 +167,21 @@ Barra de pasos arriba; se puede volver a cualquier paso ya completo. El borrador
 
 ---
 
+## Agregados de UX (de `docs/04-UI-UX-brief.md` §11)
+
+Aceptados para el MVP:
+
+- **Lanzamiento en segundo plano:** si el usuario sale de la vista de progreso, la barra superior muestra "Lanzando 14/20". Se consulta `GET /api/w/:id/launches/:lid` al volver el foco o al navegar, nunca con polling fuera de la vista. Al terminar, toast con link al resultado.
+- **Deshacer** en el toast de Pausar/Activar (6 s): llama al endpoint de estado con el valor anterior.
+- **Autoguardado visible** en el pie del lanzador: "Guardado", "Guardando…", "Sin conexión".
+- **Tema** Claro, Oscuro o Sistema en Ajustes › Cuenta (guardado en el navegador).
+- **Aprobar desde Hoy en mobile:** la propuesta abre en una hoja inferior con el comprobante, sin ir a Piloto.
+- **Vista previa del anuncio** en Lanzador › Revisión: copy + creativo + CTA como en el feed, uno por combinación distinta.
+- **Tope de IA alcanzado:** "Pedile a la IA" y "Generar con IA" se deshabilitan con el motivo.
+- **Historial › Acciones** enlaza cada acción del piloto con su propuesta y explicación.
+
+Para después del MVP: elegir columnas y densidad en Métricas; página de atajos de teclado.
+
 ## Flujos clave
 
 ### Login y registro
