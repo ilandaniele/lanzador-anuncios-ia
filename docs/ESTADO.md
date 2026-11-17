@@ -1,6 +1,6 @@
 # Estado del proyecto — Lanzador de anuncios con IA
 
-Fase actual: **5 — Desarrollo** (siguiente: tarea 4 del plan).
+Fase actual: **5 — Desarrollo** (siguiente: tarea 10 del plan, pipeline HTTP).
 
 ## Checklist
 
@@ -9,7 +9,7 @@ Fase actual: **5 — Desarrollo** (siguiente: tarea 4 del plan).
 - [x] 2 Documentos `docs/01..06`
 - [x] 3 Arquitectura y esqueleto (tareas 1–3 del plan). Preview desplegado: https://lanzador-preview.ilandaniele.workers.dev (`/api/health` responde `{"ok":true}`; rutas de la SPA devuelven `index.html`).
 - [x] 4 Infra y secretos: D1 `lanzador-db-preview` y `lanzador-db` creadas y enlazadas como `DB`; secretos `TOKEN_ENC_KEY_V1` y `E2E_SECRET` cargados en `lanzador-preview`; `.dev.vars` local con valores propios; `APP_ORIGIN` del preview fijado. Las migraciones remotas se aplican cuando exista el schema (tarea 5).
-- [ ] 5 Desarrollo
+- [ ] 5 Desarrollo — hechas tareas 4–9: constantes y helpers compartidos, schema D1 con migraciones 0001–0005 (aplicadas en `lanzador-db-preview` remota), cifrado de tokens AES-GCM y cliente de Resend con plantillas de email. 217 tests en verde.
 - [ ] 6 Seguridad
 - [ ] 7 Tests y performance
 - [ ] 8 Deploy y entrega
@@ -32,7 +32,7 @@ Fase actual: **5 — Desarrollo** (siguiente: tarea 4 del plan).
 
 ## Pendiente
 
-- Producción: cargar `TOKEN_ENC_KEY_V1` en `lanzador` (valor distinto al de preview) y aplicar migraciones a `lanzador-db` en la Fase 8. `E2E_SECRET` nunca va a producción.
+- Producción: cargar `TOKEN_ENC_KEY_V1` en `lanzador` (valor distinto al de preview) y aplicar migraciones a `lanzador-db` en la Fase 8 (en preview ya están aplicadas). `E2E_SECRET` nunca va a producción.
 - Bindings `AI`, Workflows y rate limits: se agregan en la tarea del plan que los usa.
 - Datos del usuario: `RESEND_API_KEY` (se carga con `npx wrangler secret put RESEND_API_KEY --env preview` en su terminal), email de superadmin, `META_APP_ID`, `META_LOGIN_CONFIG_ID` y `META_APP_SECRET` según `docs/guia-app-meta.md`.
 - Cuenta Cloudflare: 9 de 10 bases D1 del plan gratis en uso.
