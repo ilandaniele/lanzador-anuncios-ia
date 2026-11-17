@@ -10,6 +10,10 @@ export const blockedLimiter: RateLimit = {
   limit: async () => ({ success: false }),
 };
 
+export const openLimiter: RateLimit = {
+  limit: async () => ({ success: true }),
+};
+
 export const testEnv = (overrides: Partial<Env> = {}): Env => ({
   ...env,
   APP_ORIGIN: ORIGIN,

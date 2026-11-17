@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
+import type { Env } from "../../src/api/env";
 import type { Role, WorkspaceStatus } from "../../src/shared/constants";
 import type { createApp } from "../../src/api/app";
 import {
@@ -71,7 +72,13 @@ export async function api(
     as,
     method = "GET",
     body,
-  }: { as?: User; method?: string; body?: unknown } = {},
+    env: envOverrides,
+  }: {
+    as?: User;
+    method?: string;
+    body?: unknown;
+    env?: Partial<Env>;
+  } = {},
 ) {
   const { cookie } = as ? await loginAs(as) : {};
   return app.request(
@@ -85,7 +92,7 @@ export async function api(
       },
       body: body === undefined ? undefined : JSON.stringify(body),
     },
-    testEnv(),
+    testEnv(envOverrides),
   );
 }
 
