@@ -2,9 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { users } from "../../db/schema/auth";
 import { memberships, workspaces } from "../../db/schema/workspaces";
-import type { Role, WORKSPACE_STATUSES } from "../../shared/constants";
-
-type WorkspaceStatus = (typeof WORKSPACE_STATUSES)[number];
+import type { Role, WorkspaceStatus } from "../../shared/constants";
 
 const userColumns = {
   id: users.id,

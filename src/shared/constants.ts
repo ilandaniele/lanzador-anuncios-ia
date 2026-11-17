@@ -43,6 +43,7 @@ export const PAGINATION = {
 
 export const USER_STATUSES = ["active", "disabled"] as const;
 export const WORKSPACE_STATUSES = ["active", "disabled", "deleting"] as const;
+export type WorkspaceStatus = (typeof WORKSPACE_STATUSES)[number];
 export const CONNECTION_STATUSES = ["active", "reconnect_required"] as const;
 export const ASSET_KINDS = [
   "ad_account",
@@ -121,6 +122,10 @@ export const PROPOSAL_STATUSES = [
   "expired",
 ] as const;
 
+export const AUDIT_ACTOR_TYPES = ["user", "superadmin", "system"] as const;
+export type AuditActorType = (typeof AUDIT_ACTOR_TYPES)[number];
 export const AUDIT_ORIGINS = ["manual", "pilot", "chat", "system"] as const;
+export type AuditOrigin = (typeof AUDIT_ORIGINS)[number];
 export const AUDIT_RESULTS = ["ok", "error"] as const;
+export type AuditResult = (typeof AUDIT_RESULTS)[number];
 export const CHAT_ROLES = ["user", "assistant", "tool"] as const;

@@ -1,5 +1,5 @@
-import type { Role } from "../shared/constants";
 import type { Env } from "./env";
+import type { Scope } from "./repositories/scope";
 
 export type SessionUser = {
   id: string;
@@ -8,8 +8,6 @@ export type SessionUser = {
   isSuperadmin: boolean;
   sessionId: string;
 };
-
-export type Scope = { workspaceId: string; userId: string; role: Role };
 
 export type AppEnv = {
   Bindings: Env;
