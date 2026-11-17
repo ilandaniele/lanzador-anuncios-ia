@@ -12,6 +12,7 @@ import type {
   WorkspaceStatus,
 } from "../../shared/constants";
 import { newId } from "../lib/ids";
+import { isUniqueViolation } from "./db-errors";
 import { inWorkspace, type Scope } from "./scope";
 
 const invitationColumns = {
@@ -62,13 +63,6 @@ const stillOpen = () =>
 
 const pendingAt = (at: number) =>
   and(stillOpen(), gt(invitations.expiresAt, at));
-
-const isUniqueViolation = (error: unknown) =>
-  [error, error instanceof Error ? error.cause : undefined].some(
-    (candidate) =>
-      candidate instanceof Error &&
-      candidate.message.includes("UNIQUE constraint failed"),
-  );
 
 export const selectInvitations = (
   db: D1Database,

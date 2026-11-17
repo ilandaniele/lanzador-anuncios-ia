@@ -53,6 +53,7 @@ export const USER_STATUSES = ["active", "disabled"] as const;
 export const WORKSPACE_STATUSES = ["active", "disabled", "deleting"] as const;
 export type WorkspaceStatus = (typeof WORKSPACE_STATUSES)[number];
 export const CONNECTION_STATUSES = ["active", "reconnect_required"] as const;
+export type ConnectionStatus = (typeof CONNECTION_STATUSES)[number];
 export const ASSET_KINDS = [
   "ad_account",
   "page",

@@ -4,6 +4,9 @@ export function now(): number {
   return Date.now();
 }
 
+export const toIsoOrNull = (at: number | null) =>
+  at === null ? null : new Date(at).toISOString();
+
 export function utcPeriods(at: number) {
   const iso = new Date(at).toISOString();
   return {

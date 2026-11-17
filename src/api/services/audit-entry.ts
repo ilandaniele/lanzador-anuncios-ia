@@ -13,3 +13,17 @@ export const manualAuditEntry = (
   requestId,
   ...entry,
 });
+
+export const superadminAuditEntry = (
+  workspaceId: string,
+  actorUserId: string,
+  requestId: string,
+  entry: Pick<AuditEntry, "action" | "objectType" | "objectName" | "detail">,
+): AuditEntry => ({
+  workspaceId,
+  actorUserId,
+  actorType: "superadmin",
+  origin: "manual",
+  requestId,
+  ...entry,
+});
