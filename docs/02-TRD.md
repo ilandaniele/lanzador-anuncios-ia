@@ -7,7 +7,7 @@ Fecha: 2026-11-16. Fuentes: `00-brief.md`, `01-PRD.md`, `legacy/inventario-app-v
 | Capa | Elección | Por qué |
 |---|---|---|
 | Hosting | Cloudflare Workers plan Free, `lanzador.<subdominio>.workers.dev` | Decisión del brief. Cero costo fijo, escala beta (≤ 20 workspaces, 10 concurrentes) entra en el free tier. Sin dominio propio. |
-| Front | React + Vite (SPA), servida como Workers static assets con `assets.run_worker_first: false` y `not_found_handling: "single-page-application"` | Los assets no ejecutan el Worker: no gastan requests de la cuota diaria compartida. No hace falta SSR (todo detrás de login). |
+| Front | React + Vite (SPA), servida como Workers static assets con `assets.run_worker_first: ["/api/*"]` y `not_found_handling: "single-page-application"` | Los assets no ejecutan el Worker: no gastan requests de la cuota diaria compartida. No hace falta SSR (todo detrás de login). |
 | API | Hono en el mismo Worker, solo bajo `/api/*` | Router liviano, middlewares listos (`secure-headers`, `cors`), tipado end-to-end. Un Worker por app (regla de cuotas). |
 | DB | D1 (SQLite) + Drizzle ORM + drizzle-kit | Relacional, transacciones por `batch`, gratis. Drizzle genera SQL tipado y migraciones versionadas. |
 | Archivos | Sin almacenamiento propio: R2 descartado (sin medio de pago); los medios van directo a Meta | Navegador → Worker → Meta (subida resumable por bloques) y Drive → Workflow → Meta. La app solo guarda ids y hashes de Meta, no el archivo. |
@@ -497,7 +497,7 @@ Cifrado de tokens: AES-256-GCM con WebCrypto, IV de 12 bytes aleatorio por cifra
 | Tema | Decisión |
 |---|---|
 | Workers | `lanzador` (producción, rama `main`) y `lanzador-preview` (rama `dev`), cada uno con su D1 (`lanzador-db` y `lanzador-db-preview`). `compatibility_flags: ["nodejs_compat"]`, `observability.enabled: true`. |
-| Assets | `assets.directory: "dist/web"`, `run_worker_first: false`, `not_found_handling: "single-page-application"`. Archivos con hash: `Cache-Control: public, max-age=31536000, immutable` vía `_headers`. `robots.txt` bloquea `/api/`. |
+| Assets | `assets.directory: "dist/web"`, `run_worker_first: ["/api/*"]`, `not_found_handling: "single-page-application"`. Archivos con hash: `Cache-Control: public, max-age=31536000, immutable` vía `_headers`. `robots.txt` bloquea `/api/`. |
 | Headers de la SPA (`_headers`) | `Content-Security-Policy: default-src 'self'; script-src 'self' https://apis.google.com; frame-src https://www.facebook.com https://docs.google.com https://drive.google.com; img-src 'self' data: blob: https://*.fbcdn.net https://*.googleusercontent.com; media-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`. |
 | Headers de la API | `hono/secure-headers` + `Cache-Control: no-store`. CORS: sin CORS (mismo origen); preflight rechazado. |
 | Landing check (SSRF) | Solo `https`, sin credenciales en la URL, sin IPs literales ni `localhost`, redirecciones manuales (máx. 5, todas `https`), 10 s, User-Agent de navegador; 2xx/3xx = `ok`, 401/403/429 = `soft_ok`, resto = `error`. |

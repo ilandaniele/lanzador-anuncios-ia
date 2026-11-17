@@ -1,0 +1,58 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "lanzador",
+  "main": "src/api/index.ts",
+  "compatibility_date": "2026-11-17",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "assets": {
+    "directory": "dist/web",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "vars": {
+    "APP_ORIGIN": "",
+    "ENVIRONMENT": "production",
+    "GRAPH_API_VERSION": "v24.0",
+    "META_APP_ID": "",
+    "META_LOGIN_CONFIG_ID": "",
+    "TOKEN_ENC_KEY_CURRENT": 1,
+    "GOOGLE_CLIENT_ID": "",
+    "GOOGLE_PICKER_API_KEY": "",
+    "GOOGLE_PROJECT_NUMBER": "",
+    "EMAIL_FROM": "",
+    "WORKERS_AI_TEXT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    "WORKERS_AI_CHAT_MODEL": "@cf/meta/llama-4-scout-17b-16e-instruct",
+    "WORKERS_AI_VISION_MODEL": "@cf/meta/llama-4-scout-17b-16e-instruct",
+    "WORKERS_AI_DAILY_NEURON_CAP": 9000,
+    "SUPERADMIN_EMAIL": ""
+  },
+  "env": {
+    "preview": {
+      "name": "lanzador-preview",
+      "observability": { "enabled": true },
+      "assets": {
+        "directory": "dist/web",
+        "not_found_handling": "single-page-application",
+        "run_worker_first": ["/api/*"]
+      },
+      "vars": {
+        "APP_ORIGIN": "",
+        "ENVIRONMENT": "preview",
+        "GRAPH_API_VERSION": "v24.0",
+        "META_APP_ID": "",
+        "META_LOGIN_CONFIG_ID": "",
+        "TOKEN_ENC_KEY_CURRENT": 1,
+        "GOOGLE_CLIENT_ID": "",
+        "GOOGLE_PICKER_API_KEY": "",
+        "GOOGLE_PROJECT_NUMBER": "",
+        "EMAIL_FROM": "",
+        "WORKERS_AI_TEXT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "WORKERS_AI_CHAT_MODEL": "@cf/meta/llama-4-scout-17b-16e-instruct",
+        "WORKERS_AI_VISION_MODEL": "@cf/meta/llama-4-scout-17b-16e-instruct",
+        "WORKERS_AI_DAILY_NEURON_CAP": 9000,
+        "SUPERADMIN_EMAIL": ""
+      }
+    }
+  }
+}
