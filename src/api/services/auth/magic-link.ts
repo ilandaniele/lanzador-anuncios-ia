@@ -29,7 +29,7 @@ type MagicLinkIssue = { id: string; token: string };
 
 const linkExpired = () => new AppError(410, "LINK_EXPIRED");
 
-const isSuperadminEmail = (env: LinkEnv, email: string) => {
+export const isSuperadminEmail = (env: LinkEnv, email: string) => {
   const superadmin = env.SUPERADMIN_EMAIL.trim().toLowerCase();
   return superadmin !== "" && superadmin === email;
 };

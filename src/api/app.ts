@@ -7,6 +7,7 @@ import { apiHeaders } from "./middleware/headers";
 import { clientIp, rateLimit } from "./middleware/rate-limit";
 import { requestId } from "./middleware/request-id";
 import { authRoutes } from "./routes/auth";
+import { invitationRoutes } from "./routes/invitations";
 import { memberRoutes } from "./routes/members";
 import { testSupportRoutes } from "./routes/test-support";
 import { workspaceRoutes } from "./routes/workspaces";
@@ -38,6 +39,7 @@ export function createApp() {
   app.route("/", authRoutes);
   app.route("/", workspaceRoutes);
   app.route("/", memberRoutes);
+  app.route("/", invitationRoutes);
   app.route("/", testSupportRoutes);
 
   return app;

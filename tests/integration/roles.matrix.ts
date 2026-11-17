@@ -10,4 +10,7 @@ export const ROLE_MATRIX: Record<string, RoleRule> = {
   "PATCH /api/w/:wid/members/:userId": "admin",
   "DELETE /api/w/:wid/members/:userId": { min: "admin", self: true },
   "POST /api/w/:wid/transfer-ownership": "owner",
+  "GET /api/w/:wid/invitations": "admin",
+  "POST /api/w/:wid/invitations": "admin",
+  "DELETE /api/w/:wid/invitations/:id": "admin",
 };

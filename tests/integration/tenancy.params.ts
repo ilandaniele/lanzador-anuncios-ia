@@ -5,10 +5,15 @@ const foreignMember = ({ B }: TenantPair) => ({
   params: { userId: B.users.viewer.id },
 });
 
+const foreignInvitation = ({ B }: TenantPair) => ({
+  params: { id: B.invitation.id },
+});
+
 export const TENANCY_PARAMS: TenancyParams = {
   "PATCH /api/w/:wid/members/:userId": (pair) => ({
     ...foreignMember(pair),
     body: { role: "viewer" },
   }),
   "DELETE /api/w/:wid/members/:userId": foreignMember,
+  "DELETE /api/w/:wid/invitations/:id": foreignInvitation,
 };

@@ -56,3 +56,5 @@ export function rateLimit(
     await next();
   });
 }
+
+export const authRateLimit = rateLimit("RL_AUTH", clientIp);

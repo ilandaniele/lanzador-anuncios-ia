@@ -4,17 +4,20 @@ import { expect } from "vitest";
 import type { Env } from "../../src/api/env";
 import type { Role, WorkspaceStatus } from "../../src/shared/constants";
 import type { createApp } from "../../src/api/app";
+import { randomToken, sha256Hex } from "../../src/api/lib/hash";
 import {
   createSession,
   SESSION_COOKIE,
 } from "../../src/api/services/auth/session";
 import { users } from "../../src/db/schema/auth";
 import {
+  invitations,
   memberships,
   workspaceSettings,
   workspaces,
 } from "../../src/db/schema/workspaces";
 import {
+  buildInvitation,
   buildMembership,
   buildUser,
   buildWorkspace,
@@ -58,6 +61,20 @@ export async function createWorkspace({
       .values({ workspaceId: workspace.id, updatedAt: workspace.updatedAt }),
   ]);
   return { workspace, owner: ownerUser };
+}
+
+export async function createInvitation(
+  workspaceId: string,
+  overrides: Partial<typeof invitations.$inferInsert> = {},
+) {
+  const token = randomToken(32);
+  const invitation = buildInvitation({
+    workspaceId,
+    tokenHash: await sha256Hex(token),
+    ...overrides,
+  });
+  await drizzle(env.DB).insert(invitations).values(invitation);
+  return { invitation, token };
 }
 
 export async function loginAs(user: User) {

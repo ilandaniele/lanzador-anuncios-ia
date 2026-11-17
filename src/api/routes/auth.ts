@@ -4,7 +4,7 @@ import {
   verifyRequestSchema,
 } from "../../shared/schemas/auth";
 import { parseJson } from "../lib/validate";
-import { clientIp, rateLimit, requestIp } from "../middleware/rate-limit";
+import { authRateLimit, requestIp } from "../middleware/rate-limit";
 import { session } from "../middleware/session";
 import {
   deliverMagicLink,
@@ -18,8 +18,6 @@ import {
   destroyUserSessions,
 } from "../services/auth/session";
 import type { AppEnv } from "../types";
-
-const authRateLimit = rateLimit("RL_AUTH", clientIp);
 
 const loggedOut = (c: Context<AppEnv>) => {
   c.header("Set-Cookie", clearSessionCookie(), { append: true });

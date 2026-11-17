@@ -1,5 +1,5 @@
 import { users } from "../schema/auth";
-import { memberships, workspaces } from "../schema/workspaces";
+import { invitations, memberships, workspaces } from "../schema/workspaces";
 
 export const buildUser = (
   overrides: Partial<typeof users.$inferInsert> = {},
@@ -39,6 +39,27 @@ export const buildMembership = (
     id: crypto.randomUUID(),
     createdAt: at,
     updatedAt: at,
+    ...overrides,
+  };
+};
+
+const INVITATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+export const buildInvitation = (
+  overrides: Pick<
+    typeof invitations.$inferInsert,
+    "workspaceId" | "tokenHash"
+  > &
+    Partial<typeof invitations.$inferInsert>,
+): typeof invitations.$inferInsert => {
+  const id = crypto.randomUUID();
+  const at = Date.now();
+  return {
+    id,
+    email: `${id}@example.test`,
+    role: "editor",
+    createdAt: at,
+    expiresAt: at + INVITATION_TTL_MS,
     ...overrides,
   };
 };

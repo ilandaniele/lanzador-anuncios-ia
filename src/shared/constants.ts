@@ -11,6 +11,14 @@ export const ROLE_RANK: Record<Role, number> = {
 export const INVITABLE_ROLES = ["admin", "editor", "viewer"] as const;
 export type InvitableRole = (typeof INVITABLE_ROLES)[number];
 
+export const INVITATION_STATUSES = [
+  "pending",
+  "accepted",
+  "revoked",
+  "expired",
+] as const;
+export type InvitationStatus = (typeof INVITATION_STATUSES)[number];
+
 export const CTAS = [
   "SHOP_NOW",
   "LEARN_MORE",
