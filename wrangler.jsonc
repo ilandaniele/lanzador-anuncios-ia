@@ -10,6 +10,14 @@
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*"]
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "lanzador-db",
+      "database_id": "dd532010-908e-4058-bc92-e3be2ca608f8",
+      "migrations_dir": "src/db/migrations"
+    }
+  ],
   "vars": {
     "APP_ORIGIN": "",
     "ENVIRONMENT": "production",
@@ -36,8 +44,16 @@
         "not_found_handling": "single-page-application",
         "run_worker_first": ["/api/*"]
       },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "lanzador-db-preview",
+          "database_id": "4b238c86-26f6-41c3-978c-4b34a733aa4a",
+          "migrations_dir": "src/db/migrations"
+        }
+      ],
       "vars": {
-        "APP_ORIGIN": "",
+        "APP_ORIGIN": "https://lanzador-preview.ilandaniele.workers.dev",
         "ENVIRONMENT": "preview",
         "GRAPH_API_VERSION": "v24.0",
         "META_APP_ID": "",
