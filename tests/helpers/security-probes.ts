@@ -24,7 +24,11 @@ export type TenancyParams = Record<
   (pair: TenantPair) => TenancyRequest
 >;
 
-const openLimits = { RL_IP: openLimiter, RL_USER: openLimiter };
+const openLimits = {
+  RL_IP: openLimiter,
+  RL_USER: openLimiter,
+  RL_EXP: openLimiter,
+};
 
 async function errorCode(response: Response) {
   const json = (await response.json().catch(() => null)) as {

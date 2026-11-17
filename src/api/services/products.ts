@@ -3,6 +3,7 @@ import type {
   ListProductsQuery,
   ProductPatch,
 } from "../../shared/schemas/products";
+import type { Env } from "../env";
 import { decodeNumericCursor, paginate } from "../lib/cursor";
 import { notFound } from "../lib/errors";
 import { newId } from "../lib/ids";
@@ -10,10 +11,12 @@ import { now } from "../lib/time";
 import {
   findProduct,
   insertProduct,
+  recordLandingCheck,
   selectProducts,
   updateProduct,
 } from "../repositories/products";
 import type { Scope } from "../repositories/scope";
+import { checkLanding } from "./landing-check";
 import { toProductDto, toProductListItem } from "./product-dto";
 import {
   assertHttpsLanding,
@@ -133,4 +136,22 @@ export async function archiveProduct(
   );
   if (!product) throw notFound();
   return { product: toProductDto(product) };
+}
+
+export async function checkProductLanding(
+  env: Pick<Env, "DB" | "APP_ORIGIN">,
+  scope: Scope,
+  id: string,
+) {
+  const { landingUrl } = await findProductOrThrow(env.DB, scope, id);
+  const result = await checkLanding(landingUrl, fetch, {
+    blockedHosts: [new URL(env.APP_ORIGIN).hostname],
+  });
+  await recordLandingCheck(env.DB, scope, id, landingUrl, {
+    landingStatus: result.status,
+    landingHttpStatus: result.httpStatus,
+    landingError: result.error ?? null,
+    landingCheckedAt: now(),
+  });
+  return result;
 }

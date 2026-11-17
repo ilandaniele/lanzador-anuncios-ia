@@ -81,3 +81,12 @@ export const productSchema = productListItemSchema.extend({
 export type ProductDto = z.infer<typeof productSchema>;
 
 export const productResponseSchema = z.object({ product: productSchema });
+
+export const checkLandingResponseSchema = z.object({
+  status: z.enum(LANDING_STATUSES).exclude(["unchecked"]),
+  httpStatus: z.number().nullable(),
+  finalUrl: z.string(),
+  ms: z.number(),
+  error: z.string().optional(),
+});
+export type CheckLandingResponse = z.infer<typeof checkLandingResponseSchema>;

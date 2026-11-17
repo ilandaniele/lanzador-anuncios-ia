@@ -7,8 +7,10 @@ import {
 } from "../../shared/schemas/products";
 import { parseJson, parseQuery } from "../lib/validate";
 import { member } from "../middleware/member";
+import { expensiveRateLimit } from "../middleware/rate-limit";
 import {
   archiveProduct,
+  checkProductLanding,
   createProduct,
   duplicateProduct,
   getProduct,
@@ -55,6 +57,15 @@ export const productRoutes = new Hono<AppEnv>()
       await duplicateProduct(c.env.DB, c.get("scope")!, c.req.param("id")),
       201,
     ),
+  )
+  .post(
+    "/w/:wid/products/:id/check-landing",
+    ...member("editor"),
+    expensiveRateLimit,
+    async (c) =>
+      c.json(
+        await checkProductLanding(c.env, c.get("scope")!, c.req.param("id")),
+      ),
   )
   .post("/w/:wid/products/:id/archive", ...member("editor"), async (c) => {
     const { archived } = await parseJson(c, archiveProductRequestSchema);

@@ -58,3 +58,4 @@ export function rateLimit(
 }
 
 export const authRateLimit = rateLimit("RL_AUTH", clientIp);
+export const expensiveRateLimit = rateLimit("RL_EXP", (c) => c.get("user")!.id);

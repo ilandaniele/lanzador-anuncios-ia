@@ -146,3 +146,29 @@ export async function updateProduct(
     .returning(productColumns);
   return row ?? null;
 }
+
+export type LandingCheckRecord = {
+  landingStatus: LandingStatus;
+  landingHttpStatus: number | null;
+  landingError: string | null;
+  landingCheckedAt: number;
+};
+
+export async function recordLandingCheck(
+  db: D1Database,
+  scope: Scope,
+  id: string,
+  landingUrl: string,
+  record: LandingCheckRecord,
+) {
+  await drizzle(db)
+    .update(products)
+    .set(record)
+    .where(
+      and(
+        inWorkspace(products, scope),
+        eq(products.id, id),
+        eq(products.landingUrl, landingUrl),
+      ),
+    );
+}

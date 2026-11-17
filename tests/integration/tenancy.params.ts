@@ -26,6 +26,7 @@ export const TENANCY_PARAMS: TenancyParams = {
     body: { name: "Hijack" },
   }),
   "POST /api/w/:wid/products/:id/duplicate": foreignProduct,
+  "POST /api/w/:wid/products/:id/check-landing": foreignProduct,
   "POST /api/w/:wid/products/:id/archive": (pair) => ({
     ...foreignProduct(pair),
     body: { archived: true },
