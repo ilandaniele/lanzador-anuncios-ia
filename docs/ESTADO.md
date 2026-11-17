@@ -1,6 +1,6 @@
 # Estado del proyecto — Lanzador de anuncios con IA
 
-Fase actual: **5 — Desarrollo** (siguiente: tarea 11 del plan, sesiones).
+Fase actual: **5 — Desarrollo** (siguiente: tarea 12 del plan, magic link).
 
 ## Checklist
 
@@ -9,7 +9,8 @@ Fase actual: **5 — Desarrollo** (siguiente: tarea 11 del plan, sesiones).
 - [x] 2 Documentos `docs/01..06`
 - [x] 3 Arquitectura y esqueleto (tareas 1–3 del plan). Preview desplegado: https://lanzador-preview.ilandaniele.workers.dev (`/api/health` responde `{"ok":true}`; rutas de la SPA devuelven `index.html`).
 - [x] 4 Infra y secretos: D1 `lanzador-db-preview` y `lanzador-db` creadas y enlazadas como `DB`; secretos `TOKEN_ENC_KEY_V1` y `E2E_SECRET` cargados en `lanzador-preview`; `.dev.vars` local con valores propios; `APP_ORIGIN` del preview fijado. Las migraciones remotas se aplican cuando exista el schema (tarea 5).
-- [ ] 5 Desarrollo — hechas tareas 4–10: constantes y helpers compartidos, schema D1 con migraciones 0001–0005 (aplicadas en `lanzador-db-preview` remota), cifrado de tokens AES-GCM, cliente de Resend con plantillas de email y pipeline HTTP (request id, cabeceras de seguridad, CSRF, rate limits `RL_*`, manejador de errores con `error_events` y logs sin secretos; revisado en seguridad, hallazgos corregidos). 270 tests en verde.
+- [ ] 5 Desarrollo — hechas tareas 4–11: constantes y helpers compartidos, schema D1 con migraciones 0001–0005 (aplicadas en `lanzador-db-preview` remota), cifrado de tokens AES-GCM, cliente de Resend con plantillas de email y pipeline HTTP (request id, cabeceras de seguridad, CSRF, rate limits `RL_*`, manejador de errores con `error_events` y logs sin secretos; revisado en seguridad, hallazgos corregidos) y sesiones (cookie `__Host-lanzador_sid`, rotación cada 24 h, tope de 30 días y 7 de inactividad). 288 tests en verde.
+- Riesgos aceptados en sesiones: no se revoca la sesión al reusar un token viejo, e `ip_hash` es SHA-256 de IP + fecha sin pepper (reversible con un volcado de la base). Se revisan en la Fase 6.
 - [ ] 6 Seguridad
 - [ ] 7 Tests y performance
 - [ ] 8 Deploy y entrega
