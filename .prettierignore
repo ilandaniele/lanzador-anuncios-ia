@@ -7,3 +7,4 @@ package-lock.json
 docs
 CLAUDE.md
 wrangler.jsonc
+src/db/migrations

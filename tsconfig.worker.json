@@ -11,5 +11,5 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src/api", "src/shared"]
+  "include": ["src/api", "src/shared", "src/db", "drizzle.config.ts"]
 }

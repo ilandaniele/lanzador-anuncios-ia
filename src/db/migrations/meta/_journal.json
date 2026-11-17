@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1794919367422,
+      "tag": "0001_create_auth",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1794919369466,
+      "tag": "0002_create_workspaces",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1794919376570,
+      "tag": "0003_seed_plans",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1794919530847,
+      "tag": "0004_create_meta_products_creatives",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1794919716895,
+      "tag": "0005_create_launches_pilot_ops",
+      "breakpoints": true
+    }
+  ]
+}

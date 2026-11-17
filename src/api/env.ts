@@ -1,5 +1,5 @@
 export interface Env {
-  DB?: D1Database;
+  DB: D1Database;
   AI?: Ai;
   LAUNCH_WF?: Workflow;
   LAUNCH_ITEM_WF?: Workflow;
