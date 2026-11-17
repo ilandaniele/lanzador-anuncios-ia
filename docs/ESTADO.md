@@ -7,7 +7,7 @@ Fase actual: **4 — Infra y secretos**.
 - [x] 0 Bootstrap: git (`main` + `dev`), `CLAUDE.md`, `.gitignore`. CLIs: wrangler 4.163 logueado, gcloud logueado, gh logueado (`ilandaniele`), k6 2.3. El token de `cf` venció el 2026-11-14; el proyecto usará `wrangler`, así que no bloquea.
 - [x] 1 Entrevista → `docs/00-brief.md`
 - [x] 2 Documentos `docs/01..06`
-- [x] 3 Arquitectura y esqueleto (tareas 1–3 del plan). Falta el deploy de prueba a `lanzador-preview`: necesita permiso del usuario.
+- [x] 3 Arquitectura y esqueleto (tareas 1–3 del plan). Preview desplegado: https://lanzador-preview.ilandaniele.workers.dev (`/api/health` responde `{"ok":true}`; rutas de la SPA devuelven `index.html`).
 - [ ] 4 Infra y secretos
 - [ ] 5 Desarrollo
 - [ ] 6 Seguridad
