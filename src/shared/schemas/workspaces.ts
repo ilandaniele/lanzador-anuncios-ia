@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ROLES, WORKSPACE_STATUSES } from "../constants";
+import { currencySchema } from "./common";
 
 const WORKSPACE_NAME_MAX = 80;
 const NAME_TEMPLATE_MAX = 120;
@@ -32,7 +33,7 @@ const nameTemplatesSchema = z.object({
 
 const settingsFields = {
   maxCampaignBudgetMinor: z.int().positive(),
-  budgetCurrency: z.string().regex(/^[A-Z]{3}$/),
+  budgetCurrency: currencySchema,
   maxScalePercent: z.int().min(1),
   advantageCreativeEnabled: z.boolean(),
   timezone: z.string().refine(isValidTimeZone),

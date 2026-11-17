@@ -1,4 +1,5 @@
 import { users } from "../schema/auth";
+import { products } from "../schema/products";
 import { invitations, memberships, workspaces } from "../schema/workspaces";
 
 export const buildUser = (
@@ -60,6 +61,26 @@ export const buildInvitation = (
     role: "editor",
     createdAt: at,
     expiresAt: at + INVITATION_TTL_MS,
+    ...overrides,
+  };
+};
+
+export const buildProduct = (
+  overrides: Pick<typeof products.$inferInsert, "workspaceId"> &
+    Partial<typeof products.$inferInsert>,
+): typeof products.$inferInsert => {
+  const id = crypto.randomUUID();
+  const at = Date.now();
+  const name = overrides.name ?? `Producto ${id}`;
+  return {
+    id,
+    name,
+    nameNormalized: name.trim().toLowerCase(),
+    landingUrl: "https://tienda.example.test/producto",
+    primaryText: "Texto principal",
+    headline: "Titular",
+    createdAt: at,
+    updatedAt: at,
     ...overrides,
   };
 };

@@ -10,6 +10,7 @@ import {
   SESSION_COOKIE,
 } from "../../src/api/services/auth/session";
 import { users } from "../../src/db/schema/auth";
+import { products } from "../../src/db/schema/products";
 import {
   invitations,
   memberships,
@@ -19,6 +20,7 @@ import {
 import {
   buildInvitation,
   buildMembership,
+  buildProduct,
   buildUser,
   buildWorkspace,
 } from "../../src/db/fixtures/builders";
@@ -75,6 +77,15 @@ export async function createInvitation(
   });
   await drizzle(env.DB).insert(invitations).values(invitation);
   return { invitation, token };
+}
+
+export async function createProduct(
+  workspaceId: string,
+  overrides: Partial<typeof products.$inferInsert> = {},
+) {
+  const product = buildProduct({ workspaceId, ...overrides });
+  await drizzle(env.DB).insert(products).values(product);
+  return product;
 }
 
 export async function loginAs(user: User) {

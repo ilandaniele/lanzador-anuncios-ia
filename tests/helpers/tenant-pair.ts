@@ -1,4 +1,9 @@
-import { createInvitation, createUser, createWorkspace } from "./factory";
+import {
+  createInvitation,
+  createProduct,
+  createUser,
+  createWorkspace,
+} from "./factory";
 
 export async function seedWorkspaceWithRoles() {
   const [owner, admin, editor, viewer] = await Promise.all([
@@ -20,10 +25,11 @@ export async function seedWorkspaceWithRoles() {
 
 async function seedTenant() {
   const tenant = await seedWorkspaceWithRoles();
-  const { invitation } = await createInvitation(tenant.workspace.id, {
-    invitedBy: tenant.users.admin.id,
-  });
-  return { ...tenant, invitation };
+  const [{ invitation }, product] = await Promise.all([
+    createInvitation(tenant.workspace.id, { invitedBy: tenant.users.admin.id }),
+    createProduct(tenant.workspace.id),
+  ]);
+  return { ...tenant, invitation, product };
 }
 
 export async function seedTenantPair() {

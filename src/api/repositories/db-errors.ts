@@ -7,5 +7,8 @@ const hasMessage = (error: unknown, fragment: string) =>
 export const isUniqueViolation = (error: unknown) =>
   hasMessage(error, "UNIQUE constraint failed");
 
+export const isCheckViolation = (error: unknown, constraint: string) =>
+  hasMessage(error, `CHECK constraint failed: ${constraint}`);
+
 export const isForeignKeyViolation = (error: unknown) =>
   hasMessage(error, "FOREIGN KEY constraint failed");

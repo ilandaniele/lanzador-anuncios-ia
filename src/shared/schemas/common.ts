@@ -13,6 +13,8 @@ export const paginationQuerySchema = z.object({
 });
 export type PaginationQuery = z.infer<typeof paginationQuerySchema>;
 
+export const currencySchema = z.string().regex(/^[A-Z]{3}$/);
+
 export const paginatedSchema = <Item extends z.ZodType>(item: Item) =>
   z.object({
     data: z.array(item),

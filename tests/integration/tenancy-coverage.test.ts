@@ -52,7 +52,6 @@ const PENDING_TABLES = [
   "pilotRules",
   "pilotRuns",
   "productCopies",
-  "products",
   "protectedCampaigns",
   "uploads",
 ];

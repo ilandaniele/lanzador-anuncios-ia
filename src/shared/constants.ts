@@ -66,6 +66,7 @@ export const LANDING_STATUSES = [
   "soft_ok",
   "error",
 ] as const;
+export type LandingStatus = (typeof LANDING_STATUSES)[number];
 export const COPY_SOURCES = ["ai", "manual"] as const;
 export const COPY_STATUSES = ["suggested", "saved", "discarded"] as const;
 

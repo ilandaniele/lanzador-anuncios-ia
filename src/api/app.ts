@@ -10,6 +10,7 @@ import { adminRoutes } from "./routes/admin";
 import { authRoutes } from "./routes/auth";
 import { invitationRoutes } from "./routes/invitations";
 import { memberRoutes } from "./routes/members";
+import { productRoutes } from "./routes/products";
 import { testSupportRoutes } from "./routes/test-support";
 import { workspaceRoutes } from "./routes/workspaces";
 import type { AppEnv } from "./types";
@@ -41,6 +42,7 @@ export function createApp() {
   app.route("/", workspaceRoutes);
   app.route("/", memberRoutes);
   app.route("/", invitationRoutes);
+  app.route("/", productRoutes);
   app.route("/", adminRoutes);
   app.route("/", testSupportRoutes);
 

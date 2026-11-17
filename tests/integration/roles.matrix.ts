@@ -13,4 +13,10 @@ export const ROLE_MATRIX: Record<string, RoleRule> = {
   "GET /api/w/:wid/invitations": "admin",
   "POST /api/w/:wid/invitations": "admin",
   "DELETE /api/w/:wid/invitations/:id": "admin",
+  "GET /api/w/:wid/products": "viewer",
+  "POST /api/w/:wid/products": "editor",
+  "GET /api/w/:wid/products/:id": "viewer",
+  "PATCH /api/w/:wid/products/:id": "editor",
+  "POST /api/w/:wid/products/:id/duplicate": "editor",
+  "POST /api/w/:wid/products/:id/archive": "editor",
 };

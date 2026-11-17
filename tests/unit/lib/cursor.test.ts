@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   decodeCursor,
+  decodeNumericCursor,
   encodeCursor,
   paginate,
 } from "../../../src/api/lib/cursor";
@@ -66,4 +67,34 @@ describe("paginate", () => {
   it("handles an empty page", () => {
     expect(paginate([], 5)).toEqual({ rows: [], nextCursor: null });
   });
+
+  it("puts the sort value of the last kept row in the cursor", () => {
+    const sorted = [
+      { id: "a", at: 30 },
+      { id: "b", at: 20 },
+      { id: "c", at: 10 },
+    ];
+    const page = paginate(sorted, 2, (row) => row.at);
+    expect(decodeCursor(page.nextCursor!)).toEqual({ id: "b", sortValue: 20 });
+  });
+});
+
+describe("decodeNumericCursor", () => {
+  it("returns id and numeric sort value", () => {
+    const position = { id: newId(), sortValue: 42 };
+    expect(decodeNumericCursor(encodeCursor(position))).toEqual(position);
+  });
+
+  it.each([[{ id: "a" }], [{ id: "a", sortValue: "text" }]])(
+    "rejects a cursor without a numeric sort value: %j",
+    (position) => {
+      expect(() => decodeNumericCursor(encodeCursor(position))).toThrow(
+        expect.objectContaining({
+          status: 400,
+          code: "VALIDATION",
+          fields: { cursor: "invalid" },
+        }),
+      );
+    },
+  );
 });
