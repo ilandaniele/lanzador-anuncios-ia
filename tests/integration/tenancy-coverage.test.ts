@@ -57,7 +57,6 @@ const PENDING_TABLES = [
   "products",
   "protectedCampaigns",
   "uploads",
-  "workspaceSettings",
 ];
 
 describe("tenancy coverage", () => {

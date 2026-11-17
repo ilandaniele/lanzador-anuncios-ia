@@ -129,3 +129,7 @@ export type AuditOrigin = (typeof AUDIT_ORIGINS)[number];
 export const AUDIT_RESULTS = ["ok", "error"] as const;
 export type AuditResult = (typeof AUDIT_RESULTS)[number];
 export const CHAT_ROLES = ["user", "assistant", "tool"] as const;
+
+export const MAX_OWNED_WORKSPACES = 3;
+export const MAX_SCALE_PERCENT = 50;
+export const WORKSPACE_PURGE_DELAY_MS = 7 * 24 * 60 * 60 * 1000;

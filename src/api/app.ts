@@ -8,6 +8,7 @@ import { clientIp, rateLimit } from "./middleware/rate-limit";
 import { requestId } from "./middleware/request-id";
 import { authRoutes } from "./routes/auth";
 import { testSupportRoutes } from "./routes/test-support";
+import { workspaceRoutes } from "./routes/workspaces";
 import type { AppEnv } from "./types";
 
 const MAX_JSON_BODY_BYTES = 16 * 1024;
@@ -34,6 +35,7 @@ export function createApp() {
 
   app.get("/health", (c) => c.json({ ok: true }));
   app.route("/", authRoutes);
+  app.route("/", workspaceRoutes);
   app.route("/", testSupportRoutes);
 
   return app;
