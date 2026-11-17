@@ -5,11 +5,13 @@ import type { Env } from "../../src/api/env";
 import type { Role, WorkspaceStatus } from "../../src/shared/constants";
 import type { createApp } from "../../src/api/app";
 import { randomToken, sha256Hex } from "../../src/api/lib/hash";
+import { aadFor, encryptToken } from "../../src/api/lib/token-crypto";
 import {
   createSession,
   SESSION_COOKIE,
 } from "../../src/api/services/auth/session";
 import { users } from "../../src/db/schema/auth";
+import { metaAssets, metaConnections } from "../../src/db/schema/meta";
 import { products } from "../../src/db/schema/products";
 import {
   invitations,
@@ -20,6 +22,8 @@ import {
 import {
   buildInvitation,
   buildMembership,
+  buildMetaAsset,
+  buildMetaConnection,
   buildProduct,
   buildUser,
   buildWorkspace,
@@ -86,6 +90,40 @@ export async function createProduct(
   const product = buildProduct({ workspaceId, ...overrides });
   await drizzle(env.DB).insert(products).values(product);
   return product;
+}
+
+export async function createMetaConnection(
+  keyEnv: Pick<Env, "TOKEN_ENC_KEY_CURRENT">,
+  workspaceId: string,
+  token: string,
+  overrides: Partial<typeof metaConnections.$inferInsert> = {},
+) {
+  const id = overrides.id ?? crypto.randomUUID();
+  const sealed = await encryptToken(
+    keyEnv,
+    token,
+    aadFor("meta_connections", id, workspaceId),
+  );
+  const connection = buildMetaConnection({
+    workspaceId,
+    tokenCiphertext: Buffer.from(sealed.ciphertext),
+    tokenIv: Buffer.from(sealed.iv),
+    tokenKeyVersion: sealed.keyVersion,
+    ...overrides,
+    id,
+  });
+  await drizzle(env.DB).insert(metaConnections).values(connection);
+  return connection;
+}
+
+export async function createMetaAsset(
+  workspaceId: string,
+  connectionId: string,
+  overrides: Partial<typeof metaAssets.$inferInsert> = {},
+) {
+  const asset = buildMetaAsset({ workspaceId, connectionId, ...overrides });
+  await drizzle(env.DB).insert(metaAssets).values(asset);
+  return asset;
 }
 
 export async function loginAs(user: User) {

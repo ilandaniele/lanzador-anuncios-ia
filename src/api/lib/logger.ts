@@ -1,12 +1,12 @@
 const SENSITIVE_KEY =
-  /token|authorization|cookie|secret|password|key|signature|signed_request|session|link|^sid$|^(auth|oauth)_?code$/i;
+  /token|authorization|cookie|secret|password|key|signature|signed_request|session|link|proof|^sid$|^(auth|oauth)_?code$/i;
 
 const SECRET_PATTERNS: [RegExp, string][] = [
   [/(https?:\/\/[^\s?#]+)[?#]\S*/gi, "$1"],
   [/Bearer\s+\S+/gi, "Bearer [redacted]"],
   [/EAA[A-Za-z0-9]+/g, "[redacted]"],
   [
-    /(\w*(?:token|secret|password|code|signed_request|key))=\S+/gi,
+    /(\w*(?:token|secret|password|code|signed_request|key|proof))=\S+/gi,
     "$1=[redacted]",
   ],
 ];

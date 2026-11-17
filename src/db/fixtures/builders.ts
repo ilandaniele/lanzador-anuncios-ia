@@ -1,4 +1,5 @@
 import { users } from "../schema/auth";
+import { metaAssets, metaConnections } from "../schema/meta";
 import { products } from "../schema/products";
 import { invitations, memberships, workspaces } from "../schema/workspaces";
 
@@ -79,6 +80,49 @@ export const buildProduct = (
     landingUrl: "https://tienda.example.test/producto",
     primaryText: "Texto principal",
     headline: "Titular",
+    createdAt: at,
+    updatedAt: at,
+    ...overrides,
+  };
+};
+
+export const buildMetaConnection = (
+  overrides: Pick<
+    typeof metaConnections.$inferInsert,
+    "workspaceId" | "tokenCiphertext" | "tokenIv" | "tokenKeyVersion"
+  > &
+    Partial<typeof metaConnections.$inferInsert>,
+): typeof metaConnections.$inferInsert => {
+  const at = Date.now();
+  return {
+    id: crypto.randomUUID(),
+    metaBusinessId: crypto.randomUUID(),
+    businessName: "Negocio Demo",
+    metaUserId: "100000000000001",
+    createdAt: at,
+    updatedAt: at,
+    ...overrides,
+  };
+};
+
+export const buildMetaAsset = (
+  overrides: Pick<
+    typeof metaAssets.$inferInsert,
+    "workspaceId" | "connectionId"
+  > &
+    Partial<typeof metaAssets.$inferInsert>,
+): typeof metaAssets.$inferInsert => {
+  const at = Date.now();
+  const metaId = `act_${Math.floor(Math.random() * 1e15)}`;
+  return {
+    id: crypto.randomUUID(),
+    kind: "ad_account",
+    metaId,
+    name: "Cuenta Demo",
+    currency: "USD",
+    timezoneName: "America/Argentina/Buenos_Aires",
+    accountStatus: 1,
+    enabled: 1,
     createdAt: at,
     updatedAt: at,
     ...overrides,

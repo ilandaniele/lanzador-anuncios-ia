@@ -22,6 +22,7 @@ describe("logger", () => {
       sid: "x",
       magicLink: "x",
       authCode: "x",
+      appsecretProof: "x",
       code: "INTERNAL",
     });
 
@@ -46,6 +47,7 @@ describe("logger", () => {
       sid: "[redacted]",
       magicLink: "[redacted]",
       authCode: "[redacted]",
+      appsecretProof: "[redacted]",
       code: "INTERNAL",
     });
   });
@@ -83,6 +85,7 @@ describe("scrub", () => {
     ["code=abc", "code=[redacted]"],
     ["signed_request=abc.def", "signed_request=[redacted]"],
     ["api_key=abc", "api_key=[redacted]"],
+    ["appsecret_proof=abc123 next", "appsecret_proof=[redacted] next"],
     ["plain message", "plain message"],
   ])("scrubs %s", (input, expected) => {
     expect(scrub(input)).toBe(expected);
