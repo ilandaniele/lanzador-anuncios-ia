@@ -38,7 +38,7 @@ export async function upsertLoginUser(
       target: users.email,
       set: {
         lastLoginAt: row.at,
-        isSuperadmin: sql`max(${users.isSuperadmin}, excluded.is_superadmin)`,
+        isSuperadmin: sql`excluded.is_superadmin`,
       },
     })
     .returning(userColumns);

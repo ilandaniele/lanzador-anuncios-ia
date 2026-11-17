@@ -1,5 +1,9 @@
+import {
+  createExecutionContext,
+  waitOnExecutionContext,
+} from "cloudflare:test";
 import { env } from "cloudflare:workers";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../../../src/api/app";
 import type { Env } from "../../../src/api/env";
 import { sha256Hex } from "../../../src/api/lib/hash";
@@ -36,13 +40,14 @@ type SendOptions = {
   env?: Partial<Env>;
 };
 
-const send = (
+async function send(
   method: string,
   path: string,
   body?: unknown,
   { cookie, headers = {}, env: overrides }: SendOptions = {},
-) =>
-  createApp().request(
+) {
+  const ctx = createExecutionContext();
+  const response = await createApp().request(
     path,
     {
       method,
@@ -55,7 +60,11 @@ const send = (
       body: body === undefined ? undefined : JSON.stringify(body),
     },
     envFor(overrides),
+    ctx,
   );
+  await waitOnExecutionContext(ctx);
+  return response;
+}
 
 const post = (path: string, body?: unknown, options?: SendOptions) =>
   send("POST", path, body, options);
@@ -221,6 +230,34 @@ describe("POST /api/auth/magic-link", () => {
     expect(emails).toHaveLength(0);
   });
 
+  it("answers 202 without row or email for a disabled user with a pending beta invite", async () => {
+    const email = uniqueEmail();
+    await insertUser(email, "disabled");
+    await insertBetaInvite(email);
+    server.use(resendSuccess());
+    const emails = captureEmails();
+
+    const response = await post("/api/auth/magic-link", { email });
+
+    expect(response.status).toBe(202);
+    expect(emails).toHaveLength(0);
+    expect(await linkRows(email)).toHaveLength(0);
+  });
+
+  it("answers 202 without row for a disabled superadmin", async () => {
+    const email = uniqueEmail();
+    await insertUser(email, "disabled");
+
+    const response = await post(
+      "/api/auth/magic-link",
+      { email },
+      { env: { SUPERADMIN_EMAIL: email } },
+    );
+
+    expect(response.status).toBe(202);
+    expect(await linkRows(email)).toHaveLength(0);
+  });
+
   const asSuperadmin = (email: string): Partial<Env> => ({
     SUPERADMIN_EMAIL: ` ${email.toUpperCase()} `,
   });
@@ -271,31 +308,88 @@ describe("POST /api/auth/magic-link", () => {
     expect((await linkRows(email))[0]?.user_id).toBe(userId);
   });
 
-  it("answers 429 on the 6th request for the same email in 15 minutes", async () => {
+  const requestFrom = (email: string, ip: string) =>
+    post(
+      "/api/auth/magic-link",
+      { email },
+      { headers: { "CF-Connecting-IP": ip } },
+    );
+
+  it("answers 202 without row or email on the 6th request for the same email and IP in 15 minutes", async () => {
     const email = uniqueEmail();
     await insertUser(email);
-    for (let i = 0; i < 5; i++) await requestToken(email);
+    for (let i = 0; i < 5; i++) {
+      expect((await requestFrom(email, "203.0.113.7")).status).toBe(202);
+    }
+    server.use(resendSuccess());
+    const emails = captureEmails();
 
-    const response = await post("/api/auth/magic-link", { email });
+    const response = await requestFrom(email, "203.0.113.7");
 
-    await expectError(response, 429, "RATE_LIMITED");
+    expect(response.status).toBe(202);
+    expect(await response.json()).toEqual({ ok: true });
+    expect(emails).toHaveLength(0);
     expect(await linkRows(email)).toHaveLength(5);
   });
 
-  it("invalidates the link and answers 503 when Resend fails twice", async () => {
+  it("caps at 15 links per email across IPs and still issues below the cap", async () => {
+    const email = uniqueEmail();
+    await insertUser(email);
+    for (let i = 0; i < 14; i++) {
+      await requestFrom(email, `203.0.113.${i}`);
+    }
+    expect(await linkRows(email)).toHaveLength(14);
+    server.use(resendSuccess());
+    const emails = captureEmails();
+
+    expect((await requestFrom(email, "198.51.100.1")).status).toBe(202);
+    expect(await linkRows(email)).toHaveLength(15);
+    expect(emails).toHaveLength(1);
+
+    const capped = await requestFrom(email, "198.51.100.2");
+
+    expect(capped.status).toBe(202);
+    expect(await linkRows(email)).toHaveLength(15);
+    expect(emails).toHaveLength(1);
+  });
+
+  it("applies only the per-email cap when the IP is unknown", async () => {
+    const email = uniqueEmail();
+    await insertUser(email);
+    for (let i = 0; i < 6; i++) await requestToken(email);
+
+    expect(await linkRows(email)).toHaveLength(6);
+  });
+
+  it("answers 202 and invalidates the link when Resend fails twice", async () => {
     const email = uniqueEmail();
     await insertUser(email);
     server.use(resendServerError());
     const emails = captureEmails();
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
 
     const response = await post("/api/auth/magic-link", { email });
 
-    await expectError(response, 503, "EMAIL_SEND_FAILED");
+    expect(response.status).toBe(202);
     expect(emails).toHaveLength(2);
     const [row] = await linkRows(email);
     expect(row?.invalidated_at).not.toBeNull();
     const { text } = await readEmail(emails[0]);
     expect((await verify(tokenIn(text)!)).status).toBe(410);
+    const logged = log.mock.calls.map(([line]) => String(line)).join("\n");
+    expect(logged).toContain("magic_link_send_failed");
+    expect(logged).not.toContain(tokenIn(text)!);
+    expect(logged).not.toContain(email);
+    log.mockRestore();
+  });
+
+  it("answers 413 for a body over 16 KB", async () => {
+    const response = await post("/api/auth/magic-link", {
+      email: uniqueEmail(),
+      padding: "x".repeat(17 * 1024),
+    });
+
+    await expectError(response, 413, "PAYLOAD_TOO_LARGE");
   });
 
   it("answers 400 for an invalid email", async () => {
@@ -362,6 +456,29 @@ describe("POST /api/auth/verify", () => {
 
     expect((await verify(token)).status).toBe(200);
     await expectError(await verify(token), 410, "LINK_EXPIRED");
+  });
+
+  it("invalidates the other pending links of the email when one is used", async () => {
+    const email = uniqueEmail();
+    await insertUser(email);
+    const first = await requestToken(email);
+    const second = await requestToken(email);
+
+    expect((await verify(first)).status).toBe(200);
+
+    await expectError(await verify(second), 410, "LINK_EXPIRED");
+  });
+
+  it("does not touch the links of other emails", async () => {
+    const email = uniqueEmail();
+    const other = uniqueEmail();
+    await insertUser(email);
+    await insertUser(other);
+    const otherToken = await requestToken(other);
+
+    expect((await verify(await requestToken(email))).status).toBe(200);
+
+    expect((await verify(otherToken)).status).toBe(200);
   });
 
   it.each([
@@ -434,11 +551,26 @@ describe("POST /api/auth/verify", () => {
     expect(body.user).toMatchObject({ email, isSuperadmin: true });
   });
 
+  it("demotes a user that is no longer the SUPERADMIN_EMAIL on next login", async () => {
+    const email = uniqueEmail();
+    const superadmin = { SUPERADMIN_EMAIL: email };
+    expect(
+      (await verify(await requestToken(email, superadmin), superadmin)).status,
+    ).toBe(200);
+
+    const response = await verify(await requestToken(email));
+
+    expect(response.status).toBe(200);
+    expect(meSchema.parse(await response.json()).user.isSuperadmin).toBe(false);
+  });
+
   it("answers 410 for a disabled user", async () => {
     const email = uniqueEmail();
-    await insertUser(email, "disabled");
-    await insertBetaInvite(email);
+    await insertUser(email);
     const token = await requestToken(email);
+    await env.DB.prepare("UPDATE users SET status = 'disabled' WHERE email = ?")
+      .bind(email)
+      .run();
 
     await expectError(await verify(token), 410, "LINK_EXPIRED");
     expect(
@@ -563,6 +695,18 @@ describe("POST /api/test/magic-link", () => {
     const email = await uniqueUser();
     await expectError(
       await requestTestLink(email, E2E_SECRET, { ENVIRONMENT: "production" }),
+      404,
+      "NOT_FOUND",
+    );
+    expect(await linkRows(email)).toHaveLength(0);
+  });
+
+  it("answers 404 in an unlisted environment", async () => {
+    const email = await uniqueUser();
+    await expectError(
+      await requestTestLink(email, E2E_SECRET, {
+        ENVIRONMENT: "staging" as Env["ENVIRONMENT"],
+      }),
       404,
       "NOT_FOUND",
     );

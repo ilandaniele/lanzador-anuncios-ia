@@ -5,26 +5,27 @@ import { sendEmail } from "../../integrations/resend/client";
 import { AppError } from "../../lib/errors";
 import { hashIp, randomToken, sha256Hex } from "../../lib/hash";
 import { newId } from "../../lib/ids";
+import { logEvent } from "../../lib/logger";
 import { now } from "../../lib/time";
 import {
   consumeMagicLink,
   findMagicLinkAccess,
-  insertMagicLink,
+  insertMagicLinkWithinCaps,
   invalidateMagicLink,
 } from "../../repositories/magic-links";
 import { findUserByEmail, upsertLoginUser } from "../../repositories/users";
-import { countRecentMagicLinks } from "../../repositories/windows";
 import { getMe } from "./me";
 import { createSession, type SessionMeta } from "./session";
 
 const MINUTE = 60_000;
 const LINK_TTL = 15 * MINUTE;
-const LINKS_PER_WINDOW = 5;
 
 type LinkEnv = Pick<
   Env,
   "DB" | "APP_ORIGIN" | "SUPERADMIN_EMAIL" | "RESEND_API_KEY" | "EMAIL_FROM"
 >;
+
+type MagicLinkIssue = { id: string; token: string };
 
 const linkExpired = () => new AppError(410, "LINK_EXPIRED");
 
@@ -37,45 +38,38 @@ export async function issueMagicLink(
   env: LinkEnv,
   email: string,
   ip?: string,
-): Promise<{ id: string; token: string } | null> {
+): Promise<MagicLinkIssue | null> {
   const at = now();
   const access = await findMagicLinkAccess(env.DB, email, at);
   const eligible =
-    access.userId !== null || access.invited || isSuperadminEmail(env, email);
+    !access.disabled &&
+    (access.userId !== null || access.invited || isSuperadminEmail(env, email));
   if (!eligible) return null;
-
-  const recent = await countRecentMagicLinks(
-    env.DB,
-    email,
-    at - LINK_TTL,
-    LINKS_PER_WINDOW + 1,
-  );
-  if (recent >= LINKS_PER_WINDOW) {
-    throw new AppError(429, "RATE_LIMITED", { retryAfterSec: LINK_TTL / 1000 });
-  }
 
   const id = newId();
   const token = randomToken(32);
-  await insertMagicLink(env.DB, {
-    id,
-    tokenHash: await sha256Hex(token),
-    email,
-    userId: access.userId,
-    createdAt: at,
-    expiresAt: at + LINK_TTL,
-    ipHash: ip ? await hashIp(ip, at) : null,
-  });
-  return { id, token };
+  const issued = await insertMagicLinkWithinCaps(
+    env.DB,
+    {
+      id,
+      tokenHash: await sha256Hex(token),
+      email,
+      userId: access.userId,
+      createdAt: at,
+      expiresAt: at + LINK_TTL,
+      ipHash: ip ? await hashIp(ip, at) : null,
+    },
+    at - LINK_TTL,
+  );
+  return issued ? { id, token } : null;
 }
 
-export async function requestMagicLink(
+export async function deliverMagicLink(
   env: LinkEnv,
   email: string,
-  ip?: string,
+  link: MagicLinkIssue,
+  requestId: string,
 ): Promise<void> {
-  const link = await issueMagicLink(env, email, ip);
-  if (!link) return;
-
   const content = buildMagicLinkEmail({
     appOrigin: env.APP_ORIGIN,
     token: link.token,
@@ -83,8 +77,11 @@ export async function requestMagicLink(
   try {
     await sendEmail(env, { to: email, ...content });
   } catch (error) {
+    logEvent("error", "magic_link_send_failed", {
+      requestId,
+      message: error instanceof Error ? error.message : String(error),
+    });
     await invalidateMagicLink(env.DB, link.id, now());
-    throw error;
   }
 }
 

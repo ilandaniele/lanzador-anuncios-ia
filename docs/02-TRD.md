@@ -126,7 +126,7 @@ Regla ESLint (`no-restricted-imports`): `src/api/services/chat/**` y `src/api/se
 | Workspace | Si el usuario no es miembro de `:wid` o un id pedido no pertenece a `:wid`: **404** (nunca 403, para no revelar existencia). Miembro con rol insuficiente: 403 `FORBIDDEN_ROLE`. Workspace desactivado por superadmin: 403 `WORKSPACE_DISABLED`. |
 | Roles | Jerarquía `viewer < editor < admin < owner`. La columna "Rol" indica el mínimo. `superadmin` es global y solo accede a `/api/admin/*` (no ve contenido de workspaces de los que no es miembro). |
 | Errores | `{"error":{"code":"...","message":"texto para mostrar","requestId":"...","fields":{...},"details":{...}}}` (`fields` y `details?: Record<string,unknown>` son opcionales). `UPLOAD_OFFSET_MISMATCH` lleva `details:{nextChunk}` y `AI_BUDGET_EXHAUSTED` lleva `details:{scope,resetsAt}`. Sin stack traces. |
-| Errores comunes (no se repiten en la tabla) | 400 `VALIDATION`, 401 `UNAUTHENTICATED`, 403 `CSRF_FAILED`, 403 `FORBIDDEN_ROLE`, 404 `NOT_FOUND`, 429 `RATE_LIMITED` (con `Retry-After`), 500 `INTERNAL`. |
+| Errores comunes (no se repiten en la tabla) | 400 `VALIDATION`, 401 `UNAUTHENTICATED`, 403 `CSRF_FAILED`, 403 `FORBIDDEN_ROLE`, 404 `NOT_FOUND`, 413 `PAYLOAD_TOO_LARGE` (cuerpo mayor a 16 KB; las rutas de subida lo ajustan), 429 `RATE_LIMITED` (con `Retry-After`), 500 `INTERNAL`. |
 | Paginación | Cursor: `?cursor=<opaco>&limit=` (default 25, máximo 100). Respuesta `{data:[...], nextCursor:string|null}`. Sin totales (`COUNT(*)` prohibido por request). |
 | DTOs | Explícitos por endpoint. Nunca salen: `token_*`, `*_ciphertext`, `*_hash`, `refresh_token`, ids de sesión. |
 | Montos | Enteros en unidades menores (`*Minor`, centavos) + `currency`. |
@@ -152,7 +152,7 @@ Leyenda de auth: `pub` público · `ses` sesión · `ses+ws` sesión + membresí
 
 | F | Método | Ruta | Auth | Rol | Request | Response | Errores | Rate limit | Pag. |
 |---|---|---|---|---|---|---|---|---|---|
-| F1 | POST | `/api/auth/magic-link` | pub | — | `{email}` | 202 `{ok:true}` siempre (no revela si existe) | 503 `EMAIL_SEND_FAILED` | AUTH + 5 por email / 15 min (D1) → 429 | no |
+| F1 | POST | `/api/auth/magic-link` | pub | — | `{email}` | 202 `{ok:true}` siempre, exista o no el email y aunque se alcance un tope (el envío corre en segundo plano con `waitUntil`; si falla, el link se invalida y se registra, sin error para el cliente) | 413 `PAYLOAD_TOO_LARGE` | AUTH (por IP → 429) + tope silencioso de 5 links por email+IP y 15 por email en 15 min (D1, un solo INSERT condicional; al superarlo no se crea link ni se envía email) | no |
 | F1 | POST | `/api/auth/verify` | pub | — | `{token}` (viene del fragmento `#t=` de `/ingresar/confirmar`) | 200 `{user, workspaces}` + `Set-Cookie` | 410 `LINK_EXPIRED` (usado o vencido) | AUTH | no |
 | F1 | POST | `/api/auth/logout` | ses | — | — | 204 + cookie expirada | — | USR | no |
 | F1 | POST | `/api/auth/logout-all` | ses | — | — | 204 + cookie expirada (borra todas las sesiones del usuario) | — | USR | no |
@@ -171,7 +171,7 @@ Leyenda de auth: `pub` público · `ses` sesión · `ses+ws` sesión + membresí
 | F1 | POST | `/api/w/:wid/invitations` | ses+ws | admin | `{email, role}` (no `owner`) | 201 `{invitation}` + email | 409 `ALREADY_MEMBER`, 409 `INVITATION_PENDING`, 422 `PLAN_MEMBER_LIMIT`, 503 `EMAIL_SEND_FAILED` | USR + EXP | no |
 | F1 | DELETE | `/api/w/:wid/invitations/:id` | ses+ws | admin | — | 204 (revoca) | — | USR | no |
 | F1 | POST | `/api/invitations/accept` | pub o ses | — | `{token}` (viene del fragmento `#t=` de `/invitacion`) | 200 `{workspaceId, role}` + `Set-Cookie` si no había sesión | 410 `INVITATION_EXPIRED`, 409 `EMAIL_MISMATCH` | AUTH | no |
-| F1 | POST | `/api/test/magic-link` | header `X-E2E-Secret` | — | `{email}` | `{link}` | 404 en producción (la ruta no se registra) | AUTH | no |
+| F1 | POST | `/api/test/magic-link` | header `X-E2E-Secret` | — | `{email}` | `{link}` | 404 salvo `ENVIRONMENT` `preview` o `development` | AUTH | no |
 
 #### Superadmin (F1, F5, F10)
 
@@ -433,7 +433,7 @@ Con 2.000 por día alcanza para unas 4 corridas de copys + 6 etiquetados + 2 pil
 |---|---|---|---|---|---|
 | Meta Graph API `v24.0` (`graph.facebook.com`, `graph-video.facebook.com`) | Login, activos, creación, estado, insights | Sin costo. Límite por cuenta publicitaria (Business Use Case `ads_management` / `ads_insights`), menor en nivel de acceso de desarrollo; se leen `X-Business-Use-Case-Usage`, `X-Ad-Account-Usage` y `x-fb-ads-insights-throttle` y se frena al 75 % | 30 s lecturas y creaciones; 60 s batch; 120 s por bloque de subida | Ver 6.3 | Lanzamiento queda en pausa con lo creado; métricas muestran caché con `stale:true` y hora; acciones manuales dan 502 `META_ERROR` con el mensaje de Meta. |
 | Facebook Login for Business | Conexión con `config_id` | — | 10 s el canje de `code` | 1 ante 5xx | Callback redirige con `motivo=TOKEN_EXCHANGE_FAILED`. |
-| Resend (`api.resend.com/emails`) | Magic links e invitaciones | Plan gratis: 3.000 emails/mes, 100/día, 1 dominio verificado. Sin dominio verificado solo entrega al email dueño de la cuenta de Resend (dominio pendiente) | 10 s | 1 ante 429/5xx | 503 `EMAIL_SEND_FAILED`; el magic link creado se invalida. |
+| Resend (`api.resend.com/emails`) | Magic links e invitaciones | Plan gratis: 3.000 emails/mes, 100/día, 1 dominio verificado. Sin dominio verificado solo entrega al email dueño de la cuenta de Resend (dominio pendiente) | 10 s | 1 ante 429/5xx | 503 `EMAIL_SEND_FAILED`; el magic link creado se invalida (en el magic link el envío es en segundo plano: no hay 503, se registra el error). |
 | Workers AI (binding `AI`) | Copys, explicación del piloto, chat y etiquetado | 10.000 neurons/día por cuenta (compartido con otras apps); la app se limita a `WORKERS_AI_DAILY_NEURON_CAP` (9000) | 60 s copys y chat; 90 s piloto; 30 s etiquetado | 1 ante 5xx | 502 `AI_UPSTREAM`; el piloto genera propuestas sin explicación; el chat muestra error y conserva el historial; el etiquetado deja `ai_status=failed` y el creativo se usa sin etiquetas. Sin neurons: 422 `AI_BUDGET_EXHAUSTED`. |
 | Google OAuth (`accounts.google.com/o/oauth2/v2/auth`, `oauth2.googleapis.com/token`, `/revoke`) | Conexión de Drive | Gratis; app en modo prueba hasta 100 usuarios de prueba; `drive.file` no es scope restringido | 10 s | 1 ante 5xx | 409 `GOOGLE_RECONNECT_REQUIRED` si el refresh falla con `invalid_grant`. |
 | Google Picker (`apis.google.com/js/api.js`) | Elegir archivos en el navegador | Gratis, cuota de API key | — (cliente) | — | El usuario puede subir desde el navegador. |

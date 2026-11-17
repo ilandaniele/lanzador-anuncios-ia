@@ -13,7 +13,7 @@ const e2eOnly = createMiddleware<AppEnv>(async (c, next) => {
   const expected = c.env.E2E_SECRET;
   const given = c.req.header("X-E2E-Secret");
   const allowed =
-    c.env.ENVIRONMENT !== "production" &&
+    (c.env.ENVIRONMENT === "preview" || c.env.ENVIRONMENT === "development") &&
     Boolean(expected) &&
     Boolean(given) &&
     timingSafeEqual(given!, expected!);

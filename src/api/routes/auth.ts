@@ -6,7 +6,11 @@ import {
 import { parseJson } from "../lib/validate";
 import { clientIp, rateLimit, requestIp } from "../middleware/rate-limit";
 import { session } from "../middleware/session";
-import { requestMagicLink, verifyMagicLink } from "../services/auth/magic-link";
+import {
+  deliverMagicLink,
+  issueMagicLink,
+  verifyMagicLink,
+} from "../services/auth/magic-link";
 import { getMe } from "../services/auth/me";
 import {
   clearSessionCookie,
@@ -25,7 +29,12 @@ const loggedOut = (c: Context<AppEnv>) => {
 export const authRoutes = new Hono<AppEnv>()
   .post("/auth/magic-link", authRateLimit, async (c) => {
     const { email } = await parseJson(c, magicLinkRequestSchema);
-    await requestMagicLink(c.env, email, requestIp(c));
+    const link = await issueMagicLink(c.env, email, requestIp(c));
+    if (link) {
+      c.executionCtx.waitUntil(
+        deliverMagicLink(c.env, email, link, c.get("requestId")),
+      );
+    }
     return c.json({ ok: true }, 202);
   })
   .post("/auth/verify", authRateLimit, async (c) => {
