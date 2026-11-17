@@ -18,6 +18,6 @@ export default defineConfig({
     name: "workers",
     include: ["tests/integration/**/*.test.ts", "tests/unit/**/*.test.ts"],
     exclude: ["tests/unit/eslint-boundaries.test.ts"],
-    setupFiles: ["tests/setup/apply-migrations.ts"],
+    setupFiles: ["tests/setup/apply-migrations.ts", "tests/setup/msw.ts"],
   },
 });
