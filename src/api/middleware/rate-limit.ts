@@ -36,8 +36,11 @@ export function ipKey(ip: string): string {
   return `${prefix.join(":")}::/64`;
 }
 
+export const requestIp = (c: Context<AppEnv>) =>
+  c.req.header("CF-Connecting-IP");
+
 export const clientIp = (c: Context<AppEnv>) =>
-  ipKey(c.req.header("CF-Connecting-IP") ?? "unknown");
+  ipKey(requestIp(c) ?? "unknown");
 
 export function rateLimit(
   binding: RateLimitBinding,

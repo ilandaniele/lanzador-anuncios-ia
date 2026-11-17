@@ -81,3 +81,10 @@ export async function deleteSession(
 ): Promise<void> {
   await drizzle(db).delete(sessions).where(eq(sessions.id, sessionId));
 }
+
+export async function deleteUserSessions(
+  db: D1Database,
+  userId: string,
+): Promise<void> {
+  await drizzle(db).delete(sessions).where(eq(sessions.userId, userId));
+}

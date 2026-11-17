@@ -29,6 +29,10 @@ export async function sha256Hex(value: Bytes): Promise<string> {
   return bytesToHex(new Uint8Array(digest));
 }
 
+export function hashIp(ip: string, at: number): Promise<string> {
+  return sha256Hex(ip + new Date(at).toISOString().slice(0, 10));
+}
+
 export function randomToken(bytes = 32): string {
   return base64urlEncode(crypto.getRandomValues(new Uint8Array(bytes)));
 }

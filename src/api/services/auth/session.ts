@@ -1,8 +1,14 @@
-import { randomToken, sha256Hex, timingSafeEqual } from "../../lib/hash";
+import {
+  hashIp,
+  randomToken,
+  sha256Hex,
+  timingSafeEqual,
+} from "../../lib/hash";
 import { newId } from "../../lib/ids";
 import { now } from "../../lib/time";
 import {
   deleteSession,
+  deleteUserSessions,
   findSessionByTokenHash,
   insertSession,
   rotateSessionToken,
@@ -34,8 +40,6 @@ const sessionCookie = (token: string, expiresAt: number, at: number) =>
 
 export const clearSessionCookie = () => buildCookie("", 0);
 
-const dayStamp = (at: number) => new Date(at).toISOString().slice(0, 10);
-
 export async function createSession(
   db: D1Database,
   userId: string,
@@ -53,7 +57,7 @@ export async function createSession(
     lastSeenAt: at,
     expiresAt,
     userAgent: meta.userAgent?.slice(0, USER_AGENT_MAX) ?? null,
-    ipHash: meta.ip ? await sha256Hex(meta.ip + dayStamp(at)) : null,
+    ipHash: meta.ip ? await hashIp(meta.ip, at) : null,
   });
   return { token, cookie: sessionCookie(token, expiresAt, at) };
 }
@@ -109,4 +113,11 @@ export async function destroySession(
   sessionId: string,
 ): Promise<void> {
   await deleteSession(db, sessionId);
+}
+
+export async function destroyUserSessions(
+  db: D1Database,
+  userId: string,
+): Promise<void> {
+  await deleteUserSessions(db, userId);
 }

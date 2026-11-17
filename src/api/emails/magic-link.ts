@@ -5,6 +5,9 @@ interface MagicLinkEmailInput {
   token: string;
 }
 
+export const magicLinkUrl = (appOrigin: string, token: string) =>
+  `${appOrigin}/ingresar/confirmar#t=${token}`;
+
 export const buildMagicLinkEmail = ({
   appOrigin,
   token,
@@ -17,7 +20,7 @@ export const buildMagicLinkEmail = ({
     ],
     action: {
       label: "Entrar",
-      url: `${appOrigin}/ingresar/confirmar#t=${token}`,
+      url: magicLinkUrl(appOrigin, token),
     },
     note: "Si no pediste este email, ignoralo: nadie puede entrar sin el link.",
   });
