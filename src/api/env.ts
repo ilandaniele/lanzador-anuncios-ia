@@ -4,13 +4,13 @@ export interface Env {
   LAUNCH_WF?: Workflow;
   LAUNCH_ITEM_WF?: Workflow;
   JOB_WF?: Workflow;
-  RL_IP?: RateLimit;
-  RL_USER?: RateLimit;
-  RL_AUTH?: RateLimit;
-  RL_EXP?: RateLimit;
-  RL_UPL?: RateLimit;
-  RL_POLL?: RateLimit;
-  RL_CLIENT_ERR?: RateLimit;
+  RL_IP: RateLimit;
+  RL_USER: RateLimit;
+  RL_AUTH: RateLimit;
+  RL_EXP: RateLimit;
+  RL_UPL: RateLimit;
+  RL_POLL: RateLimit;
+  RL_CLIENT_ERR: RateLimit;
 
   APP_ORIGIN: string;
   ENVIRONMENT: "production" | "preview" | "development";

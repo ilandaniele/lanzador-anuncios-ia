@@ -18,6 +18,15 @@
       "migrations_dir": "src/db/migrations"
     }
   ],
+  "ratelimits": [
+    { "name": "RL_IP", "namespace_id": "1001", "simple": { "limit": 300, "period": 60 } },
+    { "name": "RL_USER", "namespace_id": "1002", "simple": { "limit": 120, "period": 60 } },
+    { "name": "RL_AUTH", "namespace_id": "1003", "simple": { "limit": 5, "period": 60 } },
+    { "name": "RL_EXP", "namespace_id": "1004", "simple": { "limit": 10, "period": 60 } },
+    { "name": "RL_UPL", "namespace_id": "1005", "simple": { "limit": 600, "period": 60 } },
+    { "name": "RL_POLL", "namespace_id": "1006", "simple": { "limit": 30, "period": 60 } },
+    { "name": "RL_CLIENT_ERR", "namespace_id": "1007", "simple": { "limit": 20, "period": 60 } }
+  ],
   "vars": {
     "APP_ORIGIN": "",
     "ENVIRONMENT": "production",
@@ -51,6 +60,15 @@
           "database_id": "4b238c86-26f6-41c3-978c-4b34a733aa4a",
           "migrations_dir": "src/db/migrations"
         }
+      ],
+      "ratelimits": [
+        { "name": "RL_IP", "namespace_id": "2001", "simple": { "limit": 300, "period": 60 } },
+        { "name": "RL_USER", "namespace_id": "2002", "simple": { "limit": 120, "period": 60 } },
+        { "name": "RL_AUTH", "namespace_id": "2003", "simple": { "limit": 5, "period": 60 } },
+        { "name": "RL_EXP", "namespace_id": "2004", "simple": { "limit": 10, "period": 60 } },
+        { "name": "RL_UPL", "namespace_id": "2005", "simple": { "limit": 600, "period": 60 } },
+        { "name": "RL_POLL", "namespace_id": "2006", "simple": { "limit": 30, "period": 60 } },
+        { "name": "RL_CLIENT_ERR", "namespace_id": "2007", "simple": { "limit": 20, "period": 60 } }
       ],
       "vars": {
         "APP_ORIGIN": "https://lanzador-preview.ilandaniele.workers.dev",
