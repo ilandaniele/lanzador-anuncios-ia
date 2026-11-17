@@ -1,14 +1,12 @@
 import { Hono } from "hono";
-import type { Role } from "../../shared/constants";
 import {
   deleteWorkspaceRequestSchema,
   settingsPatchSchema,
   workspaceNameRequestSchema,
 } from "../../shared/schemas/workspaces";
 import { parseJson } from "../lib/validate";
-import { requireRole } from "../middleware/require-role";
+import { member } from "../middleware/member";
 import { session } from "../middleware/session";
-import { workspace } from "../middleware/workspace";
 import { getSettings, patchSettings } from "../services/settings";
 import {
   createWorkspace,
@@ -17,9 +15,6 @@ import {
   updateWorkspaceName,
 } from "../services/workspaces";
 import type { AppEnv } from "../types";
-
-const member = (min: Role) =>
-  [session({ required: true }), workspace(), requireRole(min)] as const;
 
 export const workspaceRoutes = new Hono<AppEnv>()
   .post("/workspaces", session({ required: true }), async (c) => {

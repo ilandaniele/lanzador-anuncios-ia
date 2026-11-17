@@ -25,7 +25,7 @@ import { manualAuditEntry } from "./audit-entry";
 
 type WorkspaceRow = Omit<WorkspaceDto, "createdAt"> & { createdAt: number };
 
-const toWorkspaceDto = (row: WorkspaceRow): WorkspaceDto => ({
+export const toWorkspaceDto = (row: WorkspaceRow): WorkspaceDto => ({
   id: row.id,
   name: row.name,
   planId: row.planId,

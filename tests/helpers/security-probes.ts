@@ -44,18 +44,29 @@ export async function probeRoles(app: App, matrix: Record<string, RoleRule>) {
   for (const [key, rule] of Object.entries(matrix)) {
     const { method, path } = splitRouteKey(key);
     const min = typeof rule === "string" ? rule : rule.min;
+    const allowsSelf = typeof rule !== "string" && rule.self === true;
     const { workspace, users } = await seedWorkspaceWithRoles();
     for (const role of ROLES) {
+      const mustBeForbidden = ROLE_RANK[role] < ROLE_RANK[min];
       const response = await api(app, fillPath(path, { wid: workspace.id }), {
         as: users[role],
         method,
         env: openLimits,
       });
-      const mustBeForbidden = ROLE_RANK[role] < ROLE_RANK[min];
       if ((await isForbiddenRole(response)) !== mustBeForbidden) {
         violations.push(
           `${key} as ${role}: min ${min}, got ${response.status}`,
         );
+      }
+      if (allowsSelf && mustBeForbidden) {
+        const selfResponse = await api(
+          app,
+          fillPath(path, { wid: workspace.id, userId: users[role].id }),
+          { as: users[role], method, env: openLimits },
+        );
+        if (await isForbiddenRole(selfResponse)) {
+          violations.push(`${key} as ${role} on self: got 403 FORBIDDEN_ROLE`);
+        }
       }
     }
   }

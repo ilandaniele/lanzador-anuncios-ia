@@ -2,12 +2,11 @@ import type { Context } from "hono";
 import type { z } from "zod";
 import { AppError } from "./errors";
 
-export async function parseJson<Schema extends z.ZodType>(
-  c: Context,
+function validated<Schema extends z.ZodType>(
   schema: Schema,
-): Promise<z.infer<Schema>> {
-  const body: unknown = await c.req.json().catch(() => undefined);
-  const result = schema.safeParse(body);
+  value: unknown,
+): z.infer<Schema> {
+  const result = schema.safeParse(value);
   if (!result.success) {
     const fields = Object.fromEntries(
       result.error.issues.map((issue) => [issue.path.join("."), issue.code]),
@@ -16,3 +15,15 @@ export async function parseJson<Schema extends z.ZodType>(
   }
   return result.data;
 }
+
+export async function parseJson<Schema extends z.ZodType>(
+  c: Context,
+  schema: Schema,
+): Promise<z.infer<Schema>> {
+  return validated(schema, await c.req.json().catch(() => undefined));
+}
+
+export const parseQuery = <Schema extends z.ZodType>(
+  c: Context,
+  schema: Schema,
+): z.infer<Schema> => validated(schema, c.req.query());

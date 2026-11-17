@@ -7,6 +7,7 @@ import { apiHeaders } from "./middleware/headers";
 import { clientIp, rateLimit } from "./middleware/rate-limit";
 import { requestId } from "./middleware/request-id";
 import { authRoutes } from "./routes/auth";
+import { memberRoutes } from "./routes/members";
 import { testSupportRoutes } from "./routes/test-support";
 import { workspaceRoutes } from "./routes/workspaces";
 import type { AppEnv } from "./types";
@@ -36,6 +37,7 @@ export function createApp() {
   app.get("/health", (c) => c.json({ ok: true }));
   app.route("/", authRoutes);
   app.route("/", workspaceRoutes);
+  app.route("/", memberRoutes);
   app.route("/", testSupportRoutes);
 
   return app;

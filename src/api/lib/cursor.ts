@@ -14,6 +14,16 @@ export function encodeCursor(position: CursorPosition): string {
   return base64urlEncode(new TextEncoder().encode(json));
 }
 
+export function paginate<Row extends { id: string }>(
+  rowsWithLookahead: Row[],
+  limit: number,
+) {
+  const rows = rowsWithLookahead.slice(0, limit);
+  const last = rows.at(-1);
+  const hasMore = rowsWithLookahead.length > limit && last !== undefined;
+  return { rows, nextCursor: hasMore ? encodeCursor({ id: last.id }) : null };
+}
+
 export function decodeCursor(cursor: string): CursorPosition {
   try {
     const json = new TextDecoder().decode(base64urlDecode(cursor));

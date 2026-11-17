@@ -5,7 +5,12 @@ import { workspaces } from "../../db/schema/workspaces";
 import type { WorkspaceStatus } from "../../shared/constants";
 import type { UtcPeriods } from "../lib/time";
 import { type AuditEntry, auditStatement } from "./audit";
-import { insertOwnerMembership } from "./memberships";
+import {
+  demoteOwnerStatement,
+  insertOwnerMembership,
+  memberExists,
+  promoteToOwnerStatement,
+} from "./memberships";
 import { insertDefaultPilotRules } from "./pilot-rules";
 import type { Scope } from "./scope";
 import { insertDefaultSettings, selectSettings, toSettings } from "./settings";
@@ -134,4 +139,30 @@ export async function markWorkspaceDeleting(
       .where(eq(workspaces.id, scope.workspaceId)),
     auditStatement(db, audit),
   ]);
+}
+
+export async function transferOwnership(
+  db: D1Database,
+  scope: Scope,
+  transfer: { successorId: string; at: number },
+  audits: AuditEntry[],
+) {
+  const { successorId, at } = transfer;
+  const orm = drizzle(db);
+  const [, , [workspace]] = await orm.batch([
+    demoteOwnerStatement(orm, scope, successorId, at),
+    promoteToOwnerStatement(orm, scope, successorId, at),
+    orm
+      .update(workspaces)
+      .set({ ownerUserId: successorId, updatedAt: at })
+      .where(
+        and(
+          eq(workspaces.id, scope.workspaceId),
+          memberExists(orm, scope, successorId, "owner"),
+        ),
+      )
+      .returning(workspaceColumns),
+    ...audits.map((audit) => auditStatement(db, audit)),
+  ]);
+  return workspace ?? null;
 }

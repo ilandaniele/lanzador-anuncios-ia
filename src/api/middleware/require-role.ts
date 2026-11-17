@@ -11,6 +11,17 @@ export const requireRole = (min: Role) =>
     return next();
   });
 
+export const requireRoleOrSelf = (min: Role, param: string) =>
+  createMiddleware<AppEnv>(async (c, next) => {
+    const scope = c.get("scope");
+    if (!scope) throw notFound();
+    const isSelf = c.req.param(param) === scope.userId;
+    if (!isSelf && ROLE_RANK[scope.role] < ROLE_RANK[min]) {
+      throw forbiddenRole();
+    }
+    return next();
+  });
+
 export const requireSuperadmin = () =>
   createMiddleware<AppEnv>(async (c, next) => {
     if (!c.get("user")?.isSuperadmin) throw notFound();

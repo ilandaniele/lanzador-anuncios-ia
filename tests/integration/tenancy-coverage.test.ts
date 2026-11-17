@@ -46,7 +46,6 @@ const PENDING_TABLES = [
   "invitations",
   "launchItems",
   "launches",
-  "memberships",
   "metaAssets",
   "metaConnections",
   "oauthStates",
