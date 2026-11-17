@@ -1,0 +1,9 @@
+dist
+coverage
+results
+.wrangler
+node_modules
+package-lock.json
+docs
+CLAUDE.md
+wrangler.jsonc

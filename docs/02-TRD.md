@@ -17,7 +17,7 @@ Fecha: 2026-11-16. Fuentes: `00-brief.md`, `01-PRD.md`, `legacy/inventario-app-v
 | IA | Workers AI (binding `AI`): Llama 3.3 70B para texto, Llama 4 Scout para chat con function calling y visión | Copys en rioplatense, explicaciones del piloto, chat y etiquetado, todo dentro del cupo diario de neurons y sin claves de terceros. Claude se puede sumar más adelante como un segundo `AiProvider`. |
 | Email | Resend (plan gratis) | Magic links e invitaciones. API HTTP simple. |
 | Validación | Zod, schemas en `src/shared/` usados por front y back | Una sola definición por contrato. El servidor valida siempre. |
-| Tests | Vitest + `@cloudflare/vitest-pool-workers` (unit e integración contra D1 local de workerd), Playwright E2E | Corre en el runtime real. E2E contra la URL desplegada (criterio del brief). |
+| Tests | Vitest + `@cloudflare/vitest-plugin` (unit e integración contra D1 local de workerd), Playwright E2E | Corre en el runtime real. E2E contra la URL desplegada (criterio del brief). |
 | Lenguaje | TypeScript `strict` en todo | Tipos compartidos front/back. |
 
 ### Alternativas descartadas
@@ -108,7 +108,7 @@ Regla ESLint (`no-restricted-imports`): `src/api/services/chat/**` y `src/api/se
 | Framework | Hono (API), React 19 + Vite + React Router (SPA), TanStack Query (fetch, cache, refetch al foco) |
 | ORM / migraciones | Drizzle ORM + drizzle-kit (`db:generate`), `wrangler d1 migrations apply` (`db:migrate`) |
 | Validación | Zod (schemas compartidos en `src/shared/schemas/`) |
-| Tests | Vitest + `@cloudflare/vitest-pool-workers`; Playwright E2E contra el deploy; k6 solo local |
+| Tests | Vitest + `@cloudflare/vitest-plugin`; Playwright E2E contra el deploy; k6 solo local |
 | Lint/format | ESLint (typescript-eslint, react-hooks, jsx-a11y) + Prettier + `tsc --noEmit` |
 | CI | GitHub Actions: lint, typecheck, test, build en cada push y PR a `dev`/`main` |
 | Deploy | `npx wrangler deploy` (Worker `lanzador`); preview como Worker `lanzador-preview` con su propia D1 (`lanzador-db-preview`) |

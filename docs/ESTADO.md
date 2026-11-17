@@ -1,13 +1,13 @@
 # Estado del proyecto — Lanzador de anuncios con IA
 
-Fase actual: **3 — Arquitectura**.
+Fase actual: **4 — Infra y secretos**.
 
 ## Checklist
 
 - [x] 0 Bootstrap: git (`main` + `dev`), `CLAUDE.md`, `.gitignore`. CLIs: wrangler 4.163 logueado, gcloud logueado, gh logueado (`ilandaniele`), k6 2.3. El token de `cf` venció el 2026-11-14; el proyecto usará `wrangler`, así que no bloquea.
 - [x] 1 Entrevista → `docs/00-brief.md`
 - [x] 2 Documentos `docs/01..06`
-- [ ] 3 Arquitectura y esqueleto
+- [x] 3 Arquitectura y esqueleto (tareas 1–3 del plan). Falta el deploy de prueba a `lanzador-preview`: necesita permiso del usuario.
 - [ ] 4 Infra y secretos
 - [ ] 5 Desarrollo
 - [ ] 6 Seguridad
@@ -28,6 +28,7 @@ Fase actual: **3 — Arquitectura**.
 ## Hecho
 
 - Inventario de la app vieja → `docs/legacy/inventario-app-vieja.md`.
+- Esqueleto: React 19 + Vite, Worker Hono con `GET /api/health`, ESLint 9 + Prettier, Vitest (`@cloudflare/vitest-plugin` + jsdom), Playwright, CI de GitHub Actions. TypeScript fijado en 6.0 porque typescript-eslint todavía no soporta la 7.
 
 ## Pendiente
 
