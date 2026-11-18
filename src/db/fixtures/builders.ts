@@ -1,8 +1,14 @@
-import { users } from "../schema/auth";
+import { betaInvites, users } from "../schema/auth";
 import { launches } from "../schema/launches";
 import { metaAssets, metaConnections } from "../schema/meta";
+import { pilotRules } from "../schema/pilot";
 import { products } from "../schema/products";
-import { invitations, memberships, workspaces } from "../schema/workspaces";
+import {
+  invitations,
+  memberships,
+  workspaceSettings,
+  workspaces,
+} from "../schema/workspaces";
 
 export const buildUser = (
   overrides: Partial<typeof users.$inferInsert> = {},
@@ -142,3 +148,36 @@ export const buildLaunch = (
     ...overrides,
   };
 };
+
+export const buildBetaInvite = (
+  overrides: Partial<typeof betaInvites.$inferInsert> = {},
+): typeof betaInvites.$inferInsert => {
+  const id = crypto.randomUUID();
+  return {
+    id,
+    email: `${id}@example.test`,
+    createdAt: Date.now(),
+    ...overrides,
+  };
+};
+
+export const buildWorkspaceSettings = (
+  overrides: Pick<typeof workspaceSettings.$inferInsert, "workspaceId"> &
+    Partial<typeof workspaceSettings.$inferInsert>,
+): typeof workspaceSettings.$inferInsert => ({
+  updatedAt: Date.now(),
+  ...overrides,
+});
+
+export const buildPilotRule = (
+  overrides: Pick<
+    typeof pilotRules.$inferInsert,
+    "workspaceId" | "ruleType" | "params"
+  > &
+    Partial<typeof pilotRules.$inferInsert>,
+): typeof pilotRules.$inferInsert => ({
+  id: crypto.randomUUID(),
+  enabled: 0,
+  updatedAt: Date.now(),
+  ...overrides,
+});

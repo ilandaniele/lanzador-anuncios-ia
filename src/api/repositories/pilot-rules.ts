@@ -2,7 +2,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { pilotRules } from "../../db/schema/pilot";
 import { newId } from "../lib/ids";
 
-const DEFAULT_PILOT_RULES = [
+export const DEFAULT_PILOT_RULES = [
   {
     ruleType: "pause_no_sales",
     enabled: 1,
