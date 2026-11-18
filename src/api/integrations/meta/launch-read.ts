@@ -122,11 +122,15 @@ const read = (path: string, query: QueryValues): BatchRequest => ({
   query,
 });
 
-async function readAll(graph: Graph, requests: BatchRequest[]) {
+async function batchAll(graph: Graph, requests: BatchRequest[]) {
   const groups = await Promise.all(
     chunk(requests, MAX_BATCH_SIZE).map((group) => graph.batch(group)),
   );
-  return groups.flat().map((result) => {
+  return groups.flat();
+}
+
+async function readAll(graph: Graph, requests: BatchRequest[]) {
+  return (await batchAll(graph, requests)).map((result) => {
     if (!result.ok) throw result.error;
     return result.data;
   });
@@ -148,4 +152,21 @@ export async function readLaunchObjects(
     ads: parse(adsSchema, ads).data,
     videos: videos.map((video) => parse(videoSchema, video)),
   };
+}
+
+const statusSchema = z.object({ status: z.string() });
+
+export async function readStatuses(
+  graph: Graph,
+  ids: string[],
+): Promise<(string | null)[]> {
+  const results = await batchAll(
+    graph,
+    ids.map((id) => read(id, { fields: "status" })),
+  );
+  return results.map((result) =>
+    result.ok
+      ? (statusSchema.safeParse(result.data).data?.status ?? null)
+      : null,
+  );
 }

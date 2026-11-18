@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import {
   createLaunchRequestSchema,
+  launchActivateRequestSchema,
   launchDraftRequestSchema,
   launchProgressQuerySchema,
   launchRetryRequestSchema,
@@ -10,6 +11,7 @@ import {
 import { parseJson, parseQuery } from "../lib/validate";
 import { member } from "../middleware/member";
 import { expensiveRateLimit, pollRateLimit } from "../middleware/rate-limit";
+import { activateLaunch } from "../services/launch/activate";
 import {
   createLaunchDraft,
   discardLaunch,
@@ -109,6 +111,21 @@ export const launchRoutes = new Hono<AppEnv>()
     async (c) =>
       c.json(
         await reverifyLaunch(c.env, c.get("scope")!, c.req.param("id")),
+        202,
+      ),
+  )
+  .post(
+    "/w/:wid/launches/:id/activate",
+    ...member("editor"),
+    expensiveRateLimit,
+    async (c) =>
+      c.json(
+        await activateLaunch(
+          c.env,
+          c.get("scope")!,
+          c.req.param("id"),
+          await parseJson(c, launchActivateRequestSchema),
+        ),
         202,
       ),
   )

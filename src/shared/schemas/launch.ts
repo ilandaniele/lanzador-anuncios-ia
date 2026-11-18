@@ -261,6 +261,11 @@ export const launchRetryRequestSchema = launchStartRequestSchema.pick({
   confirm: true,
 });
 
+export const launchActivateRequestSchema = launchRetryRequestSchema.extend({
+  startAt: z.iso.datetime().optional(),
+});
+export type LaunchActivateRequest = z.infer<typeof launchActivateRequestSchema>;
+
 export const launchProgressQuerySchema = z.object({
   since: z.iso.datetime().optional(),
 });

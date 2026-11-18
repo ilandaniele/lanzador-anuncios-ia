@@ -109,6 +109,10 @@ export const TENANCY_PARAMS: TenancyParams = {
   }),
   "POST /api/w/:wid/launches/:id/discard": foreignLaunch,
   "POST /api/w/:wid/launches/:id/verify": foreignLaunch,
+  "POST /api/w/:wid/launches/:id/activate": (pair) => ({
+    ...foreignLaunch(pair),
+    body: { confirm: true },
+  }),
   "PATCH /api/w/:wid/members/:userId": (pair) => ({
     ...foreignMember(pair),
     body: { role: "viewer" },
