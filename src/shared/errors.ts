@@ -59,6 +59,7 @@ export const ERROR_STATUS = {
   INTERNAL: 500,
   AI_UPSTREAM: 502,
   META_ERROR: 502,
+  GOOGLE_ERROR: 502,
   EMAIL_SEND_FAILED: 503,
 } as const;
 

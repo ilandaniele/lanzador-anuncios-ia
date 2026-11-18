@@ -19,7 +19,7 @@ export async function consumeOAuthState(
     userId: string;
     at: number;
   },
-): Promise<{ workspaceId: string } | null> {
+): Promise<{ workspaceId: string; launchId: string | null } | null> {
   const [row] = await drizzle(db)
     .update(oauthStates)
     .set({ usedAt: claim.at })
@@ -32,6 +32,9 @@ export async function consumeOAuthState(
         gt(oauthStates.expiresAt, claim.at),
       ),
     )
-    .returning({ workspaceId: oauthStates.workspaceId });
+    .returning({
+      workspaceId: oauthStates.workspaceId,
+      launchId: oauthStates.launchId,
+    });
   return row ?? null;
 }

@@ -9,6 +9,7 @@ import type {
 } from "../../shared/constants";
 import { newId } from "../lib/ids";
 import { type AuditEntry, auditStatement } from "./audit";
+import { deleteMemberGoogleConnection } from "./google-connections";
 import { inWorkspace, type Scope } from "./scope";
 
 const memberColumns = {
@@ -141,6 +142,7 @@ export async function deleteMember(
           ne(memberships.role, "owner"),
         ),
       ),
+    deleteMemberGoogleConnection(orm, scope, userId),
     auditStatement(db, audit),
   ]);
 }

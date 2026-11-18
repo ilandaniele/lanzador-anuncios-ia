@@ -34,12 +34,7 @@ const isCoveredBy = (sources: string[], exportName: string) =>
 const isCovered = (exportName: string) =>
   isCoveredBy(Object.values(repositorySources), exportName);
 
-const PENDING_TABLES = [
-  "aiUsage",
-  "errorEvents",
-  "googleConnections",
-  "oauthStates",
-];
+const PENDING_TABLES = ["aiUsage", "errorEvents", "oauthStates"];
 
 describe("tenancy coverage", () => {
   it("finds the tenant tables", () => {

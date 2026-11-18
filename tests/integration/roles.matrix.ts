@@ -76,4 +76,8 @@ export const ROLE_MATRIX: Record<string, RoleRule> = {
   "GET /api/w/:wid/metrics/top-ads": "viewer",
   "GET /api/w/:wid/metrics/winning-tags": "viewer",
   "GET /api/w/:wid/today": "viewer",
+  "POST /api/w/:wid/google/connect": "editor",
+  "GET /api/w/:wid/google/connection": "editor",
+  "DELETE /api/w/:wid/google/connection": "viewer",
+  "GET /api/w/:wid/google/picker-token": "editor",
 };

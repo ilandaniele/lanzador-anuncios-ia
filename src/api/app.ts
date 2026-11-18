@@ -12,6 +12,7 @@ import { auditRoutes } from "./routes/audit";
 import { authRoutes } from "./routes/auth";
 import { chatRoutes } from "./routes/chat";
 import { creativeRoutes } from "./routes/creatives";
+import { googleRoutes } from "./routes/google";
 import { copyRoutes } from "./routes/copies";
 import { invitationRoutes } from "./routes/invitations";
 import { launchRoutes } from "./routes/launches";
@@ -73,6 +74,7 @@ export function createApp() {
   app.route("/", metaOAuthRoutes);
   app.route("/", metaCallbackRoutes);
   app.route("/", metaConnectionRoutes);
+  app.route("/", googleRoutes);
   app.route("/", metaCampaignRoutes);
   app.route("/", metaActionRoutes);
   app.route("/", protectedCampaignRoutes);
