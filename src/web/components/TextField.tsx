@@ -12,7 +12,7 @@ type FieldOptions = {
   limit?: number;
 };
 
-function Counter({ length, limit }: { length: number; limit: number }) {
+export function Counter({ length, limit }: { length: number; limit: number }) {
   const exceeded = length > limit;
   const tone = exceeded
     ? "text-loss"

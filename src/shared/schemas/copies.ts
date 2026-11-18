@@ -12,7 +12,7 @@ import { paginatedSchema, paginationQuerySchema } from "./common";
 const PRIMARY_TEXT_MAX = 2000;
 const HEADLINE_MAX = 255;
 const DESCRIPTION_MAX = 255;
-const CUSTOM_ANGLE_MAX = 200;
+export const CUSTOM_ANGLE_MAX = 200;
 
 const text = (max: number) => z.string().trim().min(1).max(max);
 

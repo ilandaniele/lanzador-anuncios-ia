@@ -11,17 +11,18 @@ import { http, HttpResponse } from "msw";
 import { useState } from "react";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import type { LandingStatus } from "../../src/shared/constants";
+import type { CopyDto } from "../../src/shared/schemas/copies";
 import type { PartialLaunchDraft } from "../../src/shared/schemas/launch";
 import type {
   ProductDto,
   ProductListItemDto,
 } from "../../src/shared/schemas/products";
 import { isProductStepComplete } from "../../src/web/features/launch/product-completion";
-import type { ProductCopyDto } from "../../src/web/features/launch/use-product-copies";
 import { WizardFooter } from "../../src/web/features/launch/WizardFooter";
 import { createQueryClient } from "../../src/web/lib/query-client";
 import { Step3Product } from "../../src/web/pages/lanzador/Step3Product";
 import { server } from "../helpers/msw/server";
+import { copyDto } from "./helpers/copies";
 
 const listItem = (
   id: string,
@@ -60,21 +61,14 @@ const products = [
   listItem("p3", "Gorra", "soft_ok"),
 ];
 
-const copies: ProductCopyDto[] = [
-  {
-    id: "c1",
-    primaryText: "Corré sin límites",
-    headline: "Livianas de verdad",
-    description: "Envío gratis",
-    favorite: true,
-  },
-  {
+const copies: CopyDto[] = [
+  copyDto({ favorite: true }),
+  copyDto({
     id: "c2",
     primaryText: "Tus pies lo van a notar",
     headline: "Comodidad todo el día",
     description: null,
-    favorite: false,
-  },
+  }),
 ];
 
 function useBackend(created?: ProductDto) {
@@ -238,15 +232,18 @@ describe("Lanzador > paso 3", () => {
     });
   });
 
-  it("shows Generar con IA disabled with a reason", async () => {
+  it("opens the Generar con IA panel inline", async () => {
     useBackend();
     renderStep(draftFor(products[0]!));
 
     const generate = await screen.findByRole("button", {
       name: "Generar con IA",
     });
-    expect(generate.getAttribute("aria-disabled")).toBe("true");
-    expect(generate.getAttribute("title")).toBe("Disponible muy pronto");
+    expect(generate.getAttribute("aria-disabled")).toBeNull();
+    fireEvent.click(generate);
+
+    expect(screen.getByRole("button", { name: "Beneficio" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Generar" })).toBeTruthy();
   });
 
   it("creates a product in the modal and selects it", async () => {

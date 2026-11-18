@@ -3,6 +3,7 @@ import type { ProductDto } from "../../../shared/schemas/products";
 import { Button } from "../../components/Button";
 import { Skeleton, SkeletonRegion } from "../../components/Skeleton";
 import { t } from "../../i18n/es-AR";
+import { CopyGenerator } from "../ai/CopyGenerator";
 import { copyFromProduct, copyFromSaved } from "./draft-copy";
 import type { StepProps } from "./step-types";
 import { useSavedCopies } from "./use-product-copies";
@@ -89,14 +90,7 @@ export function CopyPicker({
           </span>
         </label>
       )}
-      <div>
-        <Button
-          variant="secondary"
-          disabledReason={t("launcher.step3.generateSoon")}
-        >
-          {t("launcher.step3.generate")}
-        </Button>
-      </div>
+      <CopyGenerator workspaceId={workspaceId} productId={product.id} />
     </fieldset>
   );
 }

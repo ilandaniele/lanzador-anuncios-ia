@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { StatusChip } from "../../components/Chip";
 import { EmptyState } from "../../components/EmptyState";
 import { Skeleton, SkeletonRegion } from "../../components/Skeleton";
+import { Tabs } from "../../components/Tabs";
 import { ToastProvider, useToast } from "../../components/Toast";
 import { ProductActions } from "../../features/products/ProductActions";
 import { ProductForm } from "../../features/products/ProductForm";
@@ -9,6 +11,12 @@ import { useCanEdit } from "../../features/products/use-can-edit";
 import { useProduct } from "../../features/products/use-products";
 import { t } from "../../i18n/es-AR";
 import { workspacePath } from "../../layout/nav-items";
+import { CopysTab } from "./CopysTab";
+
+const PRODUCT_TABS = [
+  { id: "data", label: t("copys.tabData") },
+  { id: "copys", label: t("copys.tabCopys") },
+] as const;
 
 function ProductFormPageContent({
   workspaceId,
@@ -17,6 +25,7 @@ function ProductFormPageContent({
   workspaceId: string;
   productId: string;
 }) {
+  const [tab, setTab] = useState<(typeof PRODUCT_TABS)[number]["id"]>("data");
   const product = useProduct(workspaceId, productId);
   const canEdit = useCanEdit(workspaceId);
   const navigate = useNavigate();
@@ -48,6 +57,23 @@ function ProductFormPageContent({
     );
   }
 
+  const productForm = (
+    <ProductForm
+      key={product.data?.id}
+      workspaceId={workspaceId}
+      product={product.data}
+      onSaved={(saved) => {
+        if (isNew) {
+          navigate(workspacePath(workspaceId, `productos/${saved.id}`), {
+            replace: true,
+          });
+          return;
+        }
+        notify({ tone: "success", message: t("products.form.saved") });
+      }}
+    />
+  );
+
   return (
     <section aria-labelledby="producto-titulo" className="flex flex-col gap-4">
       <Link to={listPath} className="text-primary underline">
@@ -64,20 +90,22 @@ function ProductFormPageContent({
           <ProductActions workspaceId={workspaceId} product={product.data} />
         )}
       </div>
-      <ProductForm
-        key={product.data?.id}
-        workspaceId={workspaceId}
-        product={product.data}
-        onSaved={(saved) => {
-          if (isNew) {
-            navigate(workspacePath(workspaceId, `productos/${saved.id}`), {
-              replace: true,
-            });
-            return;
-          }
-          notify({ tone: "success", message: t("products.form.saved") });
-        }}
-      />
+      {isNew ? (
+        productForm
+      ) : (
+        <Tabs
+          label={t("copys.tabsLabel")}
+          tabs={PRODUCT_TABS}
+          selected={tab}
+          onSelect={setTab}
+        >
+          {tab === "data" ? (
+            productForm
+          ) : (
+            <CopysTab workspaceId={workspaceId} productId={productId} />
+          )}
+        </Tabs>
+      )}
     </section>
   );
 }

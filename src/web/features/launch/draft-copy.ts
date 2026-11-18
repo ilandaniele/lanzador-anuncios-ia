@@ -1,7 +1,7 @@
 import type { Cta } from "../../../shared/constants";
+import type { CopyDto } from "../../../shared/schemas/copies";
 import type { PartialLaunchDraft } from "../../../shared/schemas/launch";
 import type { ProductListItemDto } from "../../../shared/schemas/products";
-import type { ProductCopyDto } from "./use-product-copies";
 
 type DraftCopy = NonNullable<PartialLaunchDraft["copy"]>;
 
@@ -12,7 +12,7 @@ export const copyFromProduct = ({
 }: ProductListItemDto): DraftCopy => ({ primaryText, headline, cta });
 
 export const copyFromSaved = (
-  { id, primaryText, headline, description }: ProductCopyDto,
+  { id, primaryText, headline, description }: CopyDto,
   cta: Cta,
 ): DraftCopy => ({
   copyId: id,
