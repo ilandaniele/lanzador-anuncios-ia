@@ -12,6 +12,10 @@ export const qk = {
     ["products", workspaceId, "item", productId, "copies"] as const,
   creativesByIds: (workspaceId: string, ids: string[]) =>
     ["creatives", workspaceId, "ids", ...ids] as const,
+  creativeLists: (workspaceId: string) =>
+    ["creatives", workspaceId, "list"] as const,
+  creativeList: (workspaceId: string, search: string) =>
+    ["creatives", workspaceId, "list", search] as const,
   adminWorkspaces: () => ["admin", "workspaces"] as const,
   launch: (workspaceId: string, launchId: string) =>
     ["launches", workspaceId, launchId] as const,
