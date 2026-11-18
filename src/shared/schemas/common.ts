@@ -13,6 +13,15 @@ export const paginationQuerySchema = z.object({
 });
 export type PaginationQuery = z.infer<typeof paginationQuerySchema>;
 
+export const commaList = <Item extends z.ZodType<unknown, string>>(
+  item: Item,
+  max: number,
+) =>
+  z
+    .string()
+    .transform((raw) => [...new Set(raw.split(","))])
+    .pipe(z.array(item).min(1).max(max));
+
 export const currencySchema = z.string().regex(/^[A-Z]{3}$/);
 
 export const paginatedSchema = <Item extends z.ZodType>(item: Item) =>

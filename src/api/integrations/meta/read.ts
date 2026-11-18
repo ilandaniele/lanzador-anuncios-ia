@@ -765,3 +765,48 @@ export async function getAdPreview(
     iframeSrc: previewIframeSrc(preview.body),
   };
 }
+
+const AD_CREATIVE_FIELDS =
+  "id,creative{thumbnail_url,effective_object_story_id}";
+
+const adCreativeSchema = z.object({
+  id: z.string(),
+  creative: z
+    .object({
+      thumbnail_url: z.string().optional(),
+      effective_object_story_id: z.string().optional(),
+    })
+    .optional(),
+});
+
+export interface AdCreativeInfo {
+  adId: string;
+  storyId: string | null;
+  thumbnailUrl: string | null;
+}
+
+export async function getAdCreatives(
+  graph: Graph,
+  actId: string,
+  adIds: string[],
+): Promise<AdCreativeInfo[]> {
+  const ads = await fetchEdge(
+    graph,
+    `${actId}/ads`,
+    AD_CREATIVE_FIELDS,
+    adCreativeSchema,
+    {
+      extra: {
+        filtering: JSON.stringify([
+          { field: "id", operator: "IN", value: adIds },
+        ]),
+      },
+      maxItems: adIds.length,
+    },
+  );
+  return ads.map((ad) => ({
+    adId: ad.id,
+    storyId: ad.creative?.effective_object_story_id ?? null,
+    thumbnailUrl: ad.creative?.thumbnail_url ?? null,
+  }));
+}

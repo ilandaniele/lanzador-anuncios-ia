@@ -33,8 +33,8 @@ const PAST_TTL_MS = 6 * 60 * MINUTE_MS;
 const LEASE_MS = 5 * MINUTE_MS;
 export const MAX_BLOB_ROWS = 1000;
 const MAX_AD_ACCOUNTS = 100;
-const DEFAULT_TIMEZONE = "UTC";
-const DEFAULT_CURRENCY = "USD";
+export const DEFAULT_TIMEZONE = "UTC";
+export const DEFAULT_CURRENCY = "USD";
 const DAILY_PREFIX = "daily:";
 const CUSTOM_PREFIX = "custom";
 
@@ -64,6 +64,14 @@ export function parseRangeKey(rangeKey: string): RangeSpec {
   }
   return { range: { from, to }, daily };
 }
+
+export const toRangeKey = (range: InsightRange, daily = false): string => {
+  const base =
+    "preset" in range
+      ? range.preset
+      : `${CUSTOM_PREFIX}:${range.from}:${range.to}`;
+  return daily ? `${DAILY_PREFIX}${base}` : base;
+};
 
 async function fetchRows(
   graph: Graph,
@@ -103,6 +111,7 @@ export async function refreshInsights(
   scope: Scope,
   key: InsightsCacheKey,
   at: number = now(),
+  { force = false }: { force?: boolean } = {},
 ): Promise<boolean> {
   const spec = parseRangeKey(key.rangeKey);
   const { graph, asset } = await getGraphForAsset(
@@ -117,6 +126,7 @@ export async function refreshInsights(
   const leased = await acquireRefreshLease(env.DB, scope, key, dates, {
     at,
     until: at + LEASE_MS,
+    force,
   });
   if (!leased) return false;
   try {

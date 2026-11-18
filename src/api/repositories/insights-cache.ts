@@ -59,7 +59,7 @@ export async function acquireRefreshLease(
   scope: Scope,
   key: InsightsCacheKey,
   window: CacheWindow,
-  lease: { at: number; until: number },
+  lease: { at: number; until: number; force?: boolean },
 ): Promise<boolean> {
   const [row] = await drizzle(db)
     .insert(insightsCache)
@@ -82,7 +82,7 @@ export async function acquireRefreshLease(
       ],
       set: { refreshingUntil: lease.until },
       setWhere: and(
-        lte(insightsCache.expiresAt, lease.at),
+        lease.force ? undefined : lte(insightsCache.expiresAt, lease.at),
         or(
           isNull(insightsCache.refreshingUntil),
           lte(insightsCache.refreshingUntil, lease.at),

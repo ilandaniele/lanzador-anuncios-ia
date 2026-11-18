@@ -1,19 +1,14 @@
 import { cpaMinor, cpmMinor, ctr, roas } from "../../../shared/metrics";
+import {
+  METRICS_SORT_KEYS,
+  type MetricsSortKey,
+} from "../../../shared/schemas/metrics";
 import type { InsightLevel, InsightRow } from "../../integrations/meta/read";
 
 const HOUR_MS = 3_600_000;
 
-export const METRICS_SORT_KEYS = [
-  "name",
-  "spendMinor",
-  "purchases",
-  "purchaseValueMinor",
-  "roas",
-  "cpaMinor",
-  "ctr",
-  "cpmMinor",
-] as const;
-export type MetricsSortKey = (typeof METRICS_SORT_KEYS)[number];
+export { METRICS_SORT_KEYS };
+export type { MetricsSortKey };
 
 export interface MetricsSort {
   key: MetricsSortKey;

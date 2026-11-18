@@ -21,6 +21,7 @@ import { metaActionRoutes } from "./routes/meta-actions";
 import { metaCampaignRoutes } from "./routes/meta-campaigns";
 import { metaConnectionRoutes } from "./routes/meta-connections";
 import { metaOAuthRoutes } from "./routes/meta-oauth";
+import { metricsRoutes } from "./routes/metrics";
 import { pilotRuleRoutes } from "./routes/pilot-rules";
 import { productRoutes } from "./routes/products";
 import { protectedCampaignRoutes } from "./routes/protected-campaigns";
@@ -73,6 +74,7 @@ export function createApp() {
   app.route("/", metaCampaignRoutes);
   app.route("/", metaActionRoutes);
   app.route("/", protectedCampaignRoutes);
+  app.route("/", metricsRoutes);
   app.route("/", auditRoutes);
   app.route("/", chatRoutes);
   app.route("/", pilotRuleRoutes);
