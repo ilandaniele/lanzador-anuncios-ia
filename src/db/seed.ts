@@ -6,6 +6,8 @@ import { aadFor, encryptToken } from "../api/lib/token-crypto";
 import { DEFAULT_PILOT_RULES } from "../api/repositories/pilot-rules";
 import {
   buildBetaInvite,
+  buildCreative,
+  buildLaunch,
   buildMembership,
   buildMetaAsset,
   buildMetaConnection,
@@ -17,6 +19,8 @@ import {
 } from "./fixtures/builders";
 import { renderInsertOrIgnore } from "./fixtures/render-sql";
 import { betaInvites, users } from "./schema/auth";
+import { creatives } from "./schema/creatives";
+import { launchItems, launches } from "./schema/launches";
 import { metaAssets, metaConnections } from "./schema/meta";
 import { pilotRules } from "./schema/pilot";
 import { products } from "./schema/products";
@@ -43,6 +47,77 @@ const PRODUCTS = [
   { name: "Remera Basica", priceMinor: 2500, costMinor: 900 },
   { name: "Mochila Urbana", priceMinor: 4500, costMinor: 1700 },
 ];
+
+const HOUR_MS = 60 * 60 * 1000;
+
+const CREATIVES = [
+  {
+    kind: "image",
+    hook: "Antes y despues en 3 segundos",
+    angle: "transformacion",
+    format: "estatico",
+  },
+  {
+    kind: "image",
+    hook: "Oferta de temporada",
+    angle: "descuento",
+    format: "estatico",
+  },
+  {
+    kind: "image",
+    hook: "El favorito de los clientes",
+    angle: "prueba social",
+    format: "testimonio",
+  },
+  {
+    kind: "video",
+    hook: "Lo probe una semana entera",
+    angle: "resena honesta",
+    format: "ugc",
+  },
+  {
+    kind: "video",
+    hook: "Asi se usa paso a paso",
+    angle: "demostracion",
+    format: "demo",
+  },
+  {
+    kind: "video",
+    hook: "Mira lo que dicen de nosotros",
+    angle: "prueba social",
+    format: "testimonio",
+  },
+] as const;
+
+const MEDIA_BY_KIND = {
+  image: {
+    contentType: "image/jpeg",
+    extension: "jpg",
+    sizeBytes: 10276,
+    durationMs: null,
+  },
+  video: {
+    contentType: "video/mp4",
+    extension: "mp4",
+    sizeBytes: 11535,
+    durationMs: 1000,
+  },
+} as const;
+
+const LAUNCHES = [
+  {
+    slug: "ok",
+    status: "paused_verified",
+    kind: "image",
+    failedPosition: null,
+  },
+  {
+    slug: "errors",
+    status: "verified_with_errors",
+    kind: "video",
+    failedPosition: 2,
+  },
+] as const;
 
 type DevVars = Record<string, string>;
 type Tenant = (typeof TENANTS)[number];
@@ -142,6 +217,162 @@ function buildAssets(
   ];
 }
 
+function buildCreatives(
+  tenant: Tenant,
+  tenantIndex: number,
+  workspaceId: string,
+  createdBy: string,
+) {
+  const at = Date.now();
+  return CREATIVES.map(({ kind, hook, angle, format }, i) => {
+    const n = i + 1;
+    const media = MEDIA_BY_KIND[kind];
+    return buildCreative({
+      id: `seed-creative-${n}-${tenant.key}`,
+      workspaceId,
+      adAccountAssetId: `seed-asset-account-1-${tenant.key}`,
+      kind,
+      originalFilename: `seed-${kind}-${n}.${media.extension}`,
+      contentType: media.contentType,
+      sizeBytes: media.sizeBytes,
+      durationMs: media.durationMs,
+      width: 320,
+      height: 568,
+      metaVideoId:
+        kind === "video" ? `${tenantIndex + 1}9000000000000${n}` : null,
+      metaImageHash: kind === "image" ? `seedhash${tenant.key}${n}` : null,
+      thumbnailUrl: `https://thumbnails.lanzador.test/seed/${tenant.key}/creative-${n}.jpg`,
+      thumbnailRefreshedAt: at,
+      aiStatus: "done",
+      tagHook: hook,
+      tagAngle: angle,
+      tagFormat: format,
+      tagLanguage: "es",
+      tagOnScreenText: kind === "image" ? 1 : 0,
+      tagSummary: `${hook}. Creativo de prueba ${n}.`,
+      aiModel: "seed",
+      adName: `Creativo ${n}`,
+      createdBy,
+      createdAt: at - (CREATIVES.length - i) * HOUR_MS,
+    });
+  });
+}
+
+function buildLaunches(
+  tenant: Tenant,
+  tenantIndex: number,
+  workspaceId: string,
+  createdBy: string,
+  creativeRows: ReturnType<typeof buildCreatives>,
+) {
+  const prefix = tenantIndex + 1;
+  const at = Date.now();
+  const rows = LAUNCHES.map((spec, l) => {
+    const launchId = `seed-launch-${spec.slug}-${tenant.key}`;
+    const launchCreatives = creativeRows.filter(
+      ({ kind }) => kind === spec.kind,
+    );
+    const createdAt = at - (LAUNCHES.length - l) * HOUR_MS;
+    const items = launchCreatives.map(
+      (creative, position): Insert<typeof launchItems> => {
+        const failed = position === spec.failedPosition;
+        return {
+          id: `seed-launch-item-${spec.slug}-${position + 1}-${tenant.key}`,
+          workspaceId,
+          launchId,
+          position,
+          source: "upload",
+          creativeId: creative.id,
+          adName: `${creative.adName} ${l + 1}`,
+          status: failed ? "failed" : "done",
+          attempt: 1,
+          metaVideoId: creative.metaVideoId,
+          metaImageHash: creative.metaImageHash,
+          ...(failed
+            ? {
+                errorCode: "CREATIVE_NOT_READY",
+                errorMessage: "El creativo no terminó",
+              }
+            : {
+                metaCreativeId: `${prefix}8${l}000000000${position + 1}`,
+                metaAdId: `${prefix}7${l}000000000${position + 1}`,
+              }),
+          createdAt,
+          updatedAt: createdAt,
+        };
+      },
+    );
+    const itemsFailed = items.filter(
+      ({ status }) => status === "failed",
+    ).length;
+    const draft = {
+      adAccountAssetId: `seed-asset-account-1-${tenant.key}`,
+      pixelId: `${prefix}30000000000001`,
+      pageId: `${prefix}10000000000001`,
+      instagramUserId: `${prefix}20000000000001`,
+      mode: "new_cbo",
+      productId: `seed-product-1-${tenant.key}`,
+      copy: {
+        primaryText: "Texto principal de prueba",
+        headline: "Titular de prueba",
+        description: "Descripcion de prueba",
+        cta: "SHOP_NOW",
+      },
+      items: items.map(({ creativeId, adName }) => ({
+        source: "upload",
+        creativeId: creativeId ?? undefined,
+        adName,
+        mediaKind: spec.kind,
+      })),
+      dailyBudgetMinor: 5000,
+      bidStrategy: "LOWEST_COST_WITHOUT_CAP",
+      countries: ["AR"],
+      optimizationEvent: "PURCHASE",
+      campaignName: `Campaña seed ${spec.slug}`,
+      adsetName: `Conjunto seed ${spec.slug}`,
+    };
+    const launch = buildLaunch({
+      id: launchId,
+      workspaceId,
+      status: spec.status,
+      phase: "verify",
+      mode: "new_cbo",
+      adAccountAssetId: draft.adAccountAssetId,
+      adAccountMetaId: `act_${prefix}000000001`,
+      currency: "USD",
+      productId: draft.productId,
+      draft: JSON.stringify(draft),
+      dailyBudgetMinor: draft.dailyBudgetMinor,
+      metaCampaignId: `${prefix}6${l}00000000001`,
+      metaAdsetId: `${prefix}5${l}00000000001`,
+      itemsTotal: items.length,
+      itemsDone: items.length - itemsFailed,
+      itemsFailed,
+      checks: JSON.stringify([
+        { ok: true, code: "CAMPAIGN_PAUSED", text: "Campaña en pausa" },
+        {
+          ok: itemsFailed === 0,
+          code: "ALL_ADS_CREATED",
+          text: "Todos los anuncios creados",
+        },
+      ]),
+      checksOk: itemsFailed === 0 ? 1 : 0,
+      attempt: 1,
+      createdBy,
+      startedBy: createdBy,
+      createdAt,
+      startedAt: createdAt + 1000,
+      finishedAt: createdAt + 60 * 1000,
+      updatedAt: createdAt + 60 * 1000,
+    });
+    return { launch, items };
+  });
+  return {
+    launches: rows.map(({ launch }) => launch),
+    launchItems: rows.flatMap(({ items }) => items),
+  };
+}
+
 async function buildTenantRows(
   tenant: Tenant,
   tenantIndex: number,
@@ -161,6 +392,12 @@ async function buildTenantRows(
     ownerUserId: owner.id,
   });
   const connectionId = `seed-connection-${tenant.key}`;
+  const creativeRows = buildCreatives(
+    tenant,
+    tenantIndex,
+    workspace.id,
+    owner.id,
+  );
   return {
     users: roleUsers,
     workspaces: [workspace],
@@ -212,6 +449,8 @@ async function buildTenantRows(
         ...product,
       }),
     ),
+    creatives: creativeRows,
+    ...buildLaunches(tenant, tenantIndex, workspace.id, owner.id, creativeRows),
   };
 }
 
@@ -264,6 +503,18 @@ async function buildSeedSql(devVars: DevVars) {
     renderInsertOrIgnore(
       products,
       tenants.flatMap((t) => t.products),
+    ),
+    renderInsertOrIgnore(
+      creatives,
+      tenants.flatMap((t) => t.creatives),
+    ),
+    renderInsertOrIgnore(
+      launches,
+      tenants.flatMap((t) => t.launches),
+    ),
+    renderInsertOrIgnore(
+      launchItems,
+      tenants.flatMap((t) => t.launchItems),
     ),
   ].join("\n");
 }
