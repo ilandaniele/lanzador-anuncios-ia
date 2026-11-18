@@ -68,7 +68,34 @@ const esAR = {
     emailMismatch:
       "Esta invitación es para otro email. Cerrá sesión y abrí el link de nuevo.",
   },
-  onboarding: { title: "Armemos tu workspace" },
+  onboarding: {
+    title: "Armemos tu workspace",
+    stepperLabel: "Pasos del onboarding",
+    steps: {
+      name: "Nombre",
+      connect: "Conectar Meta",
+      assets: "Elegir activos",
+      product: "Primer producto",
+    },
+    nameLabel: "Nombre del workspace",
+    nameRequired: "Ingresá un nombre",
+    createWorkspace: "Crear workspace",
+    creating: "Creando…",
+    errorWorkspaceLimit: "Ya llegaste al máximo de workspaces propios.",
+    waitlistTitle: "Estás en lista de espera",
+    waitlistBody:
+      "Lanzador está en beta cerrada. Cuando tu email tenga invitación te avisamos por email y vas a poder crear tu workspace.",
+    connectIntro: "Meta te va a pedir permisos para:",
+    permissionRead:
+      "Leer tus cuentas publicitarias, páginas, Instagram y píxeles.",
+    permissionCreate:
+      "Crear campañas, conjuntos y anuncios. Siempre quedan en pausa.",
+    permissionMetrics: "Leer el gasto y los resultados de tus anuncios.",
+    continue: "Continuar",
+    skip: "Saltar",
+    productTitle: "Cargá tu primer producto",
+    productHint: "Es opcional. Lo podés cargar después desde Productos.",
+  },
   admin: {
     title: "Administración",
     brand: "Admin",
