@@ -58,6 +58,7 @@ const workspaceRoutes: RouteObject[] = [
         path: "conexiones",
         ...page(() => import("./pages/ajustes/ConexionesPage")),
       },
+      { path: "ia", ...page(() => import("./pages/ajustes/IaPage")) },
       { path: "peligro", ...page(() => import("./pages/ajustes/PeligroPage")) },
     ],
   },

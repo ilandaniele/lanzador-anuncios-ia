@@ -10,6 +10,7 @@ export type SettingsSection = {
 export const settingsSections: SettingsSection[] = [
   { section: "general", label: "settings.general", minRole: "admin" },
   { section: "conexiones", label: "settings.connections", minRole: "editor" },
+  { section: "ia", label: "settings.ai", minRole: "editor" },
   { section: "miembros", label: "settings.members", minRole: "admin" },
   { section: "cuenta", label: "settings.account", minRole: "viewer" },
   { section: "peligro", label: "settings.danger", minRole: "owner" },

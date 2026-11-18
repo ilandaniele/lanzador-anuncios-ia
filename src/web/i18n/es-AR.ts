@@ -180,8 +180,15 @@ const esAR = {
     members: "Miembros",
     connections: "Conexiones",
     danger: "Peligro",
+    ai: "IA",
     navLabel: "Secciones de ajustes",
     forbidden: "No tenés permiso para ver esta sección.",
+  },
+  aiSettings: {
+    loadError: "No pudimos cargar el consumo de IA",
+    today: "créditos de IA hoy",
+    month: "este mes",
+    of: "de",
   },
   notFound: {
     title: "No encontramos esta página",

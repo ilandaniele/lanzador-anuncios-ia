@@ -165,6 +165,7 @@ describe("Ajustes navigation by role", () => {
     expect(visibleSections()).toEqual([
       "General",
       "Conexiones",
+      "IA",
       "Miembros",
       "Cuenta",
       "Peligro",
@@ -178,6 +179,7 @@ describe("Ajustes navigation by role", () => {
     expect(visibleSections()).toEqual([
       "General",
       "Conexiones",
+      "IA",
       "Miembros",
       "Cuenta",
     ]);
@@ -187,7 +189,7 @@ describe("Ajustes navigation by role", () => {
     useBackend("editor");
     await renderAt("/w/w1/ajustes/cuenta");
 
-    expect(visibleSections()).toEqual(["Conexiones", "Cuenta"]);
+    expect(visibleSections()).toEqual(["Conexiones", "IA", "Cuenta"]);
   });
 
   it("hides Conexiones from the viewer", async () => {
