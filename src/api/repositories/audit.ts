@@ -1,4 +1,6 @@
+import { and, desc, eq, gte, lt, lte, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
+import { users } from "../../db/schema/auth";
 import { auditLog } from "../../db/schema/ops";
 import type {
   AuditActorType,
@@ -7,6 +9,7 @@ import type {
 } from "../../shared/constants";
 import { newId } from "../lib/ids";
 import { now } from "../lib/time";
+import { inWorkspace, type Scope } from "./scope";
 
 export type AuditEntry = {
   workspaceId: string | null;
@@ -41,3 +44,66 @@ export async function writeAudit(
 ): Promise<void> {
   await auditStatement(db, entry);
 }
+
+export type AuditListQuery = {
+  origin?: AuditOrigin;
+  action?: string;
+  objectId?: string;
+  actorUserId?: string;
+  from?: number;
+  to?: number;
+  after?: { id: string; sortValue: number };
+  size: number;
+};
+
+const olderThan = ({ id, sortValue }: { id: string; sortValue: number }) =>
+  or(
+    lt(auditLog.createdAt, sortValue),
+    and(eq(auditLog.createdAt, sortValue), lt(auditLog.id, id)),
+  );
+
+export const selectAuditEntries = (
+  db: D1Database,
+  scope: Scope,
+  {
+    origin,
+    action,
+    objectId,
+    actorUserId,
+    from,
+    to,
+    after,
+    size,
+  }: AuditListQuery,
+) =>
+  drizzle(db)
+    .select({
+      id: auditLog.id,
+      actorEmail: users.email,
+      origin: sql<AuditOrigin>`${auditLog.origin}`,
+      action: auditLog.action,
+      objectType: auditLog.objectType,
+      objectMetaId: auditLog.objectMetaId,
+      objectName: auditLog.objectName,
+      result: sql<AuditResult>`${auditLog.result}`,
+      detail: auditLog.detail,
+      createdAt: auditLog.createdAt,
+    })
+    .from(auditLog)
+    .leftJoin(users, eq(users.id, auditLog.actorUserId))
+    .where(
+      and(
+        inWorkspace(auditLog, scope),
+        origin ? eq(auditLog.origin, origin) : undefined,
+        action ? eq(auditLog.action, action) : undefined,
+        objectId ? eq(auditLog.objectMetaId, objectId) : undefined,
+        actorUserId ? eq(auditLog.actorUserId, actorUserId) : undefined,
+        from === undefined ? undefined : gte(auditLog.createdAt, from),
+        to === undefined ? undefined : lte(auditLog.createdAt, to),
+        after ? olderThan(after) : undefined,
+      ),
+    )
+    .orderBy(desc(auditLog.createdAt), desc(auditLog.id))
+    .limit(size + 1);
+
+export type AuditRow = Awaited<ReturnType<typeof selectAuditEntries>>[number];

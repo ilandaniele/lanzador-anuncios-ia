@@ -7,6 +7,7 @@ import { apiHeaders } from "./middleware/headers";
 import { clientIp, rateLimit } from "./middleware/rate-limit";
 import { requestId } from "./middleware/request-id";
 import { adminRoutes } from "./routes/admin";
+import { auditRoutes } from "./routes/audit";
 import { authRoutes } from "./routes/auth";
 import { invitationRoutes } from "./routes/invitations";
 import { launchRoutes } from "./routes/launches";
@@ -49,6 +50,7 @@ export function createApp() {
   app.route("/", launchRoutes);
   app.route("/", metaOAuthRoutes);
   app.route("/", metaConnectionRoutes);
+  app.route("/", auditRoutes);
   app.route("/", adminRoutes);
   app.route("/", testSupportRoutes);
 
