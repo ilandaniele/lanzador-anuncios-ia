@@ -11,6 +11,7 @@ import { authRoutes } from "./routes/auth";
 import { invitationRoutes } from "./routes/invitations";
 import { launchRoutes } from "./routes/launches";
 import { memberRoutes } from "./routes/members";
+import { metaConnectionRoutes } from "./routes/meta-connections";
 import { metaOAuthRoutes } from "./routes/meta-oauth";
 import { productRoutes } from "./routes/products";
 import { testSupportRoutes } from "./routes/test-support";
@@ -47,6 +48,7 @@ export function createApp() {
   app.route("/", productRoutes);
   app.route("/", launchRoutes);
   app.route("/", metaOAuthRoutes);
+  app.route("/", metaConnectionRoutes);
   app.route("/", adminRoutes);
   app.route("/", testSupportRoutes);
 

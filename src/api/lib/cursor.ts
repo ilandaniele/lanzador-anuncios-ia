@@ -47,3 +47,9 @@ export function decodeNumericCursor(cursor: string) {
   if (typeof sortValue !== "number") throw invalidCursor();
   return { id, sortValue };
 }
+
+export function decodeStringCursor(cursor: string) {
+  const { id, sortValue } = decodeCursor(cursor);
+  if (typeof sortValue !== "string") throw invalidCursor();
+  return { id, sortValue };
+}

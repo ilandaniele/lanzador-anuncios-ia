@@ -17,7 +17,16 @@ const foreignLaunch = ({ B }: TenantPair) => ({
   params: { id: B.launch.id },
 });
 
+const foreignConnection = ({ B }: TenantPair) => ({
+  params: { id: B.connection.id },
+});
+
 export const TENANCY_PARAMS: TenancyParams = {
+  "POST /api/w/:wid/meta/connections/:id/refresh-assets": foreignConnection,
+  "DELETE /api/w/:wid/meta/connections/:id": (pair) => ({
+    ...foreignConnection(pair),
+    body: { confirm: true },
+  }),
   "GET /api/w/:wid/launches/:id": foreignLaunch,
   "PATCH /api/w/:wid/launches/:id": (pair) => ({
     ...foreignLaunch(pair),

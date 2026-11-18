@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Env } from "../../env";
+import { bytesToHex, hmacSha256 } from "../../lib/hash";
 import { logEvent } from "../../lib/logger";
 import {
   classifyMetaError,
@@ -69,9 +70,12 @@ export function metaAuthorizeUrl(
   return `${DIALOG_ORIGIN}/${env.GRAPH_API_VERSION}/dialog/oauth?${query}`;
 }
 
-async function fetchOnce(url: URL, headers: HeadersInit) {
+type AuthMethod = "GET" | "DELETE";
+
+async function fetchOnce(url: URL, method: AuthMethod, headers: HeadersInit) {
   try {
     return await fetch(url, {
+      method,
       headers,
       redirect: "manual",
       signal: AbortSignal.timeout(TOKEN_EXCHANGE_TIMEOUT_MS),
@@ -81,11 +85,15 @@ async function fetchOnce(url: URL, headers: HeadersInit) {
   }
 }
 
-async function fetchWithRetry(url: URL, headers: HeadersInit) {
-  let response = await fetchOnce(url, headers);
+async function fetchWithRetry(
+  url: URL,
+  method: AuthMethod,
+  headers: HeadersInit,
+) {
+  let response = await fetchOnce(url, method, headers);
   for (let attempt = 1; attempt < MAX_ATTEMPTS; attempt++) {
     if (response.status < 500) break;
-    response = await fetchOnce(url, headers);
+    response = await fetchOnce(url, method, headers);
   }
   return response;
 }
@@ -96,10 +104,11 @@ async function getJson<S extends z.ZodType>(
   query: QueryValues,
   schema: S,
   headers: HeadersInit = {},
+  method: AuthMethod = "GET",
 ): Promise<z.infer<S>> {
   const url = new URL(`${GRAPH_ORIGIN}/${env.GRAPH_API_VERSION}/${path}`);
   url.search = toQueryString(query);
-  const response = await fetchWithRetry(url, headers);
+  const response = await fetchWithRetry(url, method, headers);
   const payload = parseJson(await response.text().catch(() => null));
   if (!response.ok) {
     const error = classifyMetaError(response.status, payload);
@@ -161,4 +170,22 @@ export async function debugToken(
     granularScopes: data.granular_scopes,
     expiresAt: data.expires_at > 0 ? data.expires_at * 1000 : null,
   };
+}
+
+const revokeSchema = z.object({ success: z.boolean() });
+
+export async function revokePermissions(
+  env: AuthEnv,
+  token: string,
+): Promise<boolean> {
+  const proof = bytesToHex(await hmacSha256(env.META_APP_SECRET, token));
+  const { success } = await getJson(
+    env,
+    "me/permissions",
+    { appsecret_proof: proof },
+    revokeSchema,
+    { Authorization: `Bearer ${token}` },
+    "DELETE",
+  );
+  return success;
 }

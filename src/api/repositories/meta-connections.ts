@@ -1,6 +1,8 @@
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq, getTableName, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { metaConnections } from "../../db/schema/meta";
+import { creatives } from "../../db/schema/creatives";
+import { metaAssets, metaConnections } from "../../db/schema/meta";
+import type { ConnectionStatus } from "../../shared/constants";
 import type { DiscoveredAsset } from "../integrations/meta/read";
 import { type AuditEntry, auditStatement } from "./audit";
 import { assetSyncStatements } from "./meta-assets";
@@ -106,6 +108,83 @@ export async function saveConnectedAssets(
   const orm = drizzle(db);
   await orm.batch([
     ...assetSyncStatements(orm, scope, connectionId, assets, at),
+    auditStatement(db, audit),
+  ]);
+}
+
+const outerConnection = (column: "id" | "workspace_id") =>
+  sql.raw(`"${getTableName(metaConnections)}"."${column}"`);
+
+const creativeCount = sql<number>`(select count(*) from ${creatives} where ${creatives.workspaceId} = ${outerConnection("workspace_id")} and ${creatives.adAccountAssetId} in (select ${metaAssets.id} from ${metaAssets} where ${metaAssets.connectionId} = ${outerConnection("id")}))`;
+
+export const selectConnections = (db: D1Database, scope: Scope) =>
+  drizzle(db)
+    .select({
+      id: metaConnections.id,
+      metaBusinessId: metaConnections.metaBusinessId,
+      businessName: metaConnections.businessName,
+      status: sql<ConnectionStatus>`${metaConnections.status}`,
+      scopes: metaConnections.scopes,
+      connectedBy: metaConnections.connectedBy,
+      createdAt: metaConnections.createdAt,
+      lastErrorCode: metaConnections.lastErrorCode,
+      tokenExpiresAt: metaConnections.tokenExpiresAt,
+      creativeCount,
+    })
+    .from(metaConnections)
+    .where(inWorkspace(metaConnections, scope))
+    .orderBy(asc(metaConnections.createdAt), asc(metaConnections.id));
+
+export type ConnectionRow = Awaited<
+  ReturnType<typeof selectConnections>
+>[number];
+
+export async function findConnectionSecret(
+  db: D1Database,
+  scope: Scope,
+  connectionId: string,
+) {
+  const [row] = await drizzle(db)
+    .select({
+      id: metaConnections.id,
+      metaBusinessId: metaConnections.metaBusinessId,
+      businessName: metaConnections.businessName,
+      status: sql<ConnectionStatus>`${metaConnections.status}`,
+      tokenCiphertext: metaConnections.tokenCiphertext,
+      tokenIv: metaConnections.tokenIv,
+      tokenKeyVersion: metaConnections.tokenKeyVersion,
+    })
+    .from(metaConnections)
+    .where(
+      and(
+        inWorkspace(metaConnections, scope),
+        eq(metaConnections.id, connectionId),
+      ),
+    )
+    .limit(1);
+  return row ?? null;
+}
+
+export type ConnectionSecret = NonNullable<
+  Awaited<ReturnType<typeof findConnectionSecret>>
+>;
+
+export async function deleteConnection(
+  db: D1Database,
+  scope: Scope,
+  connectionId: string,
+  audit: AuditEntry,
+): Promise<void> {
+  const orm = drizzle(db);
+  await orm.batch([
+    orm
+      .delete(metaConnections)
+      .where(
+        and(
+          inWorkspace(metaConnections, scope),
+          eq(metaConnections.id, connectionId),
+        ),
+      ),
     auditStatement(db, audit),
   ]);
 }

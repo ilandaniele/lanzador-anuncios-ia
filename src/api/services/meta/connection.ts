@@ -7,7 +7,10 @@ import {
   type GraphConnection,
 } from "../../integrations/meta/client";
 import { findEnabledAdAccount } from "../../repositories/meta-assets";
-import { setConnectionReconnectRequired } from "../../repositories/meta-connections";
+import {
+  type ConnectionSecret,
+  setConnectionReconnectRequired,
+} from "../../repositories/meta-connections";
 import type { Scope } from "../../repositories/scope";
 
 type ConnectionEnv = Pick<
@@ -46,6 +49,48 @@ export function graphForConnection(
   });
 }
 
+export const decryptConnectionToken = (
+  env: ConnectionEnv,
+  workspaceId: string,
+  connection: Pick<
+    ConnectionSecret,
+    "id" | "tokenCiphertext" | "tokenIv" | "tokenKeyVersion"
+  >,
+) =>
+  decryptToken(
+    env,
+    {
+      ciphertext: new Uint8Array(connection.tokenCiphertext),
+      iv: new Uint8Array(connection.tokenIv),
+      keyVersion: connection.tokenKeyVersion,
+    },
+    aadFor("meta_connections", connection.id, workspaceId),
+  );
+
+export async function graphForStoredConnection(
+  db: D1Database,
+  env: ConnectionEnv,
+  scope: Scope,
+  connection: Pick<
+    ConnectionSecret,
+    "id" | "status" | "tokenCiphertext" | "tokenIv" | "tokenKeyVersion"
+  >,
+) {
+  if (connection.status !== "active") {
+    throw conflict("META_RECONNECT_REQUIRED");
+  }
+  const token = await decryptConnectionToken(
+    env,
+    scope.workspaceId,
+    connection,
+  );
+  return graphForConnection(db, env, {
+    token,
+    connectionId: connection.id,
+    workspaceId: scope.workspaceId,
+  });
+}
+
 export async function getGraphForAsset(
   db: D1Database,
   env: ConnectionEnv,
@@ -55,22 +100,6 @@ export async function getGraphForAsset(
   const row = await findEnabledAdAccount(db, scope, adAccountAssetId);
   if (!row) throw notFound();
   const { asset, connection } = row;
-  if (connection.status !== "active") {
-    throw conflict("META_RECONNECT_REQUIRED");
-  }
-  const token = await decryptToken(
-    env,
-    {
-      ciphertext: new Uint8Array(connection.tokenCiphertext),
-      iv: new Uint8Array(connection.tokenIv),
-      keyVersion: connection.tokenKeyVersion,
-    },
-    aadFor("meta_connections", connection.id, scope.workspaceId),
-  );
-  const graph = graphForConnection(db, env, {
-    token,
-    connectionId: connection.id,
-    workspaceId: scope.workspaceId,
-  });
+  const graph = await graphForStoredConnection(db, env, scope, connection);
   return { graph, asset };
 }

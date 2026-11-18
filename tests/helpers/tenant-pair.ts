@@ -1,10 +1,18 @@
 import {
   createInvitation,
   createLaunch,
+  createMetaConnection,
   createProduct,
   createUser,
   createWorkspace,
 } from "./factory";
+
+const sealingKeys = {
+  TOKEN_ENC_KEY_CURRENT: 1,
+  TOKEN_ENC_KEY_V1: btoa(
+    String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))),
+  ),
+};
 
 export async function seedWorkspaceWithRoles() {
   const [owner, admin, editor, viewer] = await Promise.all([
@@ -26,12 +34,13 @@ export async function seedWorkspaceWithRoles() {
 
 async function seedTenant() {
   const tenant = await seedWorkspaceWithRoles();
-  const [{ invitation }, product, launch] = await Promise.all([
+  const [{ invitation }, product, launch, connection] = await Promise.all([
     createInvitation(tenant.workspace.id, { invitedBy: tenant.users.admin.id }),
     createProduct(tenant.workspace.id),
     createLaunch(tenant.workspace.id),
+    createMetaConnection(sealingKeys, tenant.workspace.id, "tenant-seed-token"),
   ]);
-  return { ...tenant, invitation, product, launch };
+  return { ...tenant, invitation, product, launch, connection };
 }
 
 export async function seedTenantPair() {
