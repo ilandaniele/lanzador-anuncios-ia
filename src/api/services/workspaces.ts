@@ -20,7 +20,7 @@ import {
   renameWorkspace,
 } from "../repositories/workspaces";
 import type { SessionUser } from "../types";
-import { buildAiUsage } from "./ai-usage";
+import { buildAiUsage, resolveAiCaps } from "./ai-usage";
 import { manualAuditEntry } from "./audit-entry";
 
 type WorkspaceRow = Omit<WorkspaceDto, "createdAt"> & { createdAt: number };
@@ -78,8 +78,7 @@ export async function getWorkspaceOverview(
     },
     settings,
     aiUsage: buildAiUsage({
-      dailyCap: workspace.aiDailyNeuronsOverride ?? plan.aiDailyNeurons,
-      monthlyCap: workspace.aiMonthlyNeuronsOverride ?? plan.aiMonthlyNeurons,
+      ...resolveAiCaps(workspace),
       globalCap: env.WORKERS_AI_DAILY_NEURON_CAP,
       neurons,
       resetsAt: periods.nextDayAt,

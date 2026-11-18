@@ -1,4 +1,4 @@
-import { and, eq, inArray, or } from "drizzle-orm";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
 import { type DrizzleD1Database, drizzle } from "drizzle-orm/d1";
 import { usageCounters } from "../../db/schema/ops";
 import type { UtcPeriods } from "../lib/time";
@@ -66,3 +66,39 @@ export async function readAiNeurons(
   const rows = await aiNeuronsQuery(drizzle(db), workspaceId, periods);
   return foldAiNeurons(rows, periods);
 }
+
+export const incrementAiNeuronsQuery = (
+  orm: DrizzleD1Database,
+  workspaceId: string,
+  { day, month }: UtcPeriods,
+  neurons: number,
+  at: number,
+) => {
+  const counter = (scope: "workspace" | "global", period: string) => ({
+    scope,
+    scopeId: scope === "global" ? GLOBAL_SCOPE_ID : workspaceId,
+    period,
+    metric: "ai_neurons",
+    value: neurons,
+    updatedAt: at,
+  });
+  return orm
+    .insert(usageCounters)
+    .values([
+      counter("workspace", day),
+      counter("workspace", month),
+      counter("global", day),
+    ])
+    .onConflictDoUpdate({
+      target: [
+        usageCounters.scope,
+        usageCounters.scopeId,
+        usageCounters.period,
+        usageCounters.metric,
+      ],
+      set: {
+        value: sql`${usageCounters.value} + excluded.value`,
+        updatedAt: at,
+      },
+    });
+};

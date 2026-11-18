@@ -15,3 +15,12 @@ export const buildAiUsage = (input: {
   globalExhausted: input.neurons.globalDay >= input.globalCap,
   resetsAt: new Date(input.resetsAt).toISOString(),
 });
+
+export const resolveAiCaps = (row: {
+  aiDailyNeuronsOverride: number | null;
+  aiMonthlyNeuronsOverride: number | null;
+  plan: { aiDailyNeurons: number; aiMonthlyNeurons: number };
+}) => ({
+  dailyCap: row.aiDailyNeuronsOverride ?? row.plan.aiDailyNeurons,
+  monthlyCap: row.aiMonthlyNeuronsOverride ?? row.plan.aiMonthlyNeurons,
+});

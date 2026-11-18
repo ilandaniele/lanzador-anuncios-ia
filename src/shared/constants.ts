@@ -144,3 +144,14 @@ export const CHAT_ROLES = ["user", "assistant", "tool"] as const;
 export const MAX_OWNED_WORKSPACES = 3;
 export const MAX_SCALE_PERCENT = 50;
 export const WORKSPACE_PURGE_DELAY_MS = 7 * 24 * 60 * 60 * 1000;
+
+export const AI_FEATURES = ["copy", "tagging", "pilot", "chat"] as const;
+export type AiFeature = (typeof AI_FEATURES)[number];
+export const AI_USAGE_STATUSES = ["ok", "error", "blocked_budget"] as const;
+export type AiUsageStatus = (typeof AI_USAGE_STATUSES)[number];
+export const AI_BUDGET_SCOPES = [
+  "workspace_day",
+  "workspace_month",
+  "global_day",
+] as const;
+export type AiBudgetScope = (typeof AI_BUDGET_SCOPES)[number];
