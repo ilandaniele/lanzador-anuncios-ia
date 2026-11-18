@@ -53,6 +53,11 @@ const SIGNED_IN_PAGES = [
   { name: "pilot", path: "piloto", heading: "Piloto" },
 ];
 
+const PROGRESS_LAUNCHES = [
+  { name: "verified launch", id: "seed-launch-ok-a" },
+  { name: "launch with errors", id: "seed-launch-errors-a" },
+];
+
 function e2eSecret() {
   if (process.env.E2E_SECRET) return process.env.E2E_SECRET;
   const line = readFileSync(".dev.vars", "utf8")
@@ -224,6 +229,30 @@ signedIn.describe("signed-in pages", () => {
       await expectNoHorizontalScroll(page);
       await expectNoBlockingViolations(page);
     });
+  }
+
+  for (const { name, id } of PROGRESS_LAUNCHES) {
+    const progressPath = `/w/${WORKSPACE_ID}/lanzador/${id}`;
+
+    signedIn(
+      `progress view of a ${name} has no serious or critical violations`,
+      async ({ page }) => {
+        await open(page, progressPath, "Lanzamiento");
+
+        await expectNoBlockingViolations(page);
+      },
+    );
+
+    signedIn(
+      `progress view of a ${name} reflows at 320 px`,
+      async ({ page }) => {
+        await page.setViewportSize(REFLOW_VIEWPORT);
+        await open(page, progressPath, "Lanzamiento");
+
+        await expectNoHorizontalScroll(page);
+        await expectNoBlockingViolations(page);
+      },
+    );
   }
 
   for (let step = 1; step <= WIZARD_STEP_COUNT; step++) {

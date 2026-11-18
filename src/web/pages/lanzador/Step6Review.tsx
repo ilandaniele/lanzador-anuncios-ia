@@ -73,7 +73,8 @@ function ReviewForm({ workspaceId, draft, settings }: ReviewFormProps) {
   function confirmLaunch() {
     if (!plan) return;
     start.mutate(plan.planHash, {
-      onSuccess: () => navigate(workspacePath(workspaceId, "historial")),
+      onSuccess: () =>
+        navigate(workspacePath(workspaceId, `lanzador/${launchId}`)),
       onError: (error) => {
         const failure = outcomeFromError(error);
         if (!failure) return;

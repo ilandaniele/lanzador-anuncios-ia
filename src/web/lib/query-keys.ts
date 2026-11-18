@@ -21,6 +21,8 @@ export const qk = {
   adminErrors: (source: string) => ["admin", "errors", source] as const,
   launch: (workspaceId: string, launchId: string) =>
     ["launches", workspaceId, launchId] as const,
+  launchProgress: (workspaceId: string, launchId: string) =>
+    ["launch-progress", workspaceId, launchId] as const,
   metaAssets: (workspaceId: string) => ["meta-assets", workspaceId] as const,
   metaAssetsAll: (workspaceId: string) =>
     ["meta-assets", workspaceId, "all"] as const,

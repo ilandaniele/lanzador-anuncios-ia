@@ -9,7 +9,7 @@ import {
 } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { useState } from "react";
-import { MemoryRouter, Route, Routes } from "react-router";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import {
   afterAll,
   afterEach,
@@ -230,6 +230,10 @@ function useStart(respond: () => Response) {
   return start;
 }
 
+function SearchProbe() {
+  return <p data-testid="search">{useLocation().search}</p>;
+}
+
 function renderReview(draft: PartialLaunchDraft = completeDraft) {
   render(
     <QueryClientProvider client={createQueryClient()}>
@@ -246,8 +250,8 @@ function renderReview(draft: PartialLaunchDraft = completeDraft) {
               />
             }
           />
-          <Route path="/w/:workspaceId/historial" element={<p>Historial</p>} />
         </Routes>
+        <SearchProbe />
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -522,7 +526,9 @@ describe("Lanzador > paso 6", () => {
     await waitFor(() =>
       expect(start).toHaveBeenCalledWith({ confirm: true, planHash: "hash1" }),
     );
-    expect(await screen.findByText("Historial")).toBeTruthy();
+    await waitFor(() =>
+      expect(screen.getByTestId("search").textContent).toBe(""),
+    );
   });
 
   it("PLAN_CHANGED: asks to simulate again and blocks the launch", async () => {

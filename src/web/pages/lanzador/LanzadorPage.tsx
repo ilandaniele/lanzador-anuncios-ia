@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router";
+import type { LaunchStatus } from "../../../shared/schemas/launch";
 import { Button } from "../../components/Button";
 import { Skeleton, SkeletonRegion } from "../../components/Skeleton";
 import { useMe } from "../../features/auth/use-me";
@@ -7,7 +8,10 @@ import { useCreateDraft, useLaunch } from "../../features/launch/use-draft";
 import { useCanEdit } from "../../features/products/use-can-edit";
 import { t } from "../../i18n/es-AR";
 import { workspacePath } from "../../layout/nav-items";
+import { ProgressView } from "./ProgressView";
 import { WizardShell } from "./WizardShell";
+
+const EDITABLE_STATUSES: readonly LaunchStatus[] = ["draft", "simulated"];
 
 function Loading({ label }: { label: string }) {
   return (
@@ -75,6 +79,8 @@ function OpenDraft({
       />
     );
   if (!launch.data) return <Loading label={t("common.loading")} />;
+  if (!EDITABLE_STATUSES.includes(launch.data.launch.status))
+    return <ProgressView workspaceId={workspaceId} launchId={launchId} />;
   return (
     <WizardShell
       key={launchId}

@@ -6,6 +6,7 @@ import { ChatPanel } from "../features/chat/ChatPanel";
 import { useChatPanel } from "../features/chat/use-chat-panel";
 import { t } from "../i18n/es-AR";
 import { BottomNav } from "./BottomNav";
+import { LaunchIndicator } from "./LaunchIndicator";
 import { Sidebar } from "./Sidebar";
 import { THEME_CHOICES, useTheme } from "./use-theme";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
@@ -74,6 +75,7 @@ export default function AppShell() {
       <header className="border-rule flex h-14 items-center justify-between gap-2 border-b px-4">
         <WorkspaceSwitcher />
         <div className="flex items-center gap-3">
+          <LaunchIndicator workspaceId={workspaceId} />
           {chat.canChat && (
             <AskAiButton workspaceId={workspaceId} onClick={chat.openChat} />
           )}
