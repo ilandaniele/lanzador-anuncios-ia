@@ -10,6 +10,7 @@ import { adminRoutes } from "./routes/admin";
 import { authRoutes } from "./routes/auth";
 import { invitationRoutes } from "./routes/invitations";
 import { memberRoutes } from "./routes/members";
+import { metaOAuthRoutes } from "./routes/meta-oauth";
 import { productRoutes } from "./routes/products";
 import { testSupportRoutes } from "./routes/test-support";
 import { workspaceRoutes } from "./routes/workspaces";
@@ -43,6 +44,7 @@ export function createApp() {
   app.route("/", memberRoutes);
   app.route("/", invitationRoutes);
   app.route("/", productRoutes);
+  app.route("/", metaOAuthRoutes);
   app.route("/", adminRoutes);
   app.route("/", testSupportRoutes);
 

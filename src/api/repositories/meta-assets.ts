@@ -1,20 +1,28 @@
-import { and, eq, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/d1";
+import { and, eq, isNotNull, ne, or, sql } from "drizzle-orm";
+import { type DrizzleD1Database, drizzle } from "drizzle-orm/d1";
 import { metaAssets, metaConnections } from "../../db/schema/meta";
 import type { ConnectionStatus } from "../../shared/constants";
 import type { DiscoveredAsset } from "../integrations/meta/read";
 import { newId } from "../lib/ids";
 import { inWorkspace, type Scope } from "./scope";
 
-export async function syncDiscoveredAssets(
-  db: D1Database,
+const ownerIsInactive = sql`${metaAssets.connectionId} in (select ${metaConnections.id} from ${metaConnections} where ${ne(metaConnections.status, "active")})`;
+
+const mayClaimAsset = (connectionId: string) =>
+  or(
+    eq(metaAssets.connectionId, connectionId),
+    isNotNull(metaAssets.missingSince),
+    ownerIsInactive,
+  );
+
+export const assetSyncStatements = (
+  orm: DrizzleD1Database,
   scope: Scope,
   connectionId: string,
   assets: DiscoveredAsset[],
   at: number,
-) {
-  const orm = drizzle(db);
-  await orm.batch([
+) =>
+  [
     orm
       .update(metaAssets)
       .set({ missingSince: sql`coalesce(${metaAssets.missingSince}, ${at})` })
@@ -37,6 +45,7 @@ export async function syncDiscoveredAssets(
         })
         .onConflictDoUpdate({
           target: [metaAssets.workspaceId, metaAssets.kind, metaAssets.metaId],
+          setWhere: mayClaimAsset(connectionId),
           set: {
             connectionId,
             name: asset.name,
@@ -49,7 +58,17 @@ export async function syncDiscoveredAssets(
           },
         }),
     ),
-  ]);
+  ] as const;
+
+export async function syncDiscoveredAssets(
+  db: D1Database,
+  scope: Scope,
+  connectionId: string,
+  assets: DiscoveredAsset[],
+  at: number,
+) {
+  const orm = drizzle(db);
+  await orm.batch(assetSyncStatements(orm, scope, connectionId, assets, at));
 }
 
 export async function findEnabledAdAccount(

@@ -376,3 +376,89 @@ describe("discoverConnectionAssets", () => {
     );
   });
 });
+
+describe("assets shared by two connections of one workspace", () => {
+  async function sharedWorkspace() {
+    const { workspace, owner } = await createWorkspace();
+    const scope = scopeFor(workspace.id, owner.id);
+    const first = await createMetaConnection(keyEnv, workspace.id, "token");
+    const second = await createMetaConnection(keyEnv, workspace.id, "token");
+    const discover = (connectionId: string) =>
+      discoverConnectionAssets(env.DB, scope, graph(), connectionId);
+    return { workspace, first, second, discover };
+  }
+
+  const renamedAccounts = () =>
+    serveAdAccounts([
+      { ...adAccountsFixture.data[0], name: "Renombrada" },
+      adAccountsFixture.data[1],
+    ]);
+
+  it("keeps the asset on its active owner and leaves it untouched", async () => {
+    serveDiscovery();
+    const { workspace, first, second, discover } = await sharedWorkspace();
+    await discover(first.id);
+    const before = await readAssets(workspace.id);
+    renamedAccounts();
+
+    await discover(second.id);
+
+    expect(await readAssets(workspace.id)).toEqual(before);
+    expect(before.every((row) => row.connectionId === first.id)).toBe(true);
+  });
+
+  it("moves the asset when the owner needs to reconnect", async () => {
+    serveDiscovery();
+    const { workspace, first, second, discover } = await sharedWorkspace();
+    await discover(first.id);
+    await env.DB.prepare(
+      "UPDATE meta_connections SET status = 'reconnect_required' WHERE id = ?",
+    )
+      .bind(first.id)
+      .run();
+    renamedAccounts();
+
+    await discover(second.id);
+
+    expect(await byMetaId(workspace.id, "act_1001")).toMatchObject({
+      connectionId: second.id,
+      name: "Renombrada",
+    });
+    const rows = await readAssets(workspace.id);
+    expect(rows.every((row) => row.connectionId === second.id)).toBe(true);
+  });
+
+  it("moves only the assets the owner stopped seeing", async () => {
+    serveDiscovery();
+    const { workspace, first, second, discover } = await sharedWorkspace();
+    await discover(first.id);
+    serveAdAccounts([adAccountsFixture.data[0]]);
+    await discover(first.id);
+    serveDiscovery();
+
+    await discover(second.id);
+
+    expect(await byMetaId(workspace.id, "act_1002")).toMatchObject({
+      connectionId: second.id,
+      missingSince: null,
+    });
+    expect(await byMetaId(workspace.id, "act_1001")).toMatchObject({
+      connectionId: first.id,
+    });
+  });
+
+  it("does not mark missing the assets another connection owns", async () => {
+    serveDiscovery();
+    const { workspace, first, second, discover } = await sharedWorkspace();
+    await discover(first.id);
+    serveAdAccounts([]);
+    server.use(metaReplies("me/accounts", accountsEmptyFixture));
+    server.use(metaReplies("me/assigned_pages", accountsEmptyFixture));
+
+    await discover(second.id);
+
+    const rows = await readAssets(workspace.id);
+    expect(rows.every((row) => row.connectionId === first.id)).toBe(true);
+    expect(rows.every((row) => row.missingSince === null)).toBe(true);
+  });
+});
