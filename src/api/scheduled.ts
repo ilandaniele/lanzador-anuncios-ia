@@ -2,6 +2,7 @@ import type { Env } from "./env";
 import { logEvent, scrub } from "./lib/logger";
 import { insertErrorEvent } from "./repositories/error-events";
 import { runCleanup } from "./services/maintenance/cleanup";
+import { enqueuePilotRuns } from "./services/maintenance/pilot";
 import { enqueueInsightsPrewarm } from "./services/maintenance/prewarm";
 
 async function recordCronFailure(
@@ -34,6 +35,7 @@ export async function scheduled(
   const tasks = {
     cleanup: () => runCleanup(env.DB, at),
     prewarm: () => enqueueInsightsPrewarm(env, at),
+    pilot: () => enqueuePilotRuns(env, at),
   };
   const names = Object.keys(tasks) as (keyof typeof tasks)[];
   const results = await Promise.allSettled(names.map((name) => tasks[name]()));

@@ -1,9 +1,21 @@
-import { and, desc, eq, gt, inArray, isNull, lt, lte, or } from "drizzle-orm";
+import {
+  and,
+  desc,
+  eq,
+  exists,
+  gt,
+  inArray,
+  isNull,
+  lt,
+  lte,
+  or,
+} from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { magicLinks, sessions } from "../../db/schema/auth";
 import { creatives, uploads } from "../../db/schema/creatives";
 import { errorEvents } from "../../db/schema/ops";
-import { insightsCache } from "../../db/schema/pilot";
+import { metaConnections } from "../../db/schema/meta";
+import { insightsCache, pilotRules } from "../../db/schema/pilot";
 import { oauthStates, workspaces } from "../../db/schema/workspaces";
 import { expireAllOverdueProposals } from "./pilot";
 
@@ -73,6 +85,46 @@ export async function selectRecentlyActiveWorkspaceIds(
       ),
     )
     .orderBy(desc(workspaces.lastActivityAt))
+    .limit(limit);
+  return rows.map(({ id }) => id);
+}
+
+export async function selectPilotEligibleWorkspaceIds(
+  db: D1Database,
+  limit: number,
+): Promise<string[]> {
+  const orm = drizzle(db);
+  const rows = await orm
+    .select({ id: workspaces.id })
+    .from(workspaces)
+    .where(
+      and(
+        eq(workspaces.status, "active"),
+        exists(
+          orm
+            .select({ id: metaConnections.id })
+            .from(metaConnections)
+            .where(
+              and(
+                eq(metaConnections.workspaceId, workspaces.id),
+                eq(metaConnections.status, "active"),
+              ),
+            ),
+        ),
+        exists(
+          orm
+            .select({ id: pilotRules.id })
+            .from(pilotRules)
+            .where(
+              and(
+                eq(pilotRules.workspaceId, workspaces.id),
+                eq(pilotRules.enabled, 1),
+              ),
+            ),
+        ),
+      ),
+    )
+    .orderBy(workspaces.id)
     .limit(limit);
   return rows.map(({ id }) => id);
 }
