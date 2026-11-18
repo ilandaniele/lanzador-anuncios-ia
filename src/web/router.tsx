@@ -6,6 +6,7 @@ import {
   RequireSession,
   RequireSuperadmin,
 } from "./features/auth/guards";
+import AppShell from "./layout/AppShell";
 import NotFoundPage from "./pages/not-found/NotFoundPage";
 
 const page = (load: () => Promise<{ default: ComponentType }>) => ({
@@ -80,7 +81,7 @@ export const appRoutes: RouteObject[] = [
       {
         path: "w/:workspaceId",
         element: <RequireMembership />,
-        children: workspaceRoutes,
+        children: [{ element: <AppShell />, children: workspaceRoutes }],
       },
       {
         path: "admin",
