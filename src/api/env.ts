@@ -4,7 +4,7 @@ export interface Env {
   DB: D1Database;
   AI?: Ai;
   AI_PROVIDER?: AiProvider;
-  LAUNCH_WF?: Workflow;
+  LAUNCH_WF: Workflow;
   LAUNCH_ITEM_WF?: Workflow;
   JOB_WF?: Workflow;
   RL_IP: RateLimit;

@@ -19,7 +19,8 @@
     }
   ],
   "workflows": [
-    { "name": "lanzador-job", "binding": "JOB_WF", "class_name": "JobWorkflow" }
+    { "name": "lanzador-job", "binding": "JOB_WF", "class_name": "JobWorkflow" },
+    { "name": "lanzador-launch", "binding": "LAUNCH_WF", "class_name": "LaunchWorkflow" }
   ],
   "triggers": { "crons": ["0 * * * *"] },
   "ai": { "binding": "AI" },
@@ -65,6 +66,9 @@
           "database_id": "4b238c86-26f6-41c3-978c-4b34a733aa4a",
           "migrations_dir": "src/db/migrations"
         }
+      ],
+      "workflows": [
+        { "name": "lanzador-launch-preview", "binding": "LAUNCH_WF", "class_name": "LaunchWorkflow" }
       ],
       "triggers": { "crons": ["0 * * * *"] },
       "ai": { "binding": "AI" },

@@ -109,6 +109,12 @@ export const launchDraftRequestSchema = z.object({
   draft: partialLaunchDraftSchema,
 });
 
+export const launchStartRequestSchema = z.object({
+  confirm: z.literal(true),
+  planHash: z.string().min(1).max(128),
+});
+export type LaunchStartRequest = z.infer<typeof launchStartRequestSchema>;
+
 export const listLaunchesQuerySchema = paginationQuerySchema.extend({
   status: z.enum(LAUNCH_STATUSES).optional(),
 });

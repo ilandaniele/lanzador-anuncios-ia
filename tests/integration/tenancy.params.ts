@@ -82,6 +82,10 @@ export const TENANCY_PARAMS: TenancyParams = {
     body: { draft: {} },
   }),
   "POST /api/w/:wid/launches/:id/simulate": foreignLaunch,
+  "POST /api/w/:wid/launches/:id/start": (pair) => ({
+    ...foreignLaunch(pair),
+    body: { confirm: true, planHash: "x" },
+  }),
   "POST /api/w/:wid/launches/:id/discard": foreignLaunch,
   "PATCH /api/w/:wid/members/:userId": (pair) => ({
     ...foreignMember(pair),

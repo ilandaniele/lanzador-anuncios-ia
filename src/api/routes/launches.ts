@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import {
   launchDraftRequestSchema,
+  launchStartRequestSchema,
   listLaunchesQuerySchema,
 } from "../../shared/schemas/launch";
 import { parseJson, parseQuery } from "../lib/validate";
@@ -14,6 +15,7 @@ import {
   patchLaunchDraft,
 } from "../services/launch/drafts";
 import { simulateLaunch } from "../services/launch/simulate";
+import { startLaunch } from "../services/launch/start";
 import type { AppEnv } from "../types";
 
 export const launchRoutes = new Hono<AppEnv>()
@@ -55,6 +57,21 @@ export const launchRoutes = new Hono<AppEnv>()
     expensiveRateLimit,
     async (c) =>
       c.json(await simulateLaunch(c.env, c.get("scope")!, c.req.param("id"))),
+  )
+  .post(
+    "/w/:wid/launches/:id/start",
+    ...member("editor"),
+    expensiveRateLimit,
+    async (c) =>
+      c.json(
+        await startLaunch(
+          c.env,
+          c.get("scope")!,
+          c.req.param("id"),
+          await parseJson(c, launchStartRequestSchema),
+        ),
+        202,
+      ),
   )
   .post("/w/:wid/launches/:id/discard", ...member("editor"), async (c) => {
     await discardLaunch(c.env.DB, c.get("scope")!, c.req.param("id"));

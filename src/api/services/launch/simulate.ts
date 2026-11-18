@@ -21,7 +21,7 @@ import { getSettings } from "../settings";
 import { throwWhyNotEditable } from "./drafts";
 import { buildLaunchPlan } from "./plan";
 
-function parseCompleteDraft(stored: string): LaunchDraft {
+export function parseCompleteDraft(stored: string): LaunchDraft {
   const result = launchDraftSchema.safeParse(JSON.parse(stored));
   if (!result.success) {
     const fields = Object.fromEntries(
@@ -68,6 +68,29 @@ async function readMeta(
   return { health, reference };
 }
 
+export interface StoredDraft {
+  draft: string;
+  updatedAt: number;
+}
+
+export async function computeLaunchPlan(
+  env: Env,
+  scope: Scope,
+  stored: StoredDraft,
+): Promise<LaunchPlan> {
+  const draft = parseCompleteDraft(stored.draft);
+  const [local, { graph, asset }] = await Promise.all([
+    loadLocalInputs(env.DB, scope, draft),
+    getGraphForAsset(env.DB, env, scope, draft.adAccountAssetId),
+  ]);
+  return buildLaunchPlan({
+    ...local,
+    ...(await readMeta(graph, asset, draft)),
+    draft,
+    at: stored.updatedAt,
+  });
+}
+
 export async function simulateLaunch(
   env: Env,
   scope: Scope,
@@ -75,17 +98,7 @@ export async function simulateLaunch(
 ): Promise<LaunchPlan> {
   const stored = await findEditableLaunchDraft(env.DB, scope, id);
   if (!stored) return throwWhyNotEditable(env.DB, scope, id);
-  const draft = parseCompleteDraft(stored.draft);
-  const [local, { graph, asset }] = await Promise.all([
-    loadLocalInputs(env.DB, scope, draft),
-    getGraphForAsset(env.DB, env, scope, draft.adAccountAssetId),
-  ]);
-  const plan = await buildLaunchPlan({
-    ...local,
-    ...(await readMeta(graph, asset, draft)),
-    draft,
-    at: stored.updatedAt,
-  });
+  const plan = await computeLaunchPlan(env, scope, stored);
   const saved = await saveLaunchPlan(
     env.DB,
     scope,
