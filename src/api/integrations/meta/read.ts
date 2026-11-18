@@ -1,10 +1,24 @@
 import { z } from "zod";
 import type { AssetKind } from "../../../shared/constants";
+import {
+  type DateWindow,
+  type InsightRange,
+  resolveWindow,
+} from "../../../shared/insight-range";
+import {
+  cpaMinor,
+  cpmMinor,
+  ctr,
+  roas,
+  toMinorUnits,
+} from "../../../shared/metrics";
 import type { Graph } from "./client";
 import { invalidPayloadError } from "./errors";
+import type { QueryValues } from "./payload";
 
 const PAGE_SIZE = 100;
 const MAX_ITEMS_PER_EDGE = 500;
+const MAX_INSIGHT_ROWS = 1000;
 const BUSINESS_SCOPE = "business_management";
 
 const AD_ACCOUNT_FIELDS =
@@ -71,18 +85,25 @@ function parse<S extends z.ZodType>(schema: S, payload: unknown): z.infer<S> {
   return result.data;
 }
 
+interface EdgeOptions {
+  extra?: QueryValues;
+  maxItems?: number;
+}
+
 async function fetchEdge<S extends z.ZodType>(
   graph: Graph,
   path: string,
   fields: string,
   item: S,
+  { extra = {}, maxItems = MAX_ITEMS_PER_EDGE }: EdgeOptions = {},
 ): Promise<z.infer<S>[]> {
   const items: z.infer<S>[] = [];
   let after: string | undefined;
-  while (items.length < MAX_ITEMS_PER_EDGE) {
+  while (items.length < maxItems) {
     const page = parse(
       edgeSchema(item),
       await graph.get<unknown>(path, {
+        ...extra,
         fields,
         limit: PAGE_SIZE,
         ...(after ? { after } : {}),
@@ -92,7 +113,7 @@ async function fetchEdge<S extends z.ZodType>(
     after = page.paging?.cursors?.after;
     if (!after || page.data.length < PAGE_SIZE) break;
   }
-  return items.slice(0, MAX_ITEMS_PER_EDGE);
+  return items.slice(0, maxItems);
 }
 
 async function fetchPages(graph: Graph) {
@@ -195,4 +216,290 @@ export async function discoverAssets(
       ...pages.flatMap(pageAssets),
     ]),
   };
+}
+
+const DECIMAL = /^-?\d+(\.\d+)?$/;
+const INTEGER = /^-?\d+$/;
+const PURCHASE_ACTION_TYPES = [
+  "omni_purchase",
+  "purchase",
+  "offsite_conversion.fb_pixel_purchase",
+];
+const INSIGHT_METRIC_FIELDS =
+  "spend,impressions,clicks,actions,action_values,date_start,date_stop";
+const INSIGHT_FIELDS = {
+  account: INSIGHT_METRIC_FIELDS,
+  campaign: `campaign_id,campaign_name,${INSIGHT_METRIC_FIELDS}`,
+  adset: `adset_id,adset_name,campaign_id,${INSIGHT_METRIC_FIELDS}`,
+  ad: `ad_id,ad_name,adset_id,campaign_id,${INSIGHT_METRIC_FIELDS}`,
+} as const;
+const ENTITY_KEYS = {
+  campaign: { id: "campaign_id", name: "campaign_name" },
+  adset: { id: "adset_id", name: "adset_name" },
+  ad: { id: "ad_id", name: "ad_name" },
+} as const;
+const ISSUE_STATUSES = ["WITH_ISSUES", "DISAPPROVED"];
+const ACCOUNT_HEALTH_FIELDS =
+  "id,account_status,disable_reason,currency,spend_cap,amount_spent,balance,is_prepay_account,funding_source_details{id,type,display_string}";
+const ISSUE_AD_FIELDS =
+  "id,name,effective_status,campaign_id,adset_id,issues_info";
+
+export type InsightLevel = keyof typeof INSIGHT_FIELDS;
+
+const decimalSchema = z.string().regex(DECIMAL);
+const countSchema = z.string().regex(INTEGER).transform(Number);
+const minorSchema = z.string().regex(INTEGER).transform(Number);
+
+const actionSchema = z.object({
+  action_type: z.string(),
+  value: decimalSchema,
+});
+
+const insightRowSchema = z.object({
+  campaign_id: z.string().optional(),
+  campaign_name: z.string().optional(),
+  adset_id: z.string().optional(),
+  adset_name: z.string().optional(),
+  ad_id: z.string().optional(),
+  ad_name: z.string().optional(),
+  date_start: z.string(),
+  spend: decimalSchema.default("0"),
+  impressions: countSchema.default(0),
+  clicks: countSchema.default(0),
+  actions: z.array(actionSchema).default([]),
+  action_values: z.array(actionSchema).default([]),
+});
+
+const accountHealthSchema = z.object({
+  id: z.string(),
+  account_status: z.number(),
+  disable_reason: z.number().optional(),
+  currency: z.string(),
+  spend_cap: minorSchema.optional(),
+  amount_spent: minorSchema.optional(),
+  balance: minorSchema.optional(),
+  is_prepay_account: z.boolean().optional(),
+  funding_source_details: z
+    .object({
+      id: z.string(),
+      type: z.number().optional(),
+      display_string: z.string().optional(),
+    })
+    .optional(),
+});
+
+const issueAdSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  effective_status: z.string(),
+  campaign_id: z.string().optional(),
+  adset_id: z.string().optional(),
+  issues_info: z
+    .array(
+      z.object({
+        level: z.string().optional(),
+        error_code: z.number().optional(),
+        error_summary: z.string().optional(),
+        error_message: z.string().optional(),
+        error_type: z.string().optional(),
+      }),
+    )
+    .default([]),
+});
+
+type InsightRowPayload = z.infer<typeof insightRowSchema>;
+type InsightAction = z.infer<typeof actionSchema>;
+
+export interface InsightsQuery {
+  actId: string;
+  level: InsightLevel;
+  range: InsightRange;
+  currency: string;
+  timezone: string;
+  daily?: boolean;
+}
+
+export interface InsightRow {
+  level: InsightLevel;
+  id: string;
+  name: string | null;
+  campaignId: string | null;
+  adsetId: string | null;
+  date: string;
+  spendMinor: number;
+  impressions: number;
+  clicks: number;
+  purchases: number;
+  purchaseValueMinor: number;
+  roas: number | null;
+  cpaMinor: number | null;
+  ctr: number | null;
+  cpmMinor: number | null;
+}
+
+export interface Insights {
+  window: DateWindow;
+  rows: InsightRow[];
+}
+
+export interface AccountHealth {
+  accountStatus: number;
+  disableReason: number | null;
+  currency: string;
+  spendCapMinor: number | null;
+  amountSpentMinor: number | null;
+  balanceMinor: number | null;
+  isPrepay: boolean;
+  fundingSource: {
+    id: string;
+    type: number | null;
+    label: string | null;
+  } | null;
+}
+
+export interface AdIssue {
+  level: string | null;
+  code: number | null;
+  summary: string | null;
+  message: string | null;
+  type: string | null;
+}
+
+export interface AdWithIssues {
+  adId: string;
+  name: string;
+  effectiveStatus: string;
+  campaignId: string | null;
+  adsetId: string | null;
+  issues: AdIssue[];
+}
+
+function purchaseAction(actions: InsightAction[]): InsightAction | undefined {
+  return PURCHASE_ACTION_TYPES.map((type) =>
+    actions.find(({ action_type }) => action_type === type),
+  ).find(Boolean);
+}
+
+function insightEntity(
+  query: InsightsQuery,
+  row: InsightRowPayload,
+): { id: string; name: string | null } {
+  if (query.level === "account") return { id: query.actId, name: null };
+  const keys = ENTITY_KEYS[query.level];
+  const id = row[keys.id];
+  if (!id) throw invalidPayloadError();
+  return { id, name: row[keys.name] ?? null };
+}
+
+function toInsightRow(
+  query: InsightsQuery,
+  row: InsightRowPayload,
+): InsightRow {
+  const spendMinor = toMinorUnits(row.spend, query.currency);
+  const purchases = Number(purchaseAction(row.actions)?.value ?? 0);
+  const purchaseValueMinor = toMinorUnits(
+    purchaseAction(row.action_values)?.value ?? "0",
+    query.currency,
+  );
+  return {
+    level: query.level,
+    ...insightEntity(query, row),
+    campaignId: row.campaign_id ?? null,
+    adsetId: row.adset_id ?? null,
+    date: row.date_start,
+    spendMinor,
+    impressions: row.impressions,
+    clicks: row.clicks,
+    purchases,
+    purchaseValueMinor,
+    roas: roas(purchaseValueMinor, spendMinor),
+    cpaMinor: cpaMinor(spendMinor, purchases),
+    ctr: ctr(row.clicks, row.impressions),
+    cpmMinor: cpmMinor(spendMinor, row.impressions),
+  };
+}
+
+export async function readInsights(
+  graph: Graph,
+  query: InsightsQuery,
+  now: Date = new Date(),
+): Promise<Insights> {
+  const window = resolveWindow(query.range, query.timezone, now);
+  const rows = await fetchEdge(
+    graph,
+    `${query.actId}/insights`,
+    INSIGHT_FIELDS[query.level],
+    insightRowSchema,
+    {
+      extra: {
+        level: query.level,
+        time_range: JSON.stringify(window),
+        ...(query.daily ? { time_increment: 1 } : {}),
+      },
+      maxItems: MAX_INSIGHT_ROWS,
+    },
+  );
+  return { window, rows: rows.map((row) => toInsightRow(query, row)) };
+}
+
+export async function readAccountHealth(
+  graph: Graph,
+  actId: string,
+): Promise<AccountHealth> {
+  const account = parse(
+    accountHealthSchema,
+    await graph.get<unknown>(actId, { fields: ACCOUNT_HEALTH_FIELDS }),
+  );
+  const funding = account.funding_source_details;
+  return {
+    accountStatus: account.account_status,
+    disableReason: account.disable_reason ?? null,
+    currency: account.currency,
+    spendCapMinor: account.spend_cap || null,
+    amountSpentMinor: account.amount_spent ?? null,
+    balanceMinor: account.balance ?? null,
+    isPrepay: account.is_prepay_account ?? false,
+    fundingSource: funding
+      ? {
+          id: funding.id,
+          type: funding.type ?? null,
+          label: funding.display_string ?? null,
+        }
+      : null,
+  };
+}
+
+export async function readIssues(
+  graph: Graph,
+  actId: string,
+): Promise<AdWithIssues[]> {
+  const ads = await fetchEdge(
+    graph,
+    `${actId}/ads`,
+    ISSUE_AD_FIELDS,
+    issueAdSchema,
+    {
+      extra: {
+        filtering: JSON.stringify([
+          { field: "effective_status", operator: "IN", value: ISSUE_STATUSES },
+        ]),
+      },
+    },
+  );
+  return ads
+    .filter((ad) => ad.issues_info.length > 0)
+    .map((ad) => ({
+      adId: ad.id,
+      name: ad.name,
+      effectiveStatus: ad.effective_status,
+      campaignId: ad.campaign_id ?? null,
+      adsetId: ad.adset_id ?? null,
+      issues: ad.issues_info.map((issue) => ({
+        level: issue.level ?? null,
+        code: issue.error_code ?? null,
+        summary: issue.error_summary ?? null,
+        message: issue.error_message ?? null,
+        type: issue.error_type ?? null,
+      })),
+    }));
 }

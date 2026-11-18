@@ -1,0 +1,13 @@
+{
+  "data": [
+    {
+      "spend": "165.57",
+      "impressions": "13000",
+      "clicks": "280",
+      "actions": [{ "action_type": "omni_purchase", "value": "5" }],
+      "action_values": [{ "action_type": "omni_purchase", "value": "502.00" }],
+      "date_start": "2026-11-17",
+      "date_stop": "2026-11-17"
+    }
+  ]
+}

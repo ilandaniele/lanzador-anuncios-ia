@@ -1,0 +1,39 @@
+{
+  "data": [
+    {
+      "campaign_id": "120000000000101",
+      "campaign_name": "CBO Ganadora",
+      "spend": "125.50",
+      "impressions": "10000",
+      "clicks": "250",
+      "actions": [
+        { "action_type": "link_click", "value": "200" },
+        { "action_type": "purchase", "value": "5" },
+        { "action_type": "omni_purchase", "value": "5" }
+      ],
+      "action_values": [
+        { "action_type": "omni_purchase", "value": "502.00" },
+        { "action_type": "purchase", "value": "502.00" }
+      ],
+      "date_start": "2026-11-17",
+      "date_stop": "2026-11-17"
+    },
+    {
+      "campaign_id": "120000000000102",
+      "campaign_name": "CBO Sin ventas",
+      "spend": "40.07",
+      "impressions": "3000",
+      "clicks": "30",
+      "actions": [{ "action_type": "link_click", "value": "25" }],
+      "date_start": "2026-11-17",
+      "date_stop": "2026-11-17"
+    },
+    {
+      "campaign_id": "120000000000103",
+      "campaign_name": "CBO Sin entrega",
+      "date_start": "2026-11-17",
+      "date_stop": "2026-11-17"
+    }
+  ],
+  "paging": { "cursors": { "before": "b", "after": "a" } }
+}

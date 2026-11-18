@@ -1,0 +1,26 @@
+{
+  "data": [
+    {
+      "id": "6001",
+      "name": "Ad Rechazado",
+      "effective_status": "DISAPPROVED",
+      "campaign_id": "120000000000101",
+      "adset_id": "120000000000201",
+      "issues_info": [
+        {
+          "level": "AD",
+          "error_code": 1487194,
+          "error_summary": "Anuncio rechazado",
+          "error_message": "El anuncio infringe las políticas.",
+          "error_type": "ERROR"
+        }
+      ]
+    },
+    {
+      "id": "6002",
+      "name": "Ad Sin Detalle",
+      "effective_status": "WITH_ISSUES",
+      "issues_info": []
+    }
+  ]
+}

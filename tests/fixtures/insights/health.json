@@ -1,0 +1,15 @@
+{
+  "id": "act_1001",
+  "account_status": 3,
+  "disable_reason": 0,
+  "currency": "USD",
+  "spend_cap": "500000",
+  "amount_spent": "123456",
+  "balance": "2500",
+  "is_prepay_account": false,
+  "funding_source_details": {
+    "id": "9001",
+    "type": 1,
+    "display_string": "Visa *4242"
+  }
+}

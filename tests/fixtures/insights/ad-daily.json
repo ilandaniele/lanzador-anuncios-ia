@@ -1,0 +1,26 @@
+{
+  "data": [
+    {
+      "ad_id": "6001",
+      "ad_name": "Ad Uno",
+      "adset_id": "120000000000201",
+      "campaign_id": "120000000000101",
+      "spend": "10.00",
+      "impressions": "1000",
+      "clicks": "20",
+      "date_start": "2026-11-16",
+      "date_stop": "2026-11-16"
+    },
+    {
+      "ad_id": "6001",
+      "ad_name": "Ad Uno",
+      "adset_id": "120000000000201",
+      "campaign_id": "120000000000101",
+      "spend": "12.00",
+      "impressions": "1200",
+      "clicks": "24",
+      "date_start": "2026-11-17",
+      "date_stop": "2026-11-17"
+    }
+  ]
+}
