@@ -184,3 +184,6 @@ export const AI_BUDGET_SCOPES = [
   "global_day",
 ] as const;
 export type AiBudgetScope = (typeof AI_BUDGET_SCOPES)[number];
+
+export const ERROR_SOURCES = ["api", "workflow", "cron", "client"] as const;
+export type ErrorSource = (typeof ERROR_SOURCES)[number];

@@ -11,6 +11,7 @@ import { adminRoutes } from "./routes/admin";
 import { auditRoutes } from "./routes/audit";
 import { authRoutes } from "./routes/auth";
 import { chatRoutes } from "./routes/chat";
+import { clientErrorRoutes } from "./routes/client-errors";
 import { creativeRoutes } from "./routes/creatives";
 import { googleRoutes } from "./routes/google";
 import { copyRoutes } from "./routes/copies";
@@ -84,6 +85,7 @@ export function createApp() {
   app.route("/", chatRoutes);
   app.route("/", pilotRuleRoutes);
   app.route("/", pilotRoutes);
+  app.route("/", clientErrorRoutes);
   app.route("/", adminRoutes);
   app.route("/", testSupportRoutes);
 

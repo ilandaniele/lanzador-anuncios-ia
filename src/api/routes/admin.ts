@@ -1,5 +1,7 @@
 import { Hono } from "hono";
 import {
+  adminErrorsQuerySchema,
+  adminUsageQuerySchema,
   adminWorkspacesQuerySchema,
   createBetaInviteRequestSchema,
   patchAdminWorkspaceSchema,
@@ -8,6 +10,8 @@ import { paginationQuerySchema } from "../../shared/schemas/common";
 import { parseJson, parseQuery } from "../lib/validate";
 import { requireSuperadmin } from "../middleware/require-role";
 import { session } from "../middleware/session";
+import { listAdminErrors } from "../services/admin-errors";
+import { getAdminUsage } from "../services/admin-usage";
 import {
   listAdminWorkspaces,
   patchAdminWorkspace,
@@ -41,6 +45,14 @@ export const adminRoutes = new Hono<AppEnv>()
       ),
     );
   })
+  .get("/admin/usage", async (c) =>
+    c.json(await getAdminUsage(c.env.DB, parseQuery(c, adminUsageQuerySchema))),
+  )
+  .get("/admin/errors", async (c) =>
+    c.json(
+      await listAdminErrors(c.env.DB, parseQuery(c, adminErrorsQuerySchema)),
+    ),
+  )
   .get("/admin/beta-invites", async (c) =>
     c.json(
       await listBetaInvites(c.env.DB, parseQuery(c, paginationQuerySchema)),

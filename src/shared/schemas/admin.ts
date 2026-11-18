@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { CONNECTION_STATUSES, WORKSPACE_STATUSES } from "../constants";
+import {
+  CONNECTION_STATUSES,
+  ERROR_SOURCES,
+  WORKSPACE_STATUSES,
+} from "../constants";
 import { emailSchema } from "./auth";
 import { paginatedSchema, paginationQuerySchema } from "./common";
 
@@ -76,3 +80,47 @@ export const createBetaInviteRequestSchema = z.object({
 export type CreateBetaInviteRequest = z.infer<
   typeof createBetaInviteRequestSchema
 >;
+
+export const adminUsageQuerySchema = paginationQuerySchema.extend({
+  month: z
+    .string()
+    .regex(/^\d{4}-(0[1-9]|1[0-2])$/)
+    .optional(),
+});
+export type AdminUsageQuery = z.infer<typeof adminUsageQuerySchema>;
+
+export const adminUsageSchema = z.object({
+  workspaces: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      neurons: z.number(),
+      metaCalls: z.number(),
+    }),
+  ),
+  global: z.object({ neuronsToday: z.number() }),
+  nextCursor: z.string().nullable(),
+});
+export type AdminUsageDto = z.infer<typeof adminUsageSchema>;
+
+const errorSourceSchema = z.enum(ERROR_SOURCES);
+
+export const adminErrorsQuerySchema = paginationQuerySchema.extend({
+  source: errorSourceSchema.optional(),
+});
+export type AdminErrorsQuery = z.infer<typeof adminErrorsQuerySchema>;
+
+export const adminErrorSchema = z.object({
+  id: z.string(),
+  source: errorSourceSchema,
+  route: z.string().nullable(),
+  status: z.number().nullable(),
+  code: z.string().nullable(),
+  message: z.string(),
+  workspaceId: z.string().nullable(),
+  requestId: z.string().nullable(),
+  createdAt: z.iso.datetime(),
+});
+export type AdminErrorDto = z.infer<typeof adminErrorSchema>;
+
+export const adminErrorsPageSchema = paginatedSchema(adminErrorSchema);
