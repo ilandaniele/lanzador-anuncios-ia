@@ -1,6 +1,84 @@
+import { useState } from "react";
+import { Link } from "react-router";
+import { Button } from "../../components/Button";
+import { ToastProvider } from "../../components/Toast";
+import { CreditsDialog } from "../../features/admin/CreditsDialog";
+import { InviteBetaDialog } from "../../features/admin/InviteBetaDialog";
+import { StatusActionDialog } from "../../features/admin/StatusActionDialog";
+import { useAdminWorkspaces } from "../../features/admin/use-admin";
+import {
+  WorkspacesTable,
+  type WorkspaceAction,
+} from "../../features/admin/WorkspacesTable";
 import { t } from "../../i18n/es-AR";
-import { PagePlaceholder } from "../PagePlaceholder";
+
+type OpenDialog = { kind: "invite" } | WorkspaceAction | null;
+
+function Admin() {
+  const workspaces = useAdminWorkspaces();
+  const [dialog, setDialog] = useState<OpenDialog>(null);
+  const closeDialog = () => setDialog(null);
+
+  return (
+    <>
+      <header className="flex items-center justify-between gap-4 border-b border-rule px-4 py-3">
+        <p className="font-semibold">{t("admin.brand")}</p>
+        <Link to="/" className="text-primary">
+          {t("admin.backToWorkspaces")}
+        </Link>
+      </header>
+      <main className="p-4">
+        <section aria-labelledby="admin-titulo">
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <h1 id="admin-titulo" className="text-xl font-semibold">
+              {t("admin.title")}
+            </h1>
+            <Button onClick={() => setDialog({ kind: "invite" })}>
+              {t("admin.inviteBeta")}
+            </Button>
+          </div>
+          <WorkspacesTable
+            workspaces={
+              workspaces.data?.pages.flatMap((page) => page.data) ?? []
+            }
+            loading={workspaces.isPending}
+            error={workspaces.isError}
+            onRetry={() => void workspaces.refetch()}
+            onAction={setDialog}
+          />
+          {workspaces.hasNextPage && (
+            <div className="mt-4 flex justify-center">
+              <Button
+                variant="secondary"
+                loading={workspaces.isFetchingNextPage}
+                loadingLabel={t("common.working")}
+                onClick={() => void workspaces.fetchNextPage()}
+              >
+                {t("admin.loadMore")}
+              </Button>
+            </div>
+          )}
+        </section>
+      </main>
+      {dialog?.kind === "invite" && <InviteBetaDialog onClose={closeDialog} />}
+      {dialog?.kind === "credits" && (
+        <CreditsDialog workspace={dialog.workspace} onClose={closeDialog} />
+      )}
+      {(dialog?.kind === "suspend" || dialog?.kind === "restore") && (
+        <StatusActionDialog
+          kind={dialog.kind}
+          workspace={dialog.workspace}
+          onClose={closeDialog}
+        />
+      )}
+    </>
+  );
+}
 
 export default function AdminPage() {
-  return <PagePlaceholder title={t("admin.title")} />;
+  return (
+    <ToastProvider>
+      <Admin />
+    </ToastProvider>
+  );
 }

@@ -8,4 +8,5 @@ export const qk = {
     ["products", workspaceId, "list", archived] as const,
   product: (workspaceId: string, productId: string) =>
     ["products", workspaceId, "item", productId] as const,
+  adminWorkspaces: () => ["admin", "workspaces"] as const,
 };
