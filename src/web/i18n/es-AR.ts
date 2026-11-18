@@ -537,6 +537,27 @@ const esAR = {
       productFallback: "Producto",
       settingsFailed: "No pudimos cargar la configuración del workspace.",
     },
+    step3: {
+      productLabel: "Producto",
+      noProducts: "Todavía no cargaste productos.",
+      create: "Crear producto",
+      landingLabel: "Landing",
+      landingChecking: "Revisando la landing del producto.",
+      landingError:
+        "La landing tiene problemas y no se puede lanzar. Corregí la URL en Productos y volvé a probarla.",
+      landingSoftOk:
+        "La landing respondió con avisos. Podés seguir, pero conviene revisarla.",
+      copiesLegend: "Copys guardados",
+      copiesHint:
+        "Sin elegir ninguno, se usa el texto que cargaste en el producto.",
+      copiesEmpty: "Este producto todavía no tiene copys guardados.",
+      copiesFailed: "No pudimos cargar los copys guardados.",
+      rotation: "Rotar los copys entre los anuncios",
+      rotationHint:
+        "Si lo apagás, cada anuncio usa un solo copy en lugar de repartirlos.",
+      generate: "Generar con IA",
+      generateSoon: "Disponible muy pronto",
+    },
   },
 };
 
