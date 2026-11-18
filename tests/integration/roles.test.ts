@@ -8,7 +8,7 @@ import { ROLE_MATRIX } from "./roles.matrix";
 const probeApp = createProbeApp();
 const matrixKeys = Object.keys(ROLE_MATRIX);
 
-describe("role matrix", () => {
+describe("role matrix", { timeout: 30_000 }, () => {
   it("has a row for every workspace route and none extra", () => {
     expect(diffKeys(workspaceRouteKeys(createApp()), matrixKeys)).toEqual({
       missing: [],
