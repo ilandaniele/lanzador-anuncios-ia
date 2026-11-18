@@ -26,6 +26,9 @@ const baseClass =
   "pointer-coarse:min-h-11 aria-disabled:cursor-not-allowed " +
   focusRing;
 
+export const buttonClass = (variant: Variant = "primary", className?: string) =>
+  cx(baseClass, variantClass[variant], className);
+
 export function Spinner() {
   return (
     <span
@@ -67,7 +70,7 @@ export function Button({
         aria-describedby={disabledReason ? reasonId : rest["aria-describedby"]}
         title={disabledReason ?? rest.title}
         onClick={handleClick}
-        className={cx(baseClass, variantClass[variant], className)}
+        className={buttonClass(variant, className)}
       >
         {loading && <Spinner />}
         {loading && loadingLabel ? loadingLabel : children}
