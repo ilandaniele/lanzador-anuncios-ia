@@ -39,6 +39,14 @@ export const TENANCY_PARAMS: TenancyParams = {
     params: { campaignId: "120200000000000001" },
     query: { adAccountAssetId: B.adAccount.id },
   }),
+  "GET /api/w/:wid/meta/campaigns/:campaignId/ads": ({ B }) => ({
+    params: { campaignId: "120200000000000001" },
+    query: { adAccountAssetId: B.adAccount.id },
+  }),
+  "GET /api/w/:wid/meta/ads/:adId/preview": ({ B }) => ({
+    params: { adId: "120200000000000002" },
+    query: { adAccountAssetId: B.adAccount.id },
+  }),
   "GET /api/w/:wid/launches/:id": foreignLaunch,
   "PATCH /api/w/:wid/launches/:id": (pair) => ({
     ...foreignLaunch(pair),

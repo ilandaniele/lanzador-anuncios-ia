@@ -1,5 +1,7 @@
 import { Hono } from "hono";
 import {
+  adPreviewQuerySchema,
+  campaignAdsQuerySchema,
   campaignReferenceQuerySchema,
   listCampaignsQuerySchema,
   metaIdSchema,
@@ -7,6 +9,7 @@ import {
 import { notFound } from "../lib/errors";
 import { parseQuery } from "../lib/validate";
 import { member } from "../middleware/member";
+import { adPreview, campaignAds } from "../services/meta/ads";
 import {
   campaignReference,
   listAccountCampaigns,
@@ -48,4 +51,28 @@ export const metaCampaignRoutes = new Hono<AppEnv>()
         ),
       );
     },
-  );
+  )
+  .get(
+    "/w/:wid/meta/campaigns/:campaignId/ads",
+    ...member("editor"),
+    async (c) => {
+      const campaignId = metaIdParam(c.req.param("campaignId"));
+      const { adAccountAssetId, range } = parseQuery(c, campaignAdsQuerySchema);
+      return c.json(
+        await campaignAds(
+          c.env,
+          c.get("scope")!,
+          campaignId,
+          adAccountAssetId,
+          range,
+        ),
+      );
+    },
+  )
+  .get("/w/:wid/meta/ads/:adId/preview", ...member("viewer"), async (c) => {
+    const adId = metaIdParam(c.req.param("adId"));
+    const { adAccountAssetId } = parseQuery(c, adPreviewQuerySchema);
+    return c.json(
+      await adPreview(c.env, c.get("scope")!, adId, adAccountAssetId),
+    );
+  });

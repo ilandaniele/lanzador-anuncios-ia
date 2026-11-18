@@ -649,3 +649,108 @@ export async function getCampaignReference(
       .map(toReferenceAdset),
   };
 }
+
+const MAX_CAMPAIGN_ADS = 200;
+const CAMPAIGN_ADS_FIELDS = `account_id,ads.limit(${MAX_CAMPAIGN_ADS + 1}){id,name,effective_status,creative{thumbnail_url,effective_object_story_id}}`;
+const AD_PREVIEW_FORMAT = "DESKTOP_FEED_STANDARD";
+const AD_PREVIEW_FIELDS = `account_id,previews.ad_format(${AD_PREVIEW_FORMAT}){body}`;
+const PREVIEW_HOSTS = ["facebook.com", "www.facebook.com"];
+const IFRAME_SRC = /<iframe\b[^>]*?\ssrc\s*=\s*(["'])(.*?)\1/is;
+
+const campaignAdSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  effective_status: z.string(),
+  creative: z
+    .object({
+      thumbnail_url: z.string().optional(),
+      effective_object_story_id: z.string().optional(),
+    })
+    .optional(),
+});
+
+const campaignAdsSchema = z.object({
+  account_id: z.string(),
+  ads: z
+    .object({
+      data: z.array(campaignAdSchema),
+      paging: z.object({ next: z.string().optional() }).optional(),
+    })
+    .optional(),
+});
+
+const adPreviewSchema = z.object({
+  account_id: z.string(),
+  previews: z.object({ data: z.array(z.object({ body: z.string() })) }),
+});
+
+export interface CampaignAd {
+  adId: string;
+  name: string;
+  effectiveStatus: string;
+  storyId: string | null;
+  thumbnailUrl: string | null;
+}
+
+export interface CampaignAds {
+  accountId: string;
+  ads: CampaignAd[];
+  truncated: boolean;
+}
+
+export interface AdPreview {
+  accountId: string;
+  iframeSrc: string;
+}
+
+export async function getCampaignAds(
+  graph: Graph,
+  campaignId: string,
+): Promise<CampaignAds> {
+  const campaign = parse(
+    campaignAdsSchema,
+    await graph.get<unknown>(campaignId, { fields: CAMPAIGN_ADS_FIELDS }),
+  );
+  const ads = campaign.ads?.data ?? [];
+  return {
+    accountId: campaign.account_id,
+    ads: ads.slice(0, MAX_CAMPAIGN_ADS).map((ad) => ({
+      adId: ad.id,
+      name: ad.name,
+      effectiveStatus: ad.effective_status,
+      storyId: ad.creative?.effective_object_story_id ?? null,
+      thumbnailUrl: ad.creative?.thumbnail_url ?? null,
+    })),
+    truncated: ads.length > MAX_CAMPAIGN_ADS || !!campaign.ads?.paging?.next,
+  };
+}
+
+function previewIframeSrc(body: string): string {
+  const rawSrc = IFRAME_SRC.exec(body)?.[2];
+  if (!rawSrc) throw invalidPayloadError();
+  const url = URL.parse(rawSrc.replaceAll("&amp;", "&"));
+  const trusted =
+    url?.protocol === "https:" &&
+    PREVIEW_HOSTS.includes(url.hostname) &&
+    !url.username &&
+    !url.password &&
+    !url.port;
+  if (!url || !trusted) throw invalidPayloadError();
+  return url.href;
+}
+
+export async function getAdPreview(
+  graph: Graph,
+  adId: string,
+): Promise<AdPreview> {
+  const ad = parse(
+    adPreviewSchema,
+    await graph.get<unknown>(adId, { fields: AD_PREVIEW_FIELDS }),
+  );
+  const [preview] = ad.previews.data;
+  if (!preview) throw invalidPayloadError();
+  return {
+    accountId: ad.account_id,
+    iframeSrc: previewIframeSrc(preview.body),
+  };
+}
