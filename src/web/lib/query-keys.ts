@@ -17,6 +17,8 @@ export const qk = {
   creativeList: (workspaceId: string, search: string) =>
     ["creatives", workspaceId, "list", search] as const,
   adminWorkspaces: () => ["admin", "workspaces"] as const,
+  adminUsage: (month: string) => ["admin", "usage", month] as const,
+  adminErrors: (source: string) => ["admin", "errors", source] as const,
   launch: (workspaceId: string, launchId: string) =>
     ["launches", workspaceId, launchId] as const,
   metaAssets: (workspaceId: string) => ["meta-assets", workspaceId] as const,

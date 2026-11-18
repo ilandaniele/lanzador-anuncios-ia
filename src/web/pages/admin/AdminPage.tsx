@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Link } from "react-router";
 import { Button } from "../../components/Button";
 import { ToastProvider } from "../../components/Toast";
+import { AdminHeader } from "../../features/admin/AdminHeader";
 import { CreditsDialog } from "../../features/admin/CreditsDialog";
 import { InviteBetaDialog } from "../../features/admin/InviteBetaDialog";
+import { LoadMoreButton } from "../../features/admin/LoadMoreButton";
 import { StatusActionDialog } from "../../features/admin/StatusActionDialog";
 import { useAdminWorkspaces } from "../../features/admin/use-admin";
 import {
@@ -21,12 +22,7 @@ function Admin() {
 
   return (
     <>
-      <header className="flex items-center justify-between gap-4 border-b border-rule px-4 py-3">
-        <p className="font-semibold">{t("admin.brand")}</p>
-        <Link to="/" className="text-primary">
-          {t("admin.backToWorkspaces")}
-        </Link>
-      </header>
+      <AdminHeader />
       <main className="p-4">
         <section aria-labelledby="admin-titulo">
           <div className="mb-4 flex items-center justify-between gap-4">
@@ -47,16 +43,10 @@ function Admin() {
             onAction={setDialog}
           />
           {workspaces.hasNextPage && (
-            <div className="mt-4 flex justify-center">
-              <Button
-                variant="secondary"
-                loading={workspaces.isFetchingNextPage}
-                loadingLabel={t("common.working")}
-                onClick={() => void workspaces.fetchNextPage()}
-              >
-                {t("admin.loadMore")}
-              </Button>
-            </div>
+            <LoadMoreButton
+              loading={workspaces.isFetchingNextPage}
+              onClick={() => void workspaces.fetchNextPage()}
+            />
           )}
         </section>
       </main>

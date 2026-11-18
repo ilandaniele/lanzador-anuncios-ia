@@ -6,6 +6,7 @@ import {
   RequireSession,
   RequireSuperadmin,
 } from "./features/auth/guards";
+import { RouteErrorFallback } from "./components/RouteErrorFallback";
 import AppShell from "./layout/AppShell";
 import NotFoundPage from "./pages/not-found/NotFoundPage";
 
@@ -89,6 +90,11 @@ export const appRoutes: RouteObject[] = [
         element: <RequireSuperadmin />,
         children: [
           { index: true, ...page(() => import("./pages/admin/AdminPage")) },
+          { path: "uso", ...page(() => import("./pages/admin/UsoPage")) },
+          {
+            path: "errores",
+            ...page(() => import("./pages/admin/ErroresPage")),
+          },
         ],
       },
     ],
@@ -96,4 +102,7 @@ export const appRoutes: RouteObject[] = [
   { path: "*", element: <NotFoundPage /> },
 ];
 
-export const createAppRouter = () => createBrowserRouter(appRoutes);
+export const createAppRouter = () =>
+  createBrowserRouter([
+    { errorElement: <RouteErrorFallback />, children: appRoutes },
+  ]);
