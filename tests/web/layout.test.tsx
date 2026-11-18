@@ -24,7 +24,11 @@ const me: Me = {
 async function renderAt(path: string) {
   vi.stubGlobal(
     "fetch",
-    vi.fn(async () => Response.json(me)),
+    vi.fn(async (input: RequestInfo | URL) =>
+      String(input).includes("/products")
+        ? Response.json({ data: [], nextCursor: null })
+        : Response.json(me),
+    ),
   );
   const router = createMemoryRouter(appRoutes, { initialEntries: [path] });
   render(
