@@ -10,6 +10,7 @@ export function Thumbnail({ url, className = "size-14" }: ThumbnailProps) {
       src={url}
       alt=""
       loading="lazy"
+      decoding="async"
       className={cx(BASE, "object-cover", className)}
     />
   ) : (

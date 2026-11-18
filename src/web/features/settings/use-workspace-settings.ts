@@ -11,11 +11,13 @@ const workspaceApi = (workspaceId: string) => `/api/w/${workspaceId}`;
 
 export type GeneralChanges = { name?: string; settings?: SettingsPatch };
 
+export const workspaceOverviewQueryOptions = (workspaceId: string) => ({
+  queryKey: qk.workspace(workspaceId),
+  queryFn: () => apiFetch<WorkspaceOverview>(workspaceApi(workspaceId)),
+});
+
 export const useWorkspaceOverview = (workspaceId: string) =>
-  useQuery({
-    queryKey: qk.workspace(workspaceId),
-    queryFn: () => apiFetch<WorkspaceOverview>(workspaceApi(workspaceId)),
-  });
+  useQuery(workspaceOverviewQueryOptions(workspaceId));
 
 export function useSaveGeneral(workspaceId: string) {
   const queryClient = useQueryClient();

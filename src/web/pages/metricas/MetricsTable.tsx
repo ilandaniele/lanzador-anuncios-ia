@@ -12,6 +12,7 @@ import { RowIdentity } from "../../features/metrics/RowIdentity";
 import { useCanEdit } from "../../features/products/use-can-edit";
 import { t } from "../../i18n/es-AR";
 
+const VIRTUALIZE_ABOVE_ROWS = 200;
 const LIST_SKELETON_ROWS = 8;
 const LIST_METRIC_KEYS = ["spendMinor", "roas", "cpaMinor"] as const;
 
@@ -81,6 +82,7 @@ export function MetricsTable({
       error={view.error}
       onRetry={view.onRetry}
       empty={t("metrics.empty")}
+      virtualizeAbove={VIRTUALIZE_ABOVE_ROWS}
     />
   );
 }

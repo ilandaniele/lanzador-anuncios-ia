@@ -28,6 +28,7 @@ function Media({
         src={creative.thumbnailUrl}
         alt={adName}
         loading="lazy"
+        decoding="async"
         className="aspect-square w-full bg-surface-sunken object-cover"
       />
     );

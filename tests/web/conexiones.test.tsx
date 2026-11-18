@@ -291,14 +291,15 @@ describe("AssetPicker", () => {
     );
   });
 
-  it("filters by search without touching the counter", async () => {
+  it("filters by search after the debounce without touching the counter", async () => {
     await openPicker();
 
     fireEvent.change(screen.getByRole("searchbox"), {
       target: { value: "norte" },
     });
 
-    expect(screen.queryByText("Cuenta Dos")).toBeNull();
+    expect(screen.getByText("Cuenta Dos")).toBeTruthy();
+    await waitFor(() => expect(screen.queryByText("Cuenta Dos")).toBeNull());
     expect(within(group("Páginas")).getByText("Página Norte")).toBeTruthy();
     expect(
       within(group("Cuentas publicitarias")).getByText("Sin resultados"),

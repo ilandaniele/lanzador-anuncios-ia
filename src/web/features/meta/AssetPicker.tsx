@@ -6,6 +6,10 @@ import { Skeleton, SkeletonRegion } from "../../components/Skeleton";
 import { Input } from "../../components/TextField";
 import { useToast } from "../../components/Toast";
 import { t } from "../../i18n/es-AR";
+import {
+  SEARCH_DEBOUNCE_MS,
+  useDebouncedValue,
+} from "../../lib/use-debounced-value";
 import { AssetGroup } from "./AssetGroup";
 import {
   GROUP_LABELS,
@@ -25,6 +29,7 @@ export function AssetPicker({ workspaceId }: AssetPickerProps) {
   const { notify } = useToast();
   const [draft, setDraft] = useState<AssetDraft>({});
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
   const pending = toChanges(draft);
 
   const toggle = (assets: AssetDto[], enabled: boolean) =>
@@ -80,7 +85,9 @@ export function AssetPicker({ workspaceId }: AssetPickerProps) {
             key={kind}
             title={t(GROUP_LABELS[kind])}
             assets={assets}
-            visible={assets.filter((asset) => matchesSearch(asset, search))}
+            visible={assets.filter((asset) =>
+              matchesSearch(asset, debouncedSearch),
+            )}
             draft={draft}
             onToggle={(asset, enabled) => toggle([asset], enabled)}
             onToggleAll={toggle}

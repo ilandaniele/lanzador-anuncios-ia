@@ -6,6 +6,7 @@ import {
   RequireSession,
   RequireSuperadmin,
 } from "./features/auth/guards";
+import { PageSkeleton } from "./components/PageSkeleton";
 import { RouteErrorFallback } from "./components/RouteErrorFallback";
 import AppShell from "./layout/AppShell";
 import NotFoundPage from "./pages/not-found/NotFoundPage";
@@ -104,5 +105,9 @@ export const appRoutes: RouteObject[] = [
 
 export const createAppRouter = () =>
   createBrowserRouter([
-    { errorElement: <RouteErrorFallback />, children: appRoutes },
+    {
+      errorElement: <RouteErrorFallback />,
+      HydrateFallback: PageSkeleton,
+      children: appRoutes,
+    },
   ]);

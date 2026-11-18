@@ -1,10 +1,13 @@
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { t } from "../i18n/es-AR";
 import { Button } from "./Button";
 import { cx, focusRing } from "./classes";
+import { DataTableRow } from "./DataTableRow";
 import { Skeleton } from "./Skeleton";
+import { VirtualRows } from "./VirtualRows";
 
 const SKELETON_ROWS = 8;
+const HEADER_ROW_COUNT = 1;
 
 export type SortDirection = "ascending" | "descending";
 export type Sort = { key: string; direction: SortDirection };
@@ -30,6 +33,7 @@ type DataTableProps<Row> = {
   error?: string;
   onRetry?: () => void;
   empty?: ReactNode;
+  virtualizeAbove?: number;
 };
 
 function nextSort(current: Sort | null | undefined, key: string): Sort | null {
@@ -61,12 +65,24 @@ export function DataTable<Row>({
   error,
   onRetry,
   empty = t("table.empty"),
+  virtualizeAbove,
 }: DataTableProps<Row>) {
   const span = columns.length;
+  const bodyRef = useRef<HTMLTableSectionElement>(null);
+  const virtualized =
+    virtualizeAbove !== undefined && rows.length > virtualizeAbove;
 
   return (
     <div className="overflow-x-auto">
-      <table aria-busy={loading || updating || undefined} className="w-full">
+      <table
+        aria-busy={loading || updating || undefined}
+        aria-rowcount={
+          virtualized && !loading && !error
+            ? rows.length + HEADER_ROW_COUNT
+            : undefined
+        }
+        className="w-full"
+      >
         <caption className="sr-only">{caption}</caption>
         <thead className="sticky top-0 bg-surface shadow-[0_1px_0_var(--color-rule)]">
           <tr>
@@ -116,7 +132,7 @@ export function DataTable<Row>({
             </tr>
           )}
         </thead>
-        <tbody>
+        <tbody ref={bodyRef}>
           {loading &&
             Array.from({ length: SKELETON_ROWS }, (_, index) => (
               <tr key={index} className="border-t border-rule">
@@ -144,28 +160,21 @@ export function DataTable<Row>({
           )}
           {!loading &&
             !error &&
-            rows.map((row) => (
-              <tr key={getRowKey(row)} className="border-t border-rule">
-                {columns.map((column) => {
-                  const className = cx(
-                    "px-3 py-3",
-                    column.numeric ? "text-right tabular-nums" : "text-left",
-                  );
-                  return column.rowHeader ? (
-                    <th
-                      key={column.key}
-                      scope="row"
-                      className={cx(className, "font-normal")}
-                    >
-                      {column.render(row)}
-                    </th>
-                  ) : (
-                    <td key={column.key} className={className}>
-                      {column.render(row)}
-                    </td>
-                  );
-                })}
-              </tr>
+            (virtualized ? (
+              <VirtualRows
+                columns={columns}
+                rows={rows}
+                getRowKey={getRowKey}
+                bodyRef={bodyRef}
+              />
+            ) : (
+              rows.map((row) => (
+                <DataTableRow
+                  key={getRowKey(row)}
+                  columns={columns}
+                  row={row}
+                />
+              ))
             ))}
         </tbody>
       </table>

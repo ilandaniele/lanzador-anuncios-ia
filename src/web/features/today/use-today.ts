@@ -7,10 +7,15 @@ import { useVisiblePolling } from "../../lib/use-server-polling";
 
 const workspaceApi = (workspaceId: string) => `/api/w/${workspaceId}`;
 
-export const useToday = (workspaceId: string) =>
-  useVisiblePolling(qk.today(workspaceId), () =>
-    apiFetch<TodayResponse>(`${workspaceApi(workspaceId)}/today`),
-  );
+export const todayQueryOptions = (workspaceId: string) => ({
+  queryKey: qk.today(workspaceId),
+  queryFn: () => apiFetch<TodayResponse>(`${workspaceApi(workspaceId)}/today`),
+});
+
+export const useToday = (workspaceId: string) => {
+  const { queryKey, queryFn } = todayQueryOptions(workspaceId);
+  return useVisiblePolling(queryKey, queryFn);
+};
 
 export function useRefreshToday(workspaceId: string) {
   const queryClient = useQueryClient();

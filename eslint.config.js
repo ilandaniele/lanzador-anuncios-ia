@@ -31,6 +31,19 @@ export default defineConfig(
     ],
   },
   {
+    files: ["tests/perf/**/*.{js,mjs}"],
+    languageOptions: {
+      globals: {
+        console: "readonly",
+        fetch: "readonly",
+        process: "readonly",
+        URL: "readonly",
+        URLSearchParams: "readonly",
+        __ENV: "readonly",
+      },
+    },
+  },
+  {
     files: ["src/**/*.{ts,tsx}"],
     ignores: ["src/api/repositories/**", "src/db/**"],
     rules: {

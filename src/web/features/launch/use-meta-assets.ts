@@ -28,8 +28,10 @@ async function fetchEnabledAssets(workspaceId: string): Promise<AssetDto[]> {
   return assets;
 }
 
+export const metaAssetsQueryOptions = (workspaceId: string) => ({
+  queryKey: qk.metaAssets(workspaceId),
+  queryFn: () => fetchEnabledAssets(workspaceId),
+});
+
 export const useMetaAssets = (workspaceId: string) =>
-  useQuery({
-    queryKey: qk.metaAssets(workspaceId),
-    queryFn: () => fetchEnabledAssets(workspaceId),
-  });
+  useQuery(metaAssetsQueryOptions(workspaceId));

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Navigate, Outlet, useLocation, useParams } from "react-router";
+import { PageSkeleton } from "../../components/PageSkeleton";
 import { t } from "../../i18n/es-AR";
 import NotFoundPage from "../../pages/not-found/NotFoundPage";
 import { useMe } from "./use-me";
@@ -23,7 +24,7 @@ export function RequireSession() {
   const me = useMe();
   const { pathname, search } = useLocation();
 
-  if (me.isPending) return null;
+  if (me.isPending) return <PageSkeleton />;
   if (me.isError) return <LoadError onRetry={() => void me.refetch()} />;
   if (!me.data) return <Navigate replace to={loginUrl(pathname + search)} />;
   return <Outlet />;

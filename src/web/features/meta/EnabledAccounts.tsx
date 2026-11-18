@@ -1,3 +1,4 @@
+import { Skeleton, SkeletonRegion } from "../../components/Skeleton";
 import { t } from "../../i18n/es-AR";
 import { useAssets } from "./use-meta-connections";
 
@@ -7,7 +8,12 @@ export function EnabledAccounts({ workspaceId }: { workspaceId: string }) {
     (asset) => asset.kind === "ad_account" && asset.enabled,
   );
 
-  if (!assets.data) return null;
+  if (!assets.data)
+    return (
+      <SkeletonRegion label={t("common.loading")}>
+        <Skeleton className="h-5 w-48" />
+      </SkeletonRegion>
+    );
   return (
     <section aria-labelledby="cuentas-habilitadas-titulo">
       <h3

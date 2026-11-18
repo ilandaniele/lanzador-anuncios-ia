@@ -6,7 +6,7 @@ import {
   within,
 } from "@testing-library/react";
 import { useState } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   DataTable,
   type Column,
@@ -108,5 +108,62 @@ describe("DataTable", () => {
     render(<DataTable {...base} rows={rows} updating />);
 
     expect(screen.getByText("Campaña A")).toBeTruthy();
+  });
+
+  describe("virtualization", () => {
+    const VIRTUALIZE_ABOVE = 200;
+    const manyRows = (count: number): Row[] =>
+      Array.from({ length: count }, (_, index) => ({
+        id: `r${index}`,
+        name: `Campaña ${index}`,
+        spend: index,
+      }));
+    const ROW_HEIGHT = 64;
+    beforeEach(() => {
+      vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(
+        ROW_HEIGHT,
+      );
+    });
+    afterEach(() => vi.restoreAllMocks());
+    const renderedBodyRows = () => screen.getAllByRole("row").length - 1;
+
+    it("renders every row when the count does not exceed the threshold", () => {
+      render(
+        <DataTable
+          {...base}
+          rows={manyRows(VIRTUALIZE_ABOVE)}
+          virtualizeAbove={VIRTUALIZE_ABOVE}
+        />,
+      );
+
+      expect(renderedBodyRows()).toBe(VIRTUALIZE_ABOVE);
+      expect(
+        screen.getByRole("table").getAttribute("aria-rowcount"),
+      ).toBeNull();
+    });
+
+    it("renders a window of rows when the count exceeds the threshold", () => {
+      render(
+        <DataTable
+          {...base}
+          rows={manyRows(VIRTUALIZE_ABOVE + 1)}
+          virtualizeAbove={VIRTUALIZE_ABOVE}
+        />,
+      );
+
+      expect(renderedBodyRows()).toBeGreaterThan(0);
+      expect(renderedBodyRows()).toBeLessThan(VIRTUALIZE_ABOVE);
+      expect(screen.getByRole("table").getAttribute("aria-rowcount")).toBe(
+        String(VIRTUALIZE_ABOVE + 2),
+      );
+      expect(screen.getByRole("rowheader", { name: "Campaña 0" })).toBeTruthy();
+      expect(screen.queryByText("Campaña 200")).toBeNull();
+    });
+
+    it("never virtualizes without a threshold", () => {
+      render(<DataTable {...base} rows={manyRows(VIRTUALIZE_ABOVE + 50)} />);
+
+      expect(renderedBodyRows()).toBe(VIRTUALIZE_ABOVE + 50);
+    });
   });
 });

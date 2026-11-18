@@ -12,4 +12,6 @@ async function fetchMe(): Promise<Me | null> {
   }
 }
 
-export const useMe = () => useQuery({ queryKey: qk.me(), queryFn: fetchMe });
+export const meQueryOptions = { queryKey: qk.me(), queryFn: fetchMe };
+
+export const useMe = () => useQuery(meQueryOptions);
