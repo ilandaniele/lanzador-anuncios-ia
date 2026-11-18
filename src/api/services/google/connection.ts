@@ -25,7 +25,10 @@ import { manualAuditEntry } from "../audit-entry";
 
 const GOOGLE_CONNECTIONS_TABLE = "google_connections";
 
-export const googleTokenAad = (scope: Scope, connectionId: string) =>
+export const googleTokenAad = (
+  scope: Pick<Scope, "workspaceId" | "userId">,
+  connectionId: string,
+) =>
   aadFor(
     GOOGLE_CONNECTIONS_TABLE,
     `${connectionId}:${scope.userId}`,

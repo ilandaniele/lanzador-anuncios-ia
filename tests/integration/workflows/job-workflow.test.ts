@@ -24,8 +24,10 @@ const job = (key: string): JobParams => ({
   workspaceId: null,
 });
 
+const registeredPurgeHandler = JOB_HANDLERS.purge_workspace;
+
 afterEach(() => {
-  delete JOB_HANDLERS.purge_workspace;
+  JOB_HANDLERS.purge_workspace = registeredPurgeHandler;
 });
 
 describe("JobWorkflow", () => {

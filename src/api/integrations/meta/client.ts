@@ -17,7 +17,7 @@ import {
   MetaError,
   networkMetaError,
 } from "./errors";
-import { assertGraphPath } from "./graph-path";
+import { assertGraphIds, assertGraphPath } from "./graph-path";
 import {
   encodeForm,
   type FormValues,
@@ -199,6 +199,11 @@ export function createGraph(
   return {
     get: async <T>(path: string, params?: QueryValues) =>
       (await send("GET", assertGraphPath(path), { query: params })) as T,
+
+    getByIds: async <T>(ids: readonly string[], params?: QueryValues) =>
+      (await send("GET", "", {
+        query: { ...params, ids: assertGraphIds(ids) },
+      })) as T,
 
     post: async <T>(path: string, form: FormValues, host?: GraphHost) =>
       (await send("POST", assertGraphPath(path), { form, host })) as T,

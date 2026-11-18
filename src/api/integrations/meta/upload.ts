@@ -60,7 +60,10 @@ const toOffsets = ({
   endOffset: end_offset,
 });
 
-function parse<S extends z.ZodType>(schema: S, payload: unknown): z.infer<S> {
+export function parse<S extends z.ZodType>(
+  schema: S,
+  payload: unknown,
+): z.infer<S> {
   const result = schema.safeParse(payload);
   if (!result.success) throw invalidPayloadError();
   return result.data;

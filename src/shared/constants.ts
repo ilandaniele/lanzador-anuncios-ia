@@ -175,6 +175,7 @@ export const MAX_SCALE_PERCENT = 50;
 export const WORKSPACE_PURGE_DELAY_MS = 7 * 24 * 60 * 60 * 1000;
 
 export const AI_FEATURES = ["copy", "tagging", "pilot", "chat"] as const;
+export const AI_TAGGING_ESTIMATED_NEURONS = 200;
 export type AiFeature = (typeof AI_FEATURES)[number];
 export const AI_USAGE_STATUSES = ["ok", "error", "blocked_budget"] as const;
 export type AiUsageStatus = (typeof AI_USAGE_STATUSES)[number];

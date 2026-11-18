@@ -4,6 +4,10 @@ import { insertErrorEvent } from "./repositories/error-events";
 import { runCleanup } from "./services/maintenance/cleanup";
 import { enqueuePilotRuns } from "./services/maintenance/pilot";
 import { enqueueInsightsPrewarm } from "./services/maintenance/prewarm";
+import { enqueueWorkspacePurges } from "./services/maintenance/purge";
+import { refreshStaleThumbnails } from "./services/maintenance/refresh-thumbnails";
+import { requeuePendingTags } from "./services/maintenance/retag-pending";
+import { rotateTokenKeys } from "./services/maintenance/rotate-keys";
 
 async function recordCronFailure(
   db: D1Database,
@@ -36,6 +40,10 @@ export async function scheduled(
     cleanup: () => runCleanup(env.DB, at),
     prewarm: () => enqueueInsightsPrewarm(env, at),
     pilot: () => enqueuePilotRuns(env, at),
+    purge: () => enqueueWorkspacePurges(env, at),
+    rotateKeys: () => rotateTokenKeys(env, at),
+    retagPending: () => requeuePendingTags(env, at),
+    thumbnails: () => refreshStaleThumbnails(env, at),
   };
   const names = Object.keys(tasks) as (keyof typeof tasks)[];
   const results = await Promise.allSettled(names.map((name) => tasks[name]()));

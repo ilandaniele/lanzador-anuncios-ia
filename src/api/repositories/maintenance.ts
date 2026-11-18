@@ -23,11 +23,17 @@ export interface CleanupCutoffs {
   at: number;
   insightsExpiredBefore: number;
   errorEventsBefore: number;
+  aiQueuedBefore: number;
 }
 
 export async function runCleanupBatch(
   db: D1Database,
-  { at, insightsExpiredBefore, errorEventsBefore }: CleanupCutoffs,
+  {
+    at,
+    insightsExpiredBefore,
+    errorEventsBefore,
+    aiQueuedBefore,
+  }: CleanupCutoffs,
 ): Promise<void> {
   const orm = drizzle(db);
   const overdueUploads = and(
@@ -54,6 +60,15 @@ export async function runCleanupBatch(
         ),
       ),
     orm.update(uploads).set({ status: "expired" }).where(overdueUploads),
+    orm
+      .update(creatives)
+      .set({ aiStatus: "pending", updatedAt: at })
+      .where(
+        and(
+          eq(creatives.aiStatus, "queued"),
+          lt(creatives.updatedAt, aiQueuedBefore),
+        ),
+      ),
     orm
       .delete(insightsCache)
       .where(
