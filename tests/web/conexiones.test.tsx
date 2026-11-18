@@ -20,6 +20,7 @@ import {
 } from "vitest";
 import type { ErrorCode } from "../../src/shared/errors";
 import type { Me } from "../../src/shared/schemas/auth";
+import type { GoogleConnectionResponse } from "../../src/shared/schemas/google";
 import type {
   AssetDto,
   ConnectionDto,
@@ -94,20 +95,42 @@ const fail = (code: ErrorCode, status: number) =>
     { status },
   );
 
+const googleConnected: GoogleConnectionResponse = {
+  connected: true,
+  email: "ana@gmail.com",
+  status: "active",
+};
+
 function useBackend(
   role: Role,
-  { connections = [connection] }: { connections?: ConnectionDto[] } = {},
+  {
+    connections = [connection],
+    google = googleConnected,
+  }: { connections?: ConnectionDto[]; google?: GoogleConnectionResponse } = {},
 ) {
   const calls = {
     patchAssets: vi.fn(),
     disconnect: vi.fn(),
     connect: vi.fn(),
+    googleConnect: vi.fn(),
+    googleDisconnect: vi.fn(),
   };
   server.use(
     http.get("/api/me", () => HttpResponse.json(meAs(role))),
     http.get("/api/w/w1/meta/connections", () =>
       HttpResponse.json({ data: connections }),
     ),
+    http.get("/api/w/w1/google/connection", () => HttpResponse.json(google)),
+    http.post("/api/w/w1/google/connect", () => {
+      calls.googleConnect();
+      return HttpResponse.json({
+        authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth?state=s",
+      });
+    }),
+    http.delete("/api/w/w1/google/connection", () => {
+      calls.googleDisconnect();
+      return new HttpResponse(null, { status: 204 });
+    }),
     http.get("/api/w/w1/meta/assets", () =>
       HttpResponse.json({ data: assets, nextCursor: null }),
     ),
@@ -334,5 +357,85 @@ describe("Disconnect Meta", () => {
       expect(calls.disconnect).toHaveBeenCalledWith({ confirm: true }),
     );
     expect(await screen.findByText("Meta desconectado")).toBeTruthy();
+  });
+});
+
+describe("Ajustes Conexiones: Google block", () => {
+  const notConnected: GoogleConnectionResponse = {
+    connected: false,
+    email: null,
+    status: null,
+  };
+
+  it("shows the connected account", async () => {
+    useBackend("editor");
+    await renderPage();
+
+    expect(
+      await screen.findByText("Conectado como ana@gmail.com"),
+    ).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Google" })).toBeTruthy();
+  });
+
+  it("connects and redirects to Google without a launch", async () => {
+    const calls = useBackend("editor", { google: notConnected });
+    await renderPage();
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Conectar Google" }),
+    );
+
+    await waitFor(() =>
+      expect(redirectToExternal).toHaveBeenCalledWith(
+        "https://accounts.google.com/o/oauth2/v2/auth?state=s",
+      ),
+    );
+    expect(calls.googleConnect).toHaveBeenCalledTimes(1);
+  });
+
+  it("asks to reconnect when Google needs it", async () => {
+    useBackend("editor", {
+      google: { ...googleConnected, status: "reconnect_required" },
+    });
+    await renderPage();
+
+    expect(
+      await screen.findByRole("button", { name: "Reconectar Google" }),
+    ).toBeTruthy();
+  });
+
+  it("disconnects after confirming", async () => {
+    const calls = useBackend("editor");
+    await renderPage();
+
+    fireEvent.click(await screen.findByRole("button", { name: "Desconectar" }));
+    const dialog = await screen.findByRole("dialog", {
+      name: "Desconectar Google",
+    });
+    expect(calls.googleDisconnect).not.toHaveBeenCalled();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Desconectar" }),
+    );
+
+    await waitFor(() =>
+      expect(calls.googleDisconnect).toHaveBeenCalledTimes(1),
+    );
+  });
+
+  it("shows the callback result from the query string", async () => {
+    useBackend("editor");
+    await renderPage("?google=error&motivo=GOOGLE_DENIED");
+
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "Cancelaste el permiso en Google",
+    );
+  });
+
+  it("hides the block from viewers", async () => {
+    useBackend("viewer");
+    await renderPage();
+
+    await screen.findByText("Mi Negocio SA");
+    expect(screen.queryByRole("heading", { name: "Google" })).toBeNull();
   });
 });

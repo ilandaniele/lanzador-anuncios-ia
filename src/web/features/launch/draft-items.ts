@@ -9,11 +9,13 @@ const AD_NAME_MAX = 120;
 export const itemKey = ({ creativeId, cloneAdId }: DraftItem) =>
   creativeId ? `creative-${creativeId}` : `clone-${cloneAdId}`;
 
+export type CreativeRef = Pick<CreativeDto, "id" | "name" | "kind">;
+
 export const itemFromCreative = ({
   id,
   name,
   kind,
-}: CreativeDto): DraftItem => ({
+}: CreativeRef): DraftItem => ({
   source: "upload",
   creativeId: id,
   adName: name.slice(0, AD_NAME_MAX),

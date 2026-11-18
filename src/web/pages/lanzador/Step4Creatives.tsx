@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import type { CreativeDto } from "../../../shared/schemas/creatives";
 import { Button } from "../../components/Button";
 import { Skeleton, SkeletonRegion } from "../../components/Skeleton";
+import { DriveTab } from "../../features/google/DriveTab";
+import type { ImportedFile } from "../../features/google/drive-files";
 import { creativeState } from "../../features/launch/creative-state";
 import { CopyFromCampaign } from "../../features/launch/CopyFromCampaign";
 import { creativesBlock } from "../../features/launch/creatives-completion";
@@ -10,6 +11,7 @@ import { CreativeTabs } from "../../features/launch/CreativeTabs";
 import {
   hasCreative,
   itemFromCreative,
+  type CreativeRef,
   mixesMediaKinds,
 } from "../../features/launch/draft-items";
 import type { StepProps } from "../../features/launch/step-types";
@@ -66,7 +68,7 @@ function CreativesForm({
     return () => setBlockReason(null);
   }, [blockText, setBlockReason]);
 
-  function addUploaded(creative: CreativeDto) {
+  function addCreative(creative: CreativeRef) {
     changeItems((current) => {
       if (hasCreative(current, creative.id)) return current;
       const mixes = mixesMediaKinds(current, creative.kind);
@@ -74,6 +76,11 @@ function CreativesForm({
       return mixes ? current : [...current, itemFromCreative(creative)];
     });
   }
+
+  const addImported = (files: ImportedFile[]) =>
+    files.forEach(({ creativeId, name, kind }) =>
+      addCreative({ id: creativeId, name, kind }),
+    );
 
   return (
     <div className="flex max-w-[720px] flex-col gap-4">
@@ -84,7 +91,7 @@ function CreativesForm({
               workspaceId={workspaceId}
               adAccountAssetId={adAccountAssetId}
               environment={environment}
-              onReady={addUploaded}
+              onReady={addCreative}
             />
           ),
           copy: (
@@ -96,7 +103,13 @@ function CreativesForm({
             />
           ),
           drive: (
-            <p className="text-ink-muted">{t("launcher.step4.driveSoon")}</p>
+            <DriveTab
+              workspaceId={workspaceId}
+              adAccountAssetId={adAccountAssetId}
+              folderHint={draft.driveFolderHint}
+              creatives={creatives}
+              onImported={addImported}
+            />
           ),
         }}
       />

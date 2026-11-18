@@ -703,6 +703,39 @@ const esAR = {
       },
     },
   },
+  google: {
+    title: "Google",
+    notConnected:
+      "Conectá Google para traer creativos desde Drive. Solo leemos los archivos que elegís.",
+    notConnectedReadOnly: "Google todavía no está conectado.",
+    connect: "Conectar Google",
+    reconnect: "Reconectar Google",
+    reconnectRequired:
+      "Google pide reconectar. Usá Reconectar Google para seguir.",
+    connectedAs: "Conectado como",
+    loadError: "No pudimos cargar la conexión de Google",
+    disconnect: "Desconectar",
+    disconnectTitle: "Desconectar Google",
+    receiptAccount: "Cuenta de Google",
+    disconnectConsequence:
+      "Lanzador pierde el acceso a tu Drive. Los creativos ya importados se quedan.",
+    disconnected: "Google desconectado",
+    connectedOk: "Google conectado.",
+    connectFailed: "No pudimos conectar Google.",
+    errorRateLimited:
+      "Hay muchas importaciones en curso. Esperá a que terminen y probá de nuevo.",
+    errorPicker:
+      "No pudimos abrir el selector de Google Drive. Probá de nuevo.",
+    failure: {
+      STATE_INVALID: "El intento de conexión venció. Probá de nuevo.",
+      GOOGLE_DENIED:
+        "Cancelaste el permiso en Google. Conectá de nuevo para seguir.",
+      TOKEN_EXCHANGE_FAILED: "Google no confirmó la conexión. Probá de nuevo.",
+      MISSING_PERMISSIONS:
+        "Faltan permisos. Aceptá todos los que pide Google y conectá de nuevo.",
+      INTERNAL: "Algo salió mal al conectar. Probá de nuevo.",
+    },
+  },
   launcher: {
     title: "Lanzador",
     stepperLabel: "Pasos del lanzamiento",
@@ -829,8 +862,16 @@ const esAR = {
       tabUpload: "Subir",
       tabCopy: "Copiar de otra campaña",
       tabDrive: "Google Drive",
-      driveSoon:
-        "La importación desde Google Drive llega muy pronto. Mientras tanto, subí los archivos desde tu compu.",
+      driveChooseAccount:
+        "Elegí la cuenta publicitaria en el paso 1 para importar desde Google Drive.",
+      driveFolderLabel: "Link de la carpeta de Drive (opcional)",
+      driveFolderHint:
+        "Pegá el link y el selector abre directo en esa carpeta.",
+      driveFolderUnknown:
+        "No reconocemos ese link como una carpeta de Drive. El selector abre en Mi unidad.",
+      driveChoose: "Elegir de Drive",
+      driveImporting: "Importando desde Drive",
+      driveImportingCount: "archivos en proceso. Seguimos en segundo plano.",
       chooseAccount:
         "Elegí la cuenta publicitaria en el paso 1 para copiar anuncios de otra campaña.",
       campaignLabel: "Campaña",

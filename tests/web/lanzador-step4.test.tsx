@@ -390,14 +390,19 @@ describe("Lanzador > paso 4", () => {
     ).toBeTruthy();
   });
 
-  it("shows the provisional Google Drive tab", async () => {
+  it("offers Conectar Google in the Google Drive tab without a connection", async () => {
     useWorkspace();
+    server.use(
+      http.get("/api/w/w1/google/connection", () =>
+        HttpResponse.json({ connected: false, email: null, status: null }),
+      ),
+    );
     renderStep(withAccount());
 
     fireEvent.click(await screen.findByRole("tab", { name: "Google Drive" }));
 
     expect(
-      screen.getByText(/La importación desde Google Drive llega/),
+      await screen.findByRole("button", { name: "Conectar Google" }),
     ).toBeTruthy();
   });
 
