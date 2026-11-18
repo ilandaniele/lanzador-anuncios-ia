@@ -1,4 +1,5 @@
 import {
+  createChatSession,
   createInvitation,
   createLaunch,
   createMetaConnection,
@@ -34,13 +35,28 @@ export async function seedWorkspaceWithRoles() {
 
 async function seedTenant() {
   const tenant = await seedWorkspaceWithRoles();
-  const [{ invitation }, product, launch, connection] = await Promise.all([
-    createInvitation(tenant.workspace.id, { invitedBy: tenant.users.admin.id }),
-    createProduct(tenant.workspace.id),
-    createLaunch(tenant.workspace.id),
-    createMetaConnection(sealingKeys, tenant.workspace.id, "tenant-seed-token"),
-  ]);
-  return { ...tenant, invitation, product, launch, connection };
+  const [{ invitation }, product, launch, connection, chatSession] =
+    await Promise.all([
+      createInvitation(tenant.workspace.id, {
+        invitedBy: tenant.users.admin.id,
+      }),
+      createProduct(tenant.workspace.id),
+      createLaunch(tenant.workspace.id),
+      createMetaConnection(
+        sealingKeys,
+        tenant.workspace.id,
+        "tenant-seed-token",
+      ),
+      createChatSession(tenant.workspace.id, tenant.users.owner.id),
+    ]);
+  return {
+    ...tenant,
+    invitation,
+    product,
+    launch,
+    connection,
+    chatSession,
+  };
 }
 
 export async function seedTenantPair() {

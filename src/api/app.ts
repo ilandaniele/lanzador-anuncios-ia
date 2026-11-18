@@ -9,6 +9,7 @@ import { requestId } from "./middleware/request-id";
 import { adminRoutes } from "./routes/admin";
 import { auditRoutes } from "./routes/audit";
 import { authRoutes } from "./routes/auth";
+import { chatRoutes } from "./routes/chat";
 import { invitationRoutes } from "./routes/invitations";
 import { launchRoutes } from "./routes/launches";
 import { memberRoutes } from "./routes/members";
@@ -52,6 +53,7 @@ export function createApp() {
   app.route("/", metaOAuthRoutes);
   app.route("/", metaConnectionRoutes);
   app.route("/", auditRoutes);
+  app.route("/", chatRoutes);
   app.route("/", pilotRuleRoutes);
   app.route("/", adminRoutes);
   app.route("/", testSupportRoutes);

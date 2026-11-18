@@ -34,4 +34,7 @@ export const ROLE_MATRIX: Record<string, RoleRule> = {
   "POST /api/w/:wid/meta/connections/:id/refresh-assets": "admin",
   "DELETE /api/w/:wid/meta/connections/:id": "admin",
   "GET /api/w/:wid/audit": "viewer",
+  "POST /api/w/:wid/chat/sessions": "editor",
+  "GET /api/w/:wid/chat/sessions": "editor",
+  "GET /api/w/:wid/chat/sessions/:id/messages": "editor",
 };

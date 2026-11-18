@@ -36,8 +36,6 @@ const isCovered = (exportName: string) =>
 
 const PENDING_TABLES = [
   "aiUsage",
-  "chatMessages",
-  "chatSessions",
   "creatives",
   "errorEvents",
   "googleConnections",

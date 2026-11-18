@@ -13,6 +13,7 @@ import {
 import { users } from "../../src/db/schema/auth";
 import { launches } from "../../src/db/schema/launches";
 import { metaAssets, metaConnections } from "../../src/db/schema/meta";
+import { chatMessages, chatSessions } from "../../src/db/schema/ops";
 import { products } from "../../src/db/schema/products";
 import {
   invitations,
@@ -21,6 +22,8 @@ import {
   workspaces,
 } from "../../src/db/schema/workspaces";
 import {
+  buildChatMessage,
+  buildChatSession,
   buildInvitation,
   buildLaunch,
   buildMembership,
@@ -101,6 +104,32 @@ export async function createLaunch(
   const launch = buildLaunch({ workspaceId, ...overrides });
   await drizzle(env.DB).insert(launches).values(launch);
   return launch;
+}
+
+export async function createChatSession(
+  workspaceId: string,
+  userId: string,
+  overrides: Partial<typeof chatSessions.$inferInsert> = {},
+) {
+  const session = buildChatSession({ workspaceId, userId, ...overrides });
+  await drizzle(env.DB).insert(chatSessions).values(session);
+  return session;
+}
+
+export async function createChatMessage(
+  workspaceId: string,
+  sessionId: string,
+  role: (typeof chatMessages.$inferInsert)["role"],
+  overrides: Partial<typeof chatMessages.$inferInsert> = {},
+) {
+  const message = buildChatMessage({
+    workspaceId,
+    sessionId,
+    role,
+    ...overrides,
+  });
+  await drizzle(env.DB).insert(chatMessages).values(message);
+  return message;
 }
 
 export async function createMetaConnection(

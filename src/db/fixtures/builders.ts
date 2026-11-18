@@ -1,6 +1,7 @@
 import { betaInvites, users } from "../schema/auth";
 import { launches } from "../schema/launches";
 import { metaAssets, metaConnections } from "../schema/meta";
+import { chatMessages, chatSessions } from "../schema/ops";
 import { pilotRules } from "../schema/pilot";
 import { products } from "../schema/products";
 import {
@@ -179,5 +180,31 @@ export const buildPilotRule = (
   id: crypto.randomUUID(),
   enabled: 0,
   updatedAt: Date.now(),
+  ...overrides,
+});
+
+export const buildChatSession = (
+  overrides: Pick<typeof chatSessions.$inferInsert, "workspaceId" | "userId"> &
+    Partial<typeof chatSessions.$inferInsert>,
+): typeof chatSessions.$inferInsert => {
+  const at = Date.now();
+  return {
+    id: crypto.randomUUID(),
+    createdAt: at,
+    updatedAt: at,
+    ...overrides,
+  };
+};
+
+export const buildChatMessage = (
+  overrides: Pick<
+    typeof chatMessages.$inferInsert,
+    "workspaceId" | "sessionId" | "role"
+  > &
+    Partial<typeof chatMessages.$inferInsert>,
+): typeof chatMessages.$inferInsert => ({
+  id: crypto.randomUUID(),
+  content: "hola",
+  createdAt: Date.now(),
   ...overrides,
 });

@@ -146,6 +146,12 @@ export type AuditOrigin = (typeof AUDIT_ORIGINS)[number];
 export const AUDIT_RESULTS = ["ok", "error"] as const;
 export type AuditResult = (typeof AUDIT_RESULTS)[number];
 export const CHAT_ROLES = ["user", "assistant", "tool"] as const;
+export const CHAT_SESSION_STATUSES = [
+  "open",
+  "draft_created",
+  "closed",
+] as const;
+export const MAX_CHAT_SESSION_MESSAGES = 60;
 
 export const MAX_OWNED_WORKSPACES = 3;
 export const MAX_SCALE_PERCENT = 50;
