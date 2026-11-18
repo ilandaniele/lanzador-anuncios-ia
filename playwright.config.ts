@@ -6,6 +6,7 @@ const baseURL = process.env.E2E_BASE_URL ?? localBaseUrl;
 export default defineConfig({
   testDir: "tests/e2e",
   outputDir: "results",
+  workers: 1,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "github" : "list",
@@ -14,7 +15,7 @@ export default defineConfig({
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : {
-        command: `npm run build && npx wrangler dev --port 8787 --var APP_ORIGIN:${localBaseUrl} --var ENVIRONMENT:development`,
+        command: `npm run build && npx wrangler dev --port 8787 --var APP_ORIGIN:${localBaseUrl} --var ENVIRONMENT:development --var SUPERADMIN_EMAIL:admin@lanzador.test`,
         url: `${localBaseUrl}/api/health`,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,

@@ -1,52 +1,22 @@
 import AxeBuilder from "@axe-core/playwright";
+import { expect, test, type Page } from "@playwright/test";
+import { createDraft } from "./helpers/launch";
 import {
-  expect,
-  test,
-  type APIRequestContext,
-  type Page,
-} from "@playwright/test";
-import { readFileSync } from "node:fs";
+  OWNER_EMAIL,
+  pacedTest,
+  SIGN_IN_TIMEOUT_MS,
+  signedInState,
+  type SessionState,
+  WORKSPACE_ID,
+} from "./helpers/session";
 
-type SessionState = Awaited<ReturnType<APIRequestContext["storageState"]>>;
-
-const WORKSPACE_ID = "seed-workspace-a";
-const OWNER_EMAIL = "owner-a@lanzador.test";
 const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 const BLOCKING_IMPACTS = ["serious", "critical"];
 const WIZARD_STEP_COUNT = 6;
 const REFLOW_VIEWPORT = { width: 320, height: 640 };
 const REFLOW_TOLERANCE_PX = 1;
 const MOTION_TOLERANCE_SECONDS = 0.001;
-const CSRF_HEADERS = { "X-Lanzador": "1" };
-const MAGIC_LINK_CAPPED =
-  "Magic link not issued: 5 per email in 15 minutes. Wait or reset local login links.";
 const LOGIN_HEADING = "Ingresá a Lanzador";
-
-const SEED_DRAFT = {
-  adAccountAssetId: "seed-asset-account-1-a",
-  pixelId: "130000000000001",
-  pageId: "110000000000001",
-  mode: "new_cbo",
-  productId: "seed-product-1-a",
-  copy: {
-    primaryText: "Texto principal de prueba",
-    headline: "Titular de prueba",
-    description: "Descripcion de prueba",
-    cta: "SHOP_NOW",
-  },
-  items: [1, 2].map((n) => ({
-    source: "upload",
-    creativeId: `seed-creative-${n}-a`,
-    adName: `Anuncio ${n}`,
-    mediaKind: "image",
-  })),
-  dailyBudgetMinor: 5000,
-  bidStrategy: "LOWEST_COST_WITHOUT_CAP",
-  countries: ["AR"],
-  optimizationEvent: "PURCHASE",
-  campaignName: "Campaña a11y",
-  adsetName: "Conjunto a11y",
-};
 
 const SIGNED_IN_PAGES = [
   { name: "metrics", path: "metricas", heading: "Métricas" },
@@ -57,42 +27,6 @@ const PROGRESS_LAUNCHES = [
   { name: "verified launch", id: "seed-launch-ok-a" },
   { name: "launch with errors", id: "seed-launch-errors-a" },
 ];
-
-function e2eSecret() {
-  if (process.env.E2E_SECRET) return process.env.E2E_SECRET;
-  const line = readFileSync(".dev.vars", "utf8")
-    .split(/\r?\n/)
-    .find((entry) => entry.startsWith("E2E_SECRET="));
-  if (!line) throw new Error("E2E_SECRET missing in env and .dev.vars");
-  return line.slice("E2E_SECRET=".length);
-}
-
-async function signIn(request: APIRequestContext, origin: string) {
-  const headers = { Origin: origin, ...CSRF_HEADERS };
-  const issued = await request.post("/api/test/magic-link", {
-    headers: { ...headers, "X-E2E-Secret": e2eSecret() },
-    data: { email: OWNER_EMAIL },
-  });
-  expect(issued.ok()).toBe(true);
-  const { link } = (await issued.json()) as { link: string | null };
-  if (!link) throw new Error(MAGIC_LINK_CAPPED);
-  const token = new URLSearchParams(new URL(link).hash.slice(1)).get("t");
-  const verified = await request.post("/api/auth/verify", {
-    headers,
-    data: { token },
-  });
-  expect(verified.ok()).toBe(true);
-}
-
-async function createDraft(request: APIRequestContext, origin: string) {
-  const response = await request.post(`/api/w/${WORKSPACE_ID}/launches`, {
-    headers: { Origin: origin, ...CSRF_HEADERS },
-    data: { draft: SEED_DRAFT },
-  });
-  expect(response.ok()).toBe(true);
-  const { launch } = (await response.json()) as { launch: { id: string } };
-  return launch.id;
-}
 
 async function expectNoBlockingViolations(page: Page) {
   const { violations } = await new AxeBuilder({ page })
@@ -186,21 +120,27 @@ test.describe("login", () => {
   });
 });
 
-const signedIn = test.extend<
+const signedIn = pacedTest.extend<
   { launchId: string },
   { session: { storageState: SessionState; launchId: string } }
 >({
   session: [
     async ({ playwright }, use, { project }) => {
       const baseURL = project.use.baseURL!;
-      const request = await playwright.request.newContext({ baseURL });
-      await signIn(request, baseURL);
-      const launchId = await createDraft(request, baseURL);
-      const storageState = await request.storageState();
+      const storageState = await signedInState(
+        playwright,
+        baseURL,
+        OWNER_EMAIL,
+      );
+      const request = await playwright.request.newContext({
+        baseURL,
+        storageState,
+      });
+      const launchId = await createDraft(request, baseURL, "a11y");
       await request.dispose();
       await use({ storageState, launchId });
     },
-    { scope: "worker" },
+    { scope: "worker", timeout: SIGN_IN_TIMEOUT_MS },
   ],
   storageState: ({ session }, use) => use(session.storageState),
   launchId: ({ session }, use) => use(session.launchId),

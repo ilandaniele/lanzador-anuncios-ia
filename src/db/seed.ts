@@ -54,6 +54,11 @@ const ROOT = resolve(import.meta.dirname, "../..");
 const SEED_SQL_PATH = resolve(ROOT, ".wrangler/seed.sql");
 const WRANGLER_BIN = resolve(ROOT, "node_modules/wrangler/bin/wrangler.js");
 const DATABASE_NAME = "lanzador-db";
+const PREVIEW = process.argv.includes("--preview");
+const DEV_VARS_FILE = PREVIEW ? ".dev.vars.preview" : ".dev.vars";
+const WRANGLER_TARGET = PREVIEW
+  ? ["DB", "--env", "preview", "--remote"]
+  : [DATABASE_NAME, "--local"];
 const TOKEN_KEY_VERSION = 1;
 const SEED_ROLES = ["owner", "admin", "editor", "viewer"] as const;
 
@@ -275,7 +280,7 @@ const findCampaign = (
 };
 
 function readDevVars(): DevVars {
-  const path = resolve(ROOT, ".dev.vars");
+  const path = resolve(ROOT, DEV_VARS_FILE);
   if (!existsSync(path)) return {};
   const entries = readFileSync(path, "utf8")
     .split(/\r?\n/)
@@ -300,7 +305,7 @@ async function sealFakeToken(
   workspaceId: string,
 ) {
   const key = devVars.TOKEN_ENC_KEY_V1;
-  if (!key) throw new Error("TOKEN_ENC_KEY_V1 missing in .dev.vars");
+  if (!key) throw new Error(`TOKEN_ENC_KEY_V1 missing in ${DEV_VARS_FILE}`);
   const keyEnv = {
     TOKEN_ENC_KEY_CURRENT: TOKEN_KEY_VERSION,
     TOKEN_ENC_KEY_V1: key,
@@ -1019,7 +1024,7 @@ async function buildSeedSql(devVars: DevVars) {
   ].join("\n");
 }
 
-function applyToLocalDatabase(sql: string) {
+function applyToDatabase(sql: string) {
   mkdirSync(dirname(SEED_SQL_PATH), { recursive: true });
   writeFileSync(SEED_SQL_PATH, sql);
   execFileSync(
@@ -1028,8 +1033,7 @@ function applyToLocalDatabase(sql: string) {
       WRANGLER_BIN,
       "d1",
       "execute",
-      DATABASE_NAME,
-      "--local",
+      ...WRANGLER_TARGET,
       "--file",
       SEED_SQL_PATH,
     ],
@@ -1039,4 +1043,4 @@ function applyToLocalDatabase(sql: string) {
 
 const devVars = readDevVars();
 assertNotProduction(devVars);
-applyToLocalDatabase(await buildSeedSql(devVars));
+applyToDatabase(await buildSeedSql(devVars));
