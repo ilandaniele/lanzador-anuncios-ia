@@ -49,7 +49,8 @@
     "WORKERS_AI_CHAT_MODEL": "@cf/meta/llama-4-scout-17b-16e-instruct",
     "WORKERS_AI_VISION_MODEL": "@cf/meta/llama-4-scout-17b-16e-instruct",
     "WORKERS_AI_DAILY_NEURON_CAP": 9000,
-    "SUPERADMIN_EMAIL": "ilan.daniele@gmail.com"
+    "SUPERADMIN_EMAIL": "ilan.daniele@gmail.com",
+    "REVIEWER_EMAIL": "ilancho.daniele@hotmail.com"
   },
   "env": {
     "preview": {
