@@ -60,6 +60,7 @@ export const ASSET_KINDS = [
   "instagram",
   "pixel",
 ] as const;
+export type AssetKind = (typeof ASSET_KINDS)[number];
 export const LANDING_STATUSES = [
   "unchecked",
   "ok",

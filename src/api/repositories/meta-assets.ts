@@ -2,7 +2,55 @@ import { and, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { metaAssets, metaConnections } from "../../db/schema/meta";
 import type { ConnectionStatus } from "../../shared/constants";
+import type { DiscoveredAsset } from "../integrations/meta/read";
+import { newId } from "../lib/ids";
 import { inWorkspace, type Scope } from "./scope";
+
+export async function syncDiscoveredAssets(
+  db: D1Database,
+  scope: Scope,
+  connectionId: string,
+  assets: DiscoveredAsset[],
+  at: number,
+) {
+  const orm = drizzle(db);
+  await orm.batch([
+    orm
+      .update(metaAssets)
+      .set({ missingSince: sql`coalesce(${metaAssets.missingSince}, ${at})` })
+      .where(
+        and(
+          inWorkspace(metaAssets, scope),
+          eq(metaAssets.connectionId, connectionId),
+        ),
+      ),
+    ...assets.map((asset) =>
+      orm
+        .insert(metaAssets)
+        .values({
+          ...asset,
+          id: newId(),
+          workspaceId: scope.workspaceId,
+          connectionId,
+          createdAt: at,
+          updatedAt: at,
+        })
+        .onConflictDoUpdate({
+          target: [metaAssets.workspaceId, metaAssets.kind, metaAssets.metaId],
+          set: {
+            connectionId,
+            name: asset.name,
+            parentMetaId: asset.parentMetaId,
+            currency: asset.currency,
+            timezoneName: asset.timezoneName,
+            accountStatus: asset.accountStatus,
+            missingSince: null,
+            updatedAt: at,
+          },
+        }),
+    ),
+  ]);
+}
 
 export async function findEnabledAdAccount(
   db: D1Database,

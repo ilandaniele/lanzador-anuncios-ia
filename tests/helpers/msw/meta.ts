@@ -22,6 +22,13 @@ export const metaReplies = (
 export const metaMe = (headers?: Record<string, string>) =>
   metaReplies("me", meFixture, { headers });
 
+export const metaEdgePages = (path: string, pages: JsonBodyType[]) =>
+  http.get(graphUrl(path), ({ request }) => {
+    const after = new URL(request.url).searchParams.get("after");
+    const index = after ? Number(after.replace("cursor_", "")) : 0;
+    return HttpResponse.json(pages[index] ?? { data: [] });
+  });
+
 export const metaFails = (
   path: string,
   envelope: JsonBodyType,

@@ -1,0 +1,33 @@
+{
+  "data": [
+    {
+      "id": "act_1001",
+      "name": "Cuenta Principal",
+      "account_id": "1001",
+      "account_status": 1,
+      "currency": "ARS",
+      "timezone_name": "America/Argentina/Buenos_Aires",
+      "business": { "id": "555000111", "name": "Negocio Demo" },
+      "adspixels": {
+        "data": [
+          {
+            "id": "7001",
+            "name": "Pixel Tienda",
+            "last_fired_time": "2026-11-01T12:00:00+0000"
+          },
+          { "id": "7002", "name": "Pixel Blog" }
+        ]
+      }
+    },
+    {
+      "id": "act_1002",
+      "name": "Cuenta Secundaria",
+      "account_id": "1002",
+      "account_status": 2,
+      "currency": "USD",
+      "timezone_name": "America/New_York",
+      "business": { "id": "555000111", "name": "Negocio Demo" }
+    }
+  ],
+  "paging": { "cursors": { "before": "b0", "after": "a0" } }
+}
