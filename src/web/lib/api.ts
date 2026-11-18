@@ -51,13 +51,15 @@ export async function apiFetch<T>(
   const { body, ...rest } = init;
   const headers = new Headers(rest.headers);
   headers.set("X-Lanzador", "1");
-  if (body !== undefined) headers.set("Content-Type", "application/json");
+  const rawBody = body instanceof Blob ? body : undefined;
+  if (body !== undefined && !rawBody)
+    headers.set("Content-Type", "application/json");
 
   const response = await fetch(path, {
     ...rest,
     headers,
     credentials: "same-origin",
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: rawBody ?? (body === undefined ? undefined : JSON.stringify(body)),
   });
   if (!response.ok) throw await toApiError(response);
   if (response.status === 204) return undefined as T;

@@ -10,6 +10,8 @@ export const qk = {
     ["products", workspaceId, "item", productId] as const,
   productCopies: (workspaceId: string, productId: string) =>
     ["products", workspaceId, "item", productId, "copies"] as const,
+  creativesByIds: (workspaceId: string, ids: string[]) =>
+    ["creatives", workspaceId, "ids", ...ids] as const,
   adminWorkspaces: () => ["admin", "workspaces"] as const,
   launch: (workspaceId: string, launchId: string) =>
     ["launches", workspaceId, launchId] as const,
