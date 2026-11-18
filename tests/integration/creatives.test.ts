@@ -269,6 +269,7 @@ describe("GET /api/w/:wid/creatives", () => {
       expect(response.status).toBe(200);
       return counter.statements;
     };
+    await count("sort=recent");
 
     expect(await count("sort=most_used")).toBe(await count("sort=recent"));
     expect(await count("sort=most_used&limit=1")).toBe(
