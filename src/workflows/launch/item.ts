@@ -1,39 +1,43 @@
+import type { WorkflowStep } from "cloudflare:workers";
+import type { Env } from "../../api/env";
 import { findCreatedByName } from "../../api/integrations/meta/lookup";
 import { createAd, createAdCreative } from "../../api/integrations/meta/write";
-import { conflict } from "../../api/lib/errors";
+import {
+  findLaunchItem,
+  type LaunchItem,
+} from "../../api/repositories/launch-items";
 import {
   completeItem,
   failItem,
-  type PendingItem,
+  type LaunchFailure,
   saveItemCreative,
 } from "../../api/repositories/launch-run";
+import { resolveItemMedia } from "../../api/services/launch/item";
+import {
+  type LaunchItemParams,
+  notifyLaunch,
+} from "../../api/services/launch/item-instance";
 import {
   buildAdPayload,
   buildCreativePayload,
   type CreativeMedia,
 } from "../../api/services/launch/payloads";
-import { type LaunchContext, launchAudit } from "./context";
-import { isItemError, metaErrorMessage } from "./failure";
+import {
+  type LaunchContext,
+  launchAudit,
+  launchScope,
+  loadLaunchContext,
+} from "./context";
+import { launchFailure } from "./failure";
 import { runLaunchStep } from "./step";
 
 const AD_SUBREQUESTS = 2;
 
-function itemMedia(item: PendingItem): CreativeMedia {
-  if (item.cloneStoryId) return { kind: "story", storyId: item.cloneStoryId };
-  if (item.kind === "image" && item.metaImageHash) {
-    return { kind: "image", imageHash: item.metaImageHash };
-  }
-  if (item.kind === "video" && item.metaVideoId && item.thumbnailUrl) {
-    return {
-      kind: "video",
-      videoId: item.metaVideoId,
-      thumbnailUrl: item.thumbnailUrl,
-    };
-  }
-  throw conflict("CREATIVE_NOT_READY");
-}
-
-function createCreative(context: LaunchContext, item: PendingItem) {
+function createCreative(
+  context: LaunchContext,
+  item: LaunchItem,
+  media: CreativeMedia,
+) {
   const { env, step, scope, budget, graph, actId, launch, product } = context;
   const { draft } = launch;
   return runLaunchStep(
@@ -48,7 +52,7 @@ function createCreative(context: LaunchContext, item: PendingItem) {
         },
         product,
         draft.copy,
-        itemMedia(item),
+        media,
         context.settings,
       );
       const { id } = await createAdCreative(graph, actId, payload);
@@ -72,7 +76,7 @@ function createCreative(context: LaunchContext, item: PendingItem) {
 
 function createItemAd(
   context: LaunchContext,
-  item: PendingItem,
+  item: LaunchItem,
   adsetId: string,
   creativeId: string,
 ) {
@@ -120,23 +124,50 @@ function createItemAd(
   );
 }
 
-export async function createLaunchItem(
-  context: LaunchContext,
-  item: PendingItem,
-  adsetId: string,
+async function createItemCreative(context: LaunchContext, item: LaunchItem) {
+  if (item.metaCreativeId) return { creativeId: item.metaCreativeId };
+  const resolved = resolveItemMedia(
+    item,
+    context.launch.draft.adAccountAssetId,
+  );
+  if ("failure" in resolved) return resolved;
+  return { creativeId: await createCreative(context, item, resolved.media) };
+}
+
+async function createLaunchItem(
+  env: Env,
+  step: WorkflowStep,
+  params: LaunchItemParams,
+): Promise<LaunchFailure | null> {
+  const context = await loadLaunchContext(env, step, params);
+  const item = await step.do("load item", () =>
+    findLaunchItem(env.DB, context.scope, params.launchId, params.itemId),
+  );
+  if (!item) throw new Error(`Launch item ${params.itemId} is missing`);
+  const creative = await createItemCreative(context, item);
+  if ("failure" in creative) return creative.failure;
+  await createItemAd(context, item, params.adsetId, creative.creativeId);
+  return null;
+}
+
+export async function runLaunchItem(
+  env: Env,
+  step: WorkflowStep,
+  params: LaunchItemParams,
 ) {
-  try {
-    const creativeId =
-      item.metaCreativeId ?? (await createCreative(context, item));
-    await createItemAd(context, item, adsetId, creativeId);
-  } catch (error) {
-    if (!isItemError(error)) throw error;
-    const { env, step, scope, launchId } = context;
-    await step.do(`fail item ${item.id}`, () =>
-      failItem(env.DB, scope, launchId, item.id, {
-        errorCode: "META_ERROR",
-        errorMessage: metaErrorMessage(error),
-      }),
+  const failure = await createLaunchItem(env, step, params).catch(
+    launchFailure,
+  );
+  if (failure) {
+    await step.do("fail item", () =>
+      failItem(
+        env.DB,
+        launchScope(params),
+        params.launchId,
+        params.itemId,
+        failure,
+      ),
     );
   }
+  await step.do("notify launch", () => notifyLaunch(env, params));
 }

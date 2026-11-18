@@ -3,14 +3,53 @@ import {
   selectPendingItems,
 } from "../../api/repositories/launch-run";
 import {
+  createLaunchItemInstance,
+  launchItemEvent,
+} from "../../api/services/launch/item-instance";
+import {
   createLaunchInstance,
+  launchInstanceId,
   type LaunchParams,
 } from "../../api/services/launch/launch-instance";
 import type { LaunchContext } from "./context";
-import { createLaunchItem } from "./item";
 
 const BATCH_SIZE = 5;
 const BATCH_PAUSE = "20 seconds";
+const ITEM_TIMEOUT = "2 hours";
+
+async function runBatch(
+  context: LaunchContext,
+  params: LaunchParams,
+  adsetId: string,
+  batch: number,
+  itemIds: string[],
+) {
+  const { env, step, budget } = context;
+  const { launchId, workspaceId, userId, attempt } = params;
+  const parentInstanceId = launchInstanceId(params);
+  budget.charge(itemIds.length);
+  await step.do(`start batch ${batch}`, () =>
+    Promise.all(
+      itemIds.map((itemId) =>
+        createLaunchItemInstance(env, {
+          launchId,
+          workspaceId,
+          userId,
+          attempt,
+          itemId,
+          adsetId,
+          parentInstanceId,
+        }),
+      ),
+    ),
+  );
+  for (const itemId of itemIds) {
+    await step.waitForEvent(`item ${itemId}`, {
+      type: launchItemEvent(itemId),
+      timeout: ITEM_TIMEOUT,
+    });
+  }
+}
 
 export async function createLaunchItems(
   context: LaunchContext,
@@ -23,7 +62,13 @@ export async function createLaunchItems(
       selectPendingItems(env.DB, scope, launchId, BATCH_SIZE),
     );
     if (items.length === 0) return true;
-    for (const item of items) await createLaunchItem(context, item, adsetId);
+    await runBatch(
+      context,
+      params,
+      adsetId,
+      batch,
+      items.map(({ id }) => id),
+    );
     await step.do(`read counters ${batch}`, () =>
       readLaunchCounters(env.DB, scope, launchId),
     );

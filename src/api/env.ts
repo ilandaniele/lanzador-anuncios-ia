@@ -5,7 +5,7 @@ export interface Env {
   AI?: Ai;
   AI_PROVIDER?: AiProvider;
   LAUNCH_WF: Workflow;
-  LAUNCH_ITEM_WF?: Workflow;
+  LAUNCH_ITEM_WF: Workflow;
   JOB_WF?: Workflow;
   RL_IP: RateLimit;
   RL_USER: RateLimit;

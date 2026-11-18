@@ -20,7 +20,9 @@ export interface CreatedObject {
   objectName?: string;
 }
 
-export const launchScope = ({ workspaceId, userId }: LaunchParams): Scope => ({
+type LaunchRef = Pick<LaunchParams, "launchId" | "workspaceId" | "userId">;
+
+export const launchScope = ({ workspaceId, userId }: LaunchRef): Scope => ({
   workspaceId,
   userId,
   role: "editor",
@@ -53,7 +55,7 @@ async function loadInputs(env: Env, scope: Scope, launchId: string) {
 export async function loadLaunchContext(
   env: Env,
   step: WorkflowStep,
-  params: LaunchParams,
+  params: LaunchRef,
 ) {
   const scope = launchScope(params);
   const inputs = await loadInputs(env, scope, params.launchId);

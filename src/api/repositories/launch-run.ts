@@ -1,8 +1,6 @@
 import { and, eq, notInArray, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { creatives } from "../../db/schema/creatives";
 import { launchItems, launches } from "../../db/schema/launches";
-import type { CreativeKind } from "../../shared/schemas/creatives";
 import type { LaunchPhase, LaunchStatus } from "../../shared/schemas/launch";
 import { newId } from "../lib/ids";
 import { now } from "../lib/time";
@@ -173,24 +171,8 @@ export const selectPendingItems = (
   limit: number,
 ) =>
   drizzle(db)
-    .select({
-      id: launchItems.id,
-      adName: launchItems.adName,
-      cloneStoryId: launchItems.cloneStoryId,
-      metaCreativeId: launchItems.metaCreativeId,
-      kind: sql<CreativeKind | null>`${creatives.kind}`,
-      metaImageHash: creatives.metaImageHash,
-      metaVideoId: creatives.metaVideoId,
-      thumbnailUrl: creatives.thumbnailUrl,
-    })
+    .select({ id: launchItems.id })
     .from(launchItems)
-    .leftJoin(
-      creatives,
-      and(
-        eq(creatives.id, launchItems.creativeId),
-        eq(creatives.workspaceId, launchItems.workspaceId),
-      ),
-    )
     .where(
       and(
         inWorkspace(launchItems, scope),
@@ -200,10 +182,6 @@ export const selectPendingItems = (
     )
     .orderBy(launchItems.position)
     .limit(limit);
-
-export type PendingItem = Awaited<
-  ReturnType<typeof selectPendingItems>
->[number];
 
 export async function saveItemCreative(
   db: D1Database,

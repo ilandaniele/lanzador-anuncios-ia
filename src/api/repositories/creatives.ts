@@ -334,3 +334,11 @@ export const setCreativeAiStatus = (
   aiStatus: CreativeAiStatus,
   at: number,
 ) => updateAndRead(db, scope, id, { aiStatus, updatedAt: at });
+
+export const launchMediaColumns = {
+  kind: sql<CreativeKind | null>`${creatives.kind}`,
+  creativeAccountId: creatives.adAccountAssetId,
+  metaImageHash: creatives.metaImageHash,
+  metaVideoId: creatives.metaVideoId,
+  thumbnailUrl: creatives.thumbnailUrl,
+};

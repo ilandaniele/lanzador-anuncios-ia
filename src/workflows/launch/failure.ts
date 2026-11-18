@@ -10,10 +10,6 @@ export const metaErrorMessage = (error: MetaError) =>
     ? `${error.userTitle}: ${error.userMsg}`
     : (error.userMsg ?? error.message);
 
-export const isItemError = (error: unknown): error is MetaError =>
-  error instanceof MetaError &&
-  (error.kind === "param" || error.kind === "permission");
-
 export function launchFailure(error: unknown): LaunchFailure {
   if (error instanceof MetaError) {
     return {
