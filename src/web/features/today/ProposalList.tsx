@@ -5,6 +5,7 @@ import {
 } from "../../../shared/schemas/today";
 import { t } from "../../i18n/es-AR";
 import { workspacePath } from "../../layout/nav-items";
+import { ProposalCardList } from "../pilot/ProposalCardList";
 
 type ProposalListProps = {
   workspaceId: string;
@@ -30,22 +31,7 @@ export function ProposalList({
       {proposals.top.length === 0 ? (
         <p className="text-ink-muted">{t("hoy.proposalsEmpty")}</p>
       ) : (
-        <ul className="flex flex-col gap-2">
-          {proposals.top.map((proposal) => (
-            <li
-              key={proposal.id}
-              className="rounded-md border border-rule bg-surface p-4"
-            >
-              <p className="font-medium">
-                {t(`hoy.proposalAction.${proposal.action}`)}{" "}
-                {proposal.objectName}
-              </p>
-              {proposal.explanation && (
-                <p className="text-sm text-ink-muted">{proposal.explanation}</p>
-              )}
-            </li>
-          ))}
-        </ul>
+        <ProposalCardList workspaceId={workspaceId} proposals={proposals.top} />
       )}
       <Link
         to={workspacePath(workspaceId, "piloto")}

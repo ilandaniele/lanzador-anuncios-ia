@@ -34,6 +34,7 @@ import {
   useLaunchPost,
   WORKSPACE_ID,
 } from "./helpers/launch-progress";
+import { usePilotContext } from "./helpers/pilot";
 
 const TODAY_URL = `/api/w/${WORKSPACE_ID}/today`;
 const POLL_MS = 20;
@@ -136,6 +137,7 @@ const todayDto = (overrides: Partial<TodayResponse> = {}): TodayResponse => ({
 
 function useTodayBackend(body: () => TodayResponse = todayDto) {
   const calls = vi.fn();
+  usePilotContext();
   server.use(
     http.get(TODAY_URL, () => {
       calls();
@@ -237,7 +239,12 @@ describe("HoyPage", () => {
       name: /Propuestas del piloto/,
     });
 
-    expect(within(proposals).getByText(/Pausar Campaña floja/)).toBeTruthy();
+    expect(
+      await within(proposals).findByRole("heading", {
+        name: "Pausar campaña",
+      }),
+    ).toBeTruthy();
+    expect(within(proposals).getByText(/Campaña floja/)).toBeTruthy();
     expect(
       within(proposals)
         .getByRole("link", { name: "Ver todas en Piloto" })

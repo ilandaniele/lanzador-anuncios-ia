@@ -21,7 +21,7 @@ function pageUrl(
   return `${path}?${query}`;
 }
 
-function useCursorPages<Item>(
+export function useCursorPages<Item>(
   queryKey: readonly unknown[],
   path: string,
   filters: Record<string, string> = {},

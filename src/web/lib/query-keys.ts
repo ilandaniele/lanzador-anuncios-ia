@@ -17,6 +17,14 @@ export const qk = {
   creativeList: (workspaceId: string, search: string) =>
     ["creatives", workspaceId, "list", search] as const,
   today: (workspaceId: string) => ["today", workspaceId] as const,
+  pilotPending: (workspaceId: string) =>
+    ["pilot", workspaceId, "pending"] as const,
+  pilotHistory: (workspaceId: string) =>
+    ["pilot", workspaceId, "history"] as const,
+  pilotHistoryStatus: (workspaceId: string, status: string) =>
+    ["pilot", workspaceId, "history", status] as const,
+  pilotLastRun: (workspaceId: string) =>
+    ["pilot", workspaceId, "last-run"] as const,
   adminWorkspaces: () => ["admin", "workspaces"] as const,
   adminUsage: (month: string) => ["admin", "usage", month] as const,
   adminErrors: (source: string) => ["admin", "errors", source] as const,

@@ -1,14 +1,11 @@
 import { Button } from "../../components/Button";
 import { useToast } from "../../components/Toast";
 import { t } from "../../i18n/es-AR";
+import { formatCountdown } from "../../lib/format-countdown";
 import { useCountdown } from "../auth/use-countdown";
 import { useRefreshToday } from "./use-today";
 
 const COOLDOWN_SECONDS = 60;
-const SECONDS_PER_MINUTE = 60;
-
-const formatCountdown = (seconds: number) =>
-  `${Math.floor(seconds / SECONDS_PER_MINUTE)}:${String(seconds % SECONDS_PER_MINUTE).padStart(2, "0")}`;
 
 export function RefreshControl({ workspaceId }: { workspaceId: string }) {
   const { remaining, restart } = useCountdown(COOLDOWN_SECONDS, 0);
