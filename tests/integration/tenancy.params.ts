@@ -90,6 +90,11 @@ export const TENANCY_PARAMS: TenancyParams = {
     ...foreignLaunch(pair),
     body: { confirm: true, planHash: "x" },
   }),
+  "GET /api/w/:wid/launches/:id/progress": foreignLaunch,
+  "POST /api/w/:wid/launches/:id/retry-failed": (pair) => ({
+    ...foreignLaunch(pair),
+    body: { confirm: true },
+  }),
   "POST /api/w/:wid/launches/:id/discard": foreignLaunch,
   "PATCH /api/w/:wid/members/:userId": (pair) => ({
     ...foreignMember(pair),

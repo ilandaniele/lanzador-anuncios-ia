@@ -10,7 +10,11 @@ import {
   queueLaunch,
 } from "../../repositories/launch-run";
 import type { Scope } from "../../repositories/scope";
-import { createLaunchInstance, launchInstanceId } from "./launch-instance";
+import {
+  createLaunchInstance,
+  firstSegmentParams,
+  launchInstanceId,
+} from "./launch-instance";
 import { computeLaunchPlan, parseCompleteDraft } from "./simulate";
 
 const toLaunchItem = ({
@@ -47,13 +51,7 @@ export async function startLaunch(
     throw new AppError(422, "BLOCKERS", { fields });
   }
   if (plan.planHash !== planHash) throw conflict("PLAN_CHANGED");
-  const params = {
-    launchId: id,
-    workspaceId: scope.workspaceId,
-    userId: scope.userId,
-    attempt: launch.attempt + 1,
-    segment: 0,
-  };
+  const params = firstSegmentParams(scope, id, launch.attempt + 1);
   const queued = await queueLaunch(env.DB, scope, id, {
     planHash,
     draftUpdatedAt: launch.updatedAt,

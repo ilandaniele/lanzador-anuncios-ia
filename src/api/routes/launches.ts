@@ -1,12 +1,14 @@
 import { Hono } from "hono";
 import {
   launchDraftRequestSchema,
+  launchProgressQuerySchema,
+  launchRetryRequestSchema,
   launchStartRequestSchema,
   listLaunchesQuerySchema,
 } from "../../shared/schemas/launch";
 import { parseJson, parseQuery } from "../lib/validate";
 import { member } from "../middleware/member";
-import { expensiveRateLimit } from "../middleware/rate-limit";
+import { expensiveRateLimit, pollRateLimit } from "../middleware/rate-limit";
 import {
   createLaunchDraft,
   discardLaunch,
@@ -14,6 +16,8 @@ import {
   listLaunches,
   patchLaunchDraft,
 } from "../services/launch/drafts";
+import { getLaunchProgress } from "../services/launch/progress";
+import { retryFailedItems } from "../services/launch/retry";
 import { simulateLaunch } from "../services/launch/simulate";
 import { startLaunch } from "../services/launch/start";
 import type { AppEnv } from "../types";
@@ -72,6 +76,32 @@ export const launchRoutes = new Hono<AppEnv>()
         ),
         202,
       ),
+  )
+  .get(
+    "/w/:wid/launches/:id/progress",
+    ...member("viewer"),
+    pollRateLimit,
+    async (c) =>
+      c.json(
+        await getLaunchProgress(
+          c.env.DB,
+          c.get("scope")!,
+          c.req.param("id"),
+          parseQuery(c, launchProgressQuerySchema),
+        ),
+      ),
+  )
+  .post(
+    "/w/:wid/launches/:id/retry-failed",
+    ...member("editor"),
+    expensiveRateLimit,
+    async (c) => {
+      await parseJson(c, launchRetryRequestSchema);
+      return c.json(
+        await retryFailedItems(c.env, c.get("scope")!, c.req.param("id")),
+        202,
+      );
+    },
   )
   .post("/w/:wid/launches/:id/discard", ...member("editor"), async (c) => {
     await discardLaunch(c.env.DB, c.get("scope")!, c.req.param("id"));

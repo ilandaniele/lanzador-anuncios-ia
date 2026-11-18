@@ -1,4 +1,5 @@
 import type { Env } from "../../env";
+import type { Scope } from "../../repositories/scope";
 
 export interface LaunchParams {
   launchId: string;
@@ -17,12 +18,17 @@ export const launchInstanceId = ({
     ? `launch-${launchId}-${attempt}`
     : `launch-${launchId}-${attempt}-${segment}`;
 
-export async function createLaunchInstance(
-  env: Pick<Env, "LAUNCH_WF">,
-  params: LaunchParams,
+export const firstSegmentParams = (
+  { workspaceId, userId }: Scope,
+  launchId: string,
+  attempt: number,
+): LaunchParams => ({ launchId, workspaceId, userId, attempt, segment: 0 });
+
+export async function createInstanceOnce<P>(
+  binding: Workflow<P>,
+  id: string,
+  params: P,
 ): Promise<string> {
-  const binding = env.LAUNCH_WF as Workflow<LaunchParams>;
-  const id = launchInstanceId(params);
   try {
     await binding.create({ id, params });
   } catch (error) {
@@ -32,3 +38,13 @@ export async function createLaunchInstance(
   }
   return id;
 }
+
+export const createLaunchInstance = (
+  env: Pick<Env, "LAUNCH_WF">,
+  params: LaunchParams,
+): Promise<string> =>
+  createInstanceOnce(
+    env.LAUNCH_WF as Workflow<LaunchParams>,
+    launchInstanceId(params),
+    params,
+  );

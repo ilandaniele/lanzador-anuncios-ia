@@ -251,3 +251,12 @@ export const launchDetailResponseSchema = z.object({
   plan: launchPlanSchema.nullable(),
 });
 export type LaunchDetailResponse = z.infer<typeof launchDetailResponseSchema>;
+
+export const launchRetryRequestSchema = launchStartRequestSchema.pick({
+  confirm: true,
+});
+
+export const launchProgressQuerySchema = z.object({
+  since: z.iso.datetime().optional(),
+});
+export type LaunchProgressQuery = z.infer<typeof launchProgressQuerySchema>;
