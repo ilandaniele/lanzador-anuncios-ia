@@ -25,7 +25,7 @@ function HoyContent({ workspaceId }: { workspaceId: string }) {
   const today = useToday(workspaceId);
 
   return (
-    <main>
+    <main className="p-4">
       <TodayHeader
         workspaceId={workspaceId}
         updatedAt={today.data?.updatedAt}
