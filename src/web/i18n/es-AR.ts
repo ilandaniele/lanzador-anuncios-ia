@@ -349,6 +349,67 @@ const esAR = {
     receiptWorkspace: "Workspace",
     errorConfirmMismatch: "El nombre no coincide. Escribilo exacto.",
   },
+  connections: {
+    metaTitle: "Meta",
+    notConnected:
+      "Conectá Meta para elegir tus cuentas publicitarias, páginas, Instagram y píxeles. Los anuncios siempre se crean en pausa.",
+    notConnectedReadOnly:
+      "Meta todavía no está conectado. Pedile a un administrador que lo conecte.",
+    loadError: "No pudimos cargar las conexiones",
+    connect: "Conectar Meta",
+    reconnect: "Reconectar",
+    chooseAssets: "Elegir activos",
+    refreshAssets: "Actualizar activos",
+    assetsRefreshed: "Activos actualizados",
+    disconnect: "Desconectar",
+    statusActive: "Conectado",
+    statusReconnect: "Reconectar",
+    expiresIn: "Vence en",
+    day: "día",
+    days: "días",
+    expiresOn: "Vence el",
+    enabledAccounts: "Cuentas habilitadas",
+    noEnabledAccounts: "Todavía no habilitaste cuentas publicitarias.",
+    connectedOk: "Meta conectado. Elegí qué activos usar.",
+    connectFailed: "No pudimos conectar Meta.",
+    disconnectTitle: "Desconectar Meta",
+    receiptBusiness: "Negocio",
+    receiptCreatives: "Creativos que salen de la biblioteca",
+    disconnectConsequence:
+      "Los creativos siguen en Meta. Lanzador pierde el acceso y se revoca el permiso.",
+    disconnected: "Meta desconectado",
+    failure: {
+      STATE_INVALID: "El intento de conexión venció. Probá de nuevo.",
+      META_DENIED:
+        "Cancelaste el permiso en Meta. Conectá de nuevo para seguir.",
+      TOKEN_EXCHANGE_FAILED: "Meta no confirmó la conexión. Probá de nuevo.",
+      MISSING_PERMISSIONS:
+        "Faltan permisos. Aceptá todos los que pide Meta y conectá de nuevo.",
+      META_ERROR: "Meta no respondió bien. Probá en unos minutos.",
+      INTERNAL: "Algo salió mal al conectar. Probá de nuevo.",
+    },
+    errorPlanLimit:
+      "Tu plan no permite habilitar tantas cuentas publicitarias. Quitá alguna o cambiá de plan.",
+    errorReconnectRequired: "Meta pide reconectar. Usá Reconectar.",
+    errorRateLimited: "Demasiados intentos. Probá en unos minutos.",
+    picker: {
+      title: "Elegir activos",
+      search: "Buscar activos",
+      all: "Todos",
+      of: "de",
+      save: "Guardar",
+      saved: "Activos guardados",
+      loadError: "No pudimos cargar los activos",
+      empty: "Todavía no hay activos. Probá con Actualizar activos.",
+      noMatches: "Sin resultados",
+      groups: {
+        ad_account: "Cuentas publicitarias",
+        page: "Páginas",
+        instagram: "Instagram",
+        pixel: "Píxeles",
+      },
+    },
+  },
 };
 
 type Leaves<T> = {

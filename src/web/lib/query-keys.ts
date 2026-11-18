@@ -9,4 +9,9 @@ export const qk = {
   product: (workspaceId: string, productId: string) =>
     ["products", workspaceId, "item", productId] as const,
   adminWorkspaces: () => ["admin", "workspaces"] as const,
+  metaAssets: (workspaceId: string) => ["meta-assets", workspaceId] as const,
+  metaAssetsAll: (workspaceId: string) =>
+    ["meta-assets", workspaceId, "all"] as const,
+  metaConnections: (workspaceId: string) =>
+    ["meta-connections", workspaceId] as const,
 };
