@@ -24,7 +24,7 @@ export const itemFromAd = ({
   adId,
   name,
   storyId,
-}: CampaignAdDto): DraftItem => ({
+}: Pick<CampaignAdDto, "adId" | "name" | "storyId">): DraftItem => ({
   source: "clone",
   cloneAdId: adId,
   ...(storyId ? { cloneStoryId: storyId } : {}),

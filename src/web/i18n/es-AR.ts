@@ -195,7 +195,11 @@ const esAR = {
   metrics: {
     exportCsv: "Exportar CSV",
     tabsLabel: "Secciones de métricas",
-    tabs: { performance: "Rendimiento" },
+    tabs: {
+      performance: "Rendimiento",
+      topAds: "Mejores anuncios",
+      winning: "Qué gana",
+    },
     filtersLabel: "Filtros de métricas",
     range: "Rango",
     ranges: {
@@ -314,6 +318,37 @@ const esAR = {
     noAccounts:
       "No hay cuentas publicitarias habilitadas. Conectá Meta y habilitá una cuenta.",
     connect: "Conectar Meta",
+    topAds: {
+      loading: "Cargando mejores anuncios",
+      loadError: "No pudimos cargar los mejores anuncios",
+      empty: "Todavía no hay anuncios con gasto suficiente para este rango.",
+      spend: "Gasto",
+      noRoas: "—",
+      choose: "Elegir",
+      otherAccount: "Otra cuenta publicitaria",
+      selectionLabel: "Selección de anuncios",
+      chosenOne: "elegido",
+      chosenMany: "elegidos",
+      use: "Usar en un lanzamiento",
+      createFailed: "No pudimos crear el lanzamiento. Probá de nuevo.",
+    },
+    winning: {
+      dimensionLegend: "Dimensión",
+      dimension: {
+        hook: "Gancho",
+        angle: "Ángulo",
+        format: "Formato",
+        language: "Idioma",
+        onScreenText: "Texto en pantalla",
+      },
+      captionIntro: "Rendimiento por",
+      onScreenTextYes: "Con texto",
+      onScreenTextNo: "Sin texto",
+      col: { tag: "Etiqueta", ads: "Anuncios" },
+      loading: "Cargando etiquetas",
+      loadError: "No pudimos cargar las etiquetas",
+      empty: "Todavía no hay etiquetas con gasto en este rango.",
+    },
   },
   copys: {
     tabsLabel: "Secciones del producto",

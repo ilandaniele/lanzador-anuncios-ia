@@ -41,6 +41,17 @@ function BreakEvenBar({
   );
 }
 
+export function roasDescription(
+  roas: number,
+  breakEvenRoas: number | null | undefined,
+): string {
+  const spoken = `${t("metrics.roasLabel")} ${formatRoas(roas)}`;
+  if (breakEvenRoas == null) return `${spoken}, ${t("metrics.roasSrNone")}`;
+  const side =
+    roas >= breakEvenRoas ? "metrics.roasSrAbove" : "metrics.roasSrBelow";
+  return `${spoken}, ${t(side)} ${formatRoas(breakEvenRoas)}`;
+}
+
 export function RoasValue({ roas, breakEvenRoas }: RoasValueProps) {
   if (roas === null) return NO_VALUE;
   const value = formatRoas(roas);
@@ -48,12 +59,12 @@ export function RoasValue({ roas, breakEvenRoas }: RoasValueProps) {
     return (
       <>
         <span aria-hidden="true">{value}</span>
-        <span className="sr-only">{`${t("metrics.roasLabel")} ${value}, ${t("metrics.roasSrNone")}`}</span>
+        <span className="sr-only">{roasDescription(roas, breakEvenRoas)}</span>
       </>
     );
 
   const above = roas >= breakEvenRoas;
-  const spoken = `${t("metrics.roasLabel")} ${value}, ${t(above ? "metrics.roasSrAbove" : "metrics.roasSrBelow")} ${formatRoas(breakEvenRoas)}`;
+  const spoken = roasDescription(roas, breakEvenRoas);
   return (
     <>
       <span

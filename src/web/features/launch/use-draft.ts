@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   LaunchDetailResponse,
   LaunchDto,
+  LaunchSource,
   PartialLaunchDraft,
 } from "../../../shared/schemas/launch";
 import { ApiError, apiFetch } from "../../lib/api";
@@ -21,13 +22,15 @@ export const useLaunch = (workspaceId: string, launchId: string) =>
       apiFetch<LaunchDetailResponse>(`${launchesApi(workspaceId)}/${launchId}`),
   });
 
+type CreateDraftRequest = { draft: PartialLaunchDraft; source?: LaunchSource };
+
 export const useCreateDraft = (workspaceId: string) =>
   useMutation({
-    mutationFn: async () =>
+    mutationFn: async (request?: CreateDraftRequest) =>
       (
         await apiFetch<{ launch: LaunchDto }>(launchesApi(workspaceId), {
           method: "POST",
-          body: { draft: {} },
+          body: request ?? { draft: {} },
         })
       ).launch,
   });

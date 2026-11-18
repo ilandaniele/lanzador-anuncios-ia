@@ -25,6 +25,10 @@ export const qk = {
   metricsAll: (workspaceId: string) => ["metrics", workspaceId] as const,
   metrics: (workspaceId: string, search: string) =>
     ["metrics", workspaceId, search] as const,
+  topAds: (workspaceId: string, search: string) =>
+    ["metrics", workspaceId, "top-ads", search] as const,
+  winningTags: (workspaceId: string, search: string) =>
+    ["metrics", workspaceId, "winning-tags", search] as const,
   metaCampaignReference: (
     workspaceId: string,
     adAccountAssetId: string,

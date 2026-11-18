@@ -3,7 +3,7 @@ import type { MetricsFilters } from "./metrics-filters";
 
 const dayMonthYear = (day: string) => day.split("-").reverse().join("/");
 
-function rangeText({ range, from, to }: MetricsFilters): string {
+export function rangeText({ range, from, to }: MetricsFilters): string {
   const label = t(`metrics.ranges.${range}`);
   if (range !== "custom" || !from || !to) return label;
   return `${label}, ${t("metrics.captionDates")} ${dayMonthYear(from)} ${t("metrics.captionDatesTo")} ${dayMonthYear(to)}`;

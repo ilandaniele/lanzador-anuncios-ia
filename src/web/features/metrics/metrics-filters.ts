@@ -68,7 +68,9 @@ export function parseFilters(params: URLSearchParams): MetricsFilters {
   };
 }
 
-export function filtersToParams(filters: MetricsFilters): URLSearchParams {
+export function rangeToParams(
+  filters: Pick<MetricsFilters, "range" | "from" | "to">,
+): URLSearchParams {
   const params = new URLSearchParams();
   if (filters.range !== DEFAULT_FILTERS.range)
     params.set("range", filters.range);
@@ -76,6 +78,11 @@ export function filtersToParams(filters: MetricsFilters): URLSearchParams {
     if (filters.from) params.set("from", filters.from);
     if (filters.to) params.set("to", filters.to);
   }
+  return params;
+}
+
+export function filtersToParams(filters: MetricsFilters): URLSearchParams {
+  const params = rangeToParams(filters);
   if (filters.adAccountId) params.set("adAccountIds", filters.adAccountId);
   if (filters.productId) params.set("productId", filters.productId);
   if (filters.level !== DEFAULT_FILTERS.level)

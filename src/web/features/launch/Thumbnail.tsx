@@ -1,15 +1,18 @@
-export function Thumbnail({ url }: { url: string | null }) {
+import { cx } from "../../components/classes";
+
+const BASE = "shrink-0 rounded-xs bg-surface-sunken";
+
+type ThumbnailProps = { url: string | null; className?: string };
+
+export function Thumbnail({ url, className = "size-14" }: ThumbnailProps) {
   return url ? (
     <img
       src={url}
       alt=""
       loading="lazy"
-      className="size-14 shrink-0 rounded-xs bg-surface-sunken object-cover"
+      className={cx(BASE, "object-cover", className)}
     />
   ) : (
-    <div
-      aria-hidden="true"
-      className="size-14 shrink-0 rounded-xs bg-surface-sunken"
-    />
+    <div aria-hidden="true" className={cx(BASE, className)} />
   );
 }
