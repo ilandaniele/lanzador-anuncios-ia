@@ -16,6 +16,7 @@ export const qk = {
     ["creatives", workspaceId, "list"] as const,
   creativeList: (workspaceId: string, search: string) =>
     ["creatives", workspaceId, "list", search] as const,
+  today: (workspaceId: string) => ["today", workspaceId] as const,
   adminWorkspaces: () => ["admin", "workspaces"] as const,
   adminUsage: (month: string) => ["admin", "usage", month] as const,
   adminErrors: (source: string) => ["admin", "errors", source] as const,

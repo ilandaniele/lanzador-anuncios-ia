@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 
 const TICK_MS = 1000;
 
-export function useCountdown(seconds: number) {
-  const [remaining, setRemaining] = useState(seconds);
+export function useCountdown(seconds: number, initial: number = seconds) {
+  const [remaining, setRemaining] = useState(initial);
   const running = remaining > 0;
 
   useEffect(() => {
