@@ -88,6 +88,13 @@ describe("launch draft schemas", () => {
     expect(launchDraftSchema.safeParse(fullDraft).success).toBe(true);
   });
 
+  it("accepts a complete draft whose copy has no description", () => {
+    const copy = { ...fullDraft.copy, description: undefined };
+    expect(launchDraftSchema.safeParse({ ...fullDraft, copy }).success).toBe(
+      true,
+    );
+  });
+
   it.each([
     ["an empty draft", {}],
     ["only a campaign name", { campaignName: "CBO" }],

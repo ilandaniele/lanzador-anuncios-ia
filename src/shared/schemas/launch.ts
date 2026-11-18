@@ -46,7 +46,7 @@ const copyFields = {
   copyId: id.optional(),
   primaryText: text(PRIMARY_TEXT_MAX),
   headline: text(HEADLINE_MAX),
-  description: text(DESCRIPTION_MAX),
+  description: text(DESCRIPTION_MAX).optional(),
   cta: z.enum(CTAS),
 };
 
