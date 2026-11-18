@@ -1,7 +1,10 @@
 import { Hono } from "hono";
+import { sendChatMessageRequestSchema } from "../../shared/schemas/chat";
 import { paginationQuerySchema } from "../../shared/schemas/common";
-import { parseQuery } from "../lib/validate";
+import { parseJson, parseQuery } from "../lib/validate";
 import { member } from "../middleware/member";
+import { expensiveRateLimit } from "../middleware/rate-limit";
+import { sendChatMessage } from "../services/chat/agent";
 import {
   createChatSession,
   listChatMessages,
@@ -31,4 +34,15 @@ export const chatRoutes = new Hono<AppEnv>()
         parseQuery(c, paginationQuerySchema),
       ),
     ),
+  )
+  .post(
+    "/w/:wid/chat/sessions/:id/messages",
+    ...member("editor"),
+    expensiveRateLimit,
+    async (c) => {
+      const { text } = await parseJson(c, sendChatMessageRequestSchema);
+      return c.json(
+        await sendChatMessage(c.env, c.get("scope")!, c.req.param("id"), text),
+      );
+    },
   );

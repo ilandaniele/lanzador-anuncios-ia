@@ -81,25 +81,38 @@ export async function listChatMessages(
   return { data: page.rows.map(toMessageDto), nextCursor: page.nextCursor };
 }
 
+const hasRoomFor = (session: ChatSessionRow, adding: number) =>
+  session.status !== "closed" &&
+  session.messageCount + adding <= MAX_CHAT_SESSION_MESSAGES;
+
+export async function findSessionWithRoom(
+  db: D1Database,
+  scope: Scope,
+  sessionId: string,
+  adding: number,
+) {
+  const session = await findChatSession(db, scope, sessionId);
+  if (session === null) throw notFound();
+  if (!hasRoomFor(session, adding)) throw conflict("SESSION_CLOSED");
+  return session;
+}
+
 export async function appendSessionMessages(
   db: D1Database,
   scope: Scope,
   sessionId: string,
   messages: Omit<NewChatMessage, "id">[],
-) {
-  const session = await findChatSession(db, scope, sessionId);
-  if (session === null) throw notFound();
-  const fits =
-    session.status !== "closed" &&
-    session.messageCount + messages.length <= MAX_CHAT_SESSION_MESSAGES;
-  const saved =
-    fits &&
-    (await appendChatMessages(
-      db,
-      scope,
-      sessionId,
-      messages.map((message) => ({ ...message, id: newId() })),
-      now(),
-    ));
-  if (!saved) throw conflict("SESSION_CLOSED");
+  launchId?: string,
+): Promise<ChatMessageDto[]> {
+  await findSessionWithRoom(db, scope, sessionId, messages.length);
+  const at = now();
+  const stored = messages.map((message) => ({ ...message, id: newId() }));
+  if (!(await appendChatMessages(db, scope, sessionId, stored, at, launchId))) {
+    throw conflict("SESSION_CLOSED");
+  }
+  return stored.flatMap(({ id, role, content }) =>
+    role === "user" || role === "assistant"
+      ? [toMessageDto({ id, role, content, createdAt: at })]
+      : [],
+  );
 }

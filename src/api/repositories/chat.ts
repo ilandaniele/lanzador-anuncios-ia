@@ -118,15 +118,38 @@ export type ChatMessageRow = Awaited<
   ReturnType<typeof selectVisibleChatMessages>
 >[number];
 
+export async function selectRecentChatHistory(
+  db: D1Database,
+  scope: Scope,
+  sessionId: string,
+  size: number,
+) {
+  const rows = await drizzle(db)
+    .select({ role: messageColumns.role, content: messageColumns.content })
+    .from(chatMessages)
+    .where(
+      and(
+        inWorkspace(chatMessages, scope),
+        eq(chatMessages.sessionId, sessionId),
+        ne(chatMessages.role, "tool"),
+      ),
+    )
+    .orderBy(desc(chatMessages.createdAt), desc(chatMessages.id))
+    .limit(size);
+  return rows.reverse();
+}
+
 export async function appendChatMessages(
   db: D1Database,
   scope: Scope,
   sessionId: string,
   messages: NewChatMessage[],
   at: number,
+  launchId?: string,
 ): Promise<boolean> {
   const orm = drizzle(db);
   const added = messages.length;
+  const openStatus = launchId ? sql`'draft_created'` : chatSessions.status;
   try {
     await orm.batch([
       orm.insert(chatMessages).values(
@@ -141,7 +164,8 @@ export async function appendChatMessages(
         .update(chatSessions)
         .set({
           messageCount: sql`${chatSessions.messageCount} + ${added}`,
-          status: sql`CASE WHEN ${chatSessions.messageCount} + ${added} >= ${MAX_CHAT_SESSION_MESSAGES} THEN 'closed' ELSE ${chatSessions.status} END`,
+          status: sql`CASE WHEN ${chatSessions.messageCount} + ${added} >= ${MAX_CHAT_SESSION_MESSAGES} THEN 'closed' ELSE ${openStatus} END`,
+          ...(launchId ? { launchId } : {}),
           updatedAt: at,
         })
         .where(and(ownSession(scope), eq(chatSessions.id, sessionId))),

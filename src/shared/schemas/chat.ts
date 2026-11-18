@@ -26,3 +26,15 @@ export const chatMessageSchema = z.object({
 export type ChatMessageDto = z.infer<typeof chatMessageSchema>;
 
 export const chatMessagesPageSchema = paginatedSchema(chatMessageSchema);
+
+export const CHAT_TEXT_MAX = 2000;
+
+export const sendChatMessageRequestSchema = z.object({
+  text: z.string().trim().min(1).max(CHAT_TEXT_MAX),
+});
+
+export const chatReplySchema = z.object({
+  messages: z.array(chatMessageSchema),
+  draftLaunchId: z.string().optional(),
+});
+export type ChatReply = z.infer<typeof chatReplySchema>;

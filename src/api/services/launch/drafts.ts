@@ -1,4 +1,5 @@
 import type {
+  LaunchSource,
   ListLaunchesQuery,
   PartialLaunchDraft,
 } from "../../../shared/schemas/launch";
@@ -68,11 +69,13 @@ export async function createLaunchDraft(
   db: D1Database,
   scope: Scope,
   draft: PartialLaunchDraft,
+  source: LaunchSource = "manual",
 ) {
   const at = now();
   const launch = await insertLaunch(db, scope, {
     ...(await toDraftColumns(db, scope, draft)),
     id: newId(),
+    source,
     createdAt: at,
     updatedAt: at,
   });

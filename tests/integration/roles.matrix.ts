@@ -55,6 +55,7 @@ export const ROLE_MATRIX: Record<string, RoleRule> = {
   "POST /api/w/:wid/chat/sessions": "editor",
   "GET /api/w/:wid/chat/sessions": "editor",
   "GET /api/w/:wid/chat/sessions/:id/messages": "editor",
+  "POST /api/w/:wid/chat/sessions/:id/messages": "editor",
   "POST /api/w/:wid/uploads": "editor",
   "PUT /api/w/:wid/uploads/:uploadId/chunk": "editor",
   "POST /api/w/:wid/uploads/:uploadId/complete": "editor",

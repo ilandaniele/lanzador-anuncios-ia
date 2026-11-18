@@ -31,6 +31,10 @@ const foreignChatSession = ({ B }: TenantPair) => ({
 
 export const TENANCY_PARAMS: TenancyParams = {
   "GET /api/w/:wid/chat/sessions/:id/messages": foreignChatSession,
+  "POST /api/w/:wid/chat/sessions/:id/messages": (pair) => ({
+    ...foreignChatSession(pair),
+    body: { text: "hola" },
+  }),
   "POST /api/w/:wid/meta/connections/:id/refresh-assets": foreignConnection,
   "DELETE /api/w/:wid/meta/connections/:id": (pair) => ({
     ...foreignConnection(pair),

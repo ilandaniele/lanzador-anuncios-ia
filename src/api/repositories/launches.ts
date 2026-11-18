@@ -79,6 +79,7 @@ const itemColumns = {
 export type NewLaunch = Pick<
   typeof launches.$inferInsert,
   | "id"
+  | "source"
   | "mode"
   | "adAccountAssetId"
   | "adAccountMetaId"
