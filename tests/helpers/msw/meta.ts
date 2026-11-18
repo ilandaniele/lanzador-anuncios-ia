@@ -50,3 +50,18 @@ export const metaNetworkError = (path: string) =>
 
 export const metaServerError = (path: string, status = 500) =>
   http.all(graphUrl(path), () => new HttpResponse("upstream", { status }));
+
+export const GRAPH_VIDEO_BASE_URL = `https://graph-video.facebook.com/${GRAPH_VERSION}`;
+
+export const graphVideoUrl = (path: string) =>
+  `${GRAPH_VIDEO_BASE_URL}/${path}`;
+
+export const metaVideoPhases = (
+  path: string,
+  replies: Record<string, JsonBodyType>,
+  status = 200,
+) =>
+  http.post(graphVideoUrl(path), async ({ request }) => {
+    const phase = String((await request.formData()).get("upload_phase"));
+    return HttpResponse.json(replies[phase] ?? null, { status });
+  });

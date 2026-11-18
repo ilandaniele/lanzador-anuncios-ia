@@ -2,6 +2,10 @@ import type { Env } from "../../env";
 import { bytesToHex, hmacSha256 } from "../../lib/hash";
 import { logEvent } from "../../lib/logger";
 import {
+  type MultipartFile,
+  multipartStream,
+} from "../../lib/multipart-stream";
+import {
   type BatchRequest,
   type BatchResult,
   readBatchItem,
@@ -28,13 +32,18 @@ export { MetaError } from "./errors";
 export type { MetaErrorKind } from "./errors";
 export type { BatchRequest, BatchResult } from "./batch";
 
-const GRAPH_ORIGIN = "https://graph.facebook.com";
+const GRAPH_ORIGINS = {
+  graph: "https://graph.facebook.com",
+  video: "https://graph-video.facebook.com",
+};
 export const REQUEST_TIMEOUT_MS = 30_000;
 export const BATCH_TIMEOUT_MS = 60_000;
+export const UPLOAD_TIMEOUT_MS = 120_000;
 export const USAGE_STOP_PERCENT = 75;
 const DEFAULT_THROTTLE_MS = 60_000;
 
 type GraphEnv = Pick<Env, "GRAPH_API_VERSION" | "META_APP_SECRET">;
+export type GraphHost = keyof typeof GRAPH_ORIGINS;
 
 export interface GraphConnection {
   token: string;
@@ -49,6 +58,8 @@ export interface GraphOptions {
 interface SendOptions {
   query?: QueryValues;
   form?: FormValues;
+  file?: MultipartFile;
+  host?: GraphHost;
   timeoutMs?: number;
   weight?: number;
 }
@@ -63,12 +74,30 @@ const throttledError = (retryAfterMs?: number) =>
     message: `Meta usage at or above ${USAGE_STOP_PERCENT}%`,
   });
 
+interface RequestBody {
+  body: BodyInit | null;
+  headers: Record<string, string>;
+}
+
+function requestBody(form: FormValues, file?: MultipartFile): RequestBody {
+  if (!file) return { body: encodeForm(form), headers: {} };
+  const fields = Object.fromEntries(encodeForm(form));
+  const multipart = multipartStream(fields, file);
+  return {
+    body: multipart.body.pipeThrough(
+      new FixedLengthStream(multipart.contentLength),
+    ),
+    headers: { "Content-Type": multipart.contentType },
+  };
+}
+
 export function createGraph(
   env: GraphEnv,
   conn: GraphConnection,
   { onSessionError }: GraphOptions = {},
 ) {
-  const baseUrl = `${GRAPH_ORIGIN}/${env.GRAPH_API_VERSION}/`;
+  const baseUrl = (host: GraphHost) =>
+    `${GRAPH_ORIGINS[host]}/${env.GRAPH_API_VERSION}/`;
   const appsecretProof = hmacSha256(env.META_APP_SECRET, conn.token).then(
     bytesToHex,
   );
@@ -127,6 +156,8 @@ export function createGraph(
     {
       query = {},
       form,
+      file,
+      host = "graph",
       timeoutMs = REQUEST_TIMEOUT_MS,
       weight = 1,
     }: SendOptions,
@@ -134,17 +165,20 @@ export function createGraph(
     assertNotThrottled();
     const proof = await appsecretProof;
     assertNotThrottled();
-    const url = new URL(`${baseUrl}${path}`);
+    const url = new URL(`${baseUrl(host)}${path}`);
     url.search = toQueryString(
       form ? query : { ...query, appsecret_proof: proof },
     );
+    const { body, headers }: RequestBody = form
+      ? requestBody({ ...form, appsecret_proof: proof }, file)
+      : { body: null, headers: {} };
 
     calls += weight;
     const response = await attempt(path, () =>
       fetch(url, {
         method,
-        headers: { Authorization: `Bearer ${conn.token}` },
-        body: form ? encodeForm({ ...form, appsecret_proof: proof }) : null,
+        headers: { ...headers, Authorization: `Bearer ${conn.token}` },
+        body,
         redirect: "manual",
         signal: AbortSignal.timeout(timeoutMs),
       }),
@@ -166,8 +200,21 @@ export function createGraph(
     get: async <T>(path: string, params?: QueryValues) =>
       (await send("GET", assertGraphPath(path), { query: params })) as T,
 
-    post: async <T>(path: string, form: FormValues) =>
-      (await send("POST", assertGraphPath(path), { form })) as T,
+    post: async <T>(path: string, form: FormValues, host?: GraphHost) =>
+      (await send("POST", assertGraphPath(path), { form, host })) as T,
+
+    upload: async <T>(
+      path: string,
+      form: FormValues,
+      file: MultipartFile,
+      host?: GraphHost,
+    ) =>
+      (await send("POST", assertGraphPath(path), {
+        form,
+        file,
+        host,
+        timeoutMs: UPLOAD_TIMEOUT_MS,
+      })) as T,
 
     async batch<T>(requests: BatchRequest[]): Promise<BatchResult<T>[]> {
       const batch = requests.map(toBatchItem);
