@@ -69,6 +69,7 @@
         }
       ],
       "workflows": [
+        { "name": "lanzador-job-preview", "binding": "JOB_WF", "class_name": "JobWorkflow" },
         { "name": "lanzador-launch-preview", "binding": "LAUNCH_WF", "class_name": "LaunchWorkflow" },
         { "name": "lanzador-launch-item-preview", "binding": "LAUNCH_ITEM_WF", "class_name": "LaunchItemWorkflow" }
       ],
