@@ -21,6 +21,7 @@
   "workflows": [
     { "name": "lanzador-job", "binding": "JOB_WF", "class_name": "JobWorkflow" }
   ],
+  "ai": { "binding": "AI" },
   "ratelimits": [
     { "name": "RL_IP", "namespace_id": "1001", "simple": { "limit": 300, "period": 60 } },
     { "name": "RL_USER", "namespace_id": "1002", "simple": { "limit": 120, "period": 60 } },
@@ -64,6 +65,7 @@
           "migrations_dir": "src/db/migrations"
         }
       ],
+      "ai": { "binding": "AI" },
       "ratelimits": [
         { "name": "RL_IP", "namespace_id": "2001", "simple": { "limit": 300, "period": 60 } },
         { "name": "RL_USER", "namespace_id": "2002", "simple": { "limit": 120, "period": 60 } },
