@@ -76,6 +76,8 @@ const esAR = {
     members: "Miembros",
     connections: "Conexiones",
     danger: "Peligro",
+    navLabel: "Secciones de ajustes",
+    forbidden: "No tenés permiso para ver esta sección.",
   },
   notFound: {
     title: "No encontramos esta página",
@@ -155,6 +157,43 @@ const esAR = {
     errorCannotChangeOwner:
       "El rol del propietario no se cambia. Transferí la propiedad.",
     errorNotAMember: "Esa persona ya no es miembro del workspace.",
+  },
+  workspaceSettings: {
+    groupWorkspace: "Workspace",
+    name: "Nombre del workspace",
+    nameRequired: "Ingresá un nombre",
+    timezone: "Zona horaria",
+    currency: "Moneda de referencia",
+    groupLimits: "Límites",
+    maxBudget: "Tope de presupuesto por campaña",
+    maxBudgetInvalid: "Ingresá un monto mayor a cero",
+    groupAds: "Anuncios",
+    advantage: "Permitir mejoras de Advantage+ creative",
+    advantageHint:
+      "Meta puede retocar tus creativos (recortes, brillo, textos). Dejalo apagado si querés que se vean tal cual los subiste.",
+    groupTemplates: "Plantillas de nombres",
+    templateCampaign: "Campaña",
+    templateAdset: "Conjunto de anuncios",
+    templateAd: "Anuncio",
+    templateRequired: "Ingresá una plantilla",
+    save: "Guardar cambios",
+    saved: "Cambios guardados",
+    loadError: "No pudimos cargar los ajustes",
+  },
+  account: {
+    theme: "Tema",
+    sessions: "Sesiones",
+    logout: "Cerrar sesión",
+    logoutAll: "Cerrar todas las sesiones",
+    logoutAllConsequence:
+      "Se cierra tu sesión en todos los dispositivos, incluido este. Para volver a entrar vas a necesitar un link nuevo por email.",
+  },
+  danger: {
+    description:
+      "Se borra el workspace con sus lanzamientos, creativos y miembros. Se purga definitivamente a los 7 días. No toca nada en Meta: tus campañas y cuentas siguen como están.",
+    delete: "Borrar workspace",
+    receiptWorkspace: "Workspace",
+    errorConfirmMismatch: "El nombre no coincide. Escribilo exacto.",
   },
 };
 
