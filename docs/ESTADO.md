@@ -1,6 +1,6 @@
 # Estado del proyecto — Lanzador de anuncios con IA
 
-Fase actual: **5 — Desarrollo** (hechas 4–23, 26–30, 35, 43–45, 47; siguientes: 24, 25, 32, 34, 36, 40, 48, 56, 65).
+Fase actual: **5 — Desarrollo** (hechas 4–32, 34–36, 38, 40, 43–45, 47, 48, 56, 65, 75, 81, 90, 97; siguientes: 33, 57–61, 76–80, 82, 91, 98).
 
 ## Checklist
 
@@ -45,6 +45,7 @@ Fase actual: **5 — Desarrollo** (hechas 4–23, 26–30, 35, 43–45, 47; sigu
 - Tarea 107 exige `PENDING_TABLES = []`, pero `error_events`, `oauth_states` y `audit_log` quizás nunca usen `inWorkspace`: decidir si se agrega una lista de exentas.
 - Tope de 3 workspaces: chequeo previo y luego batch; dos creaciones simultáneas podrían pasarlo. Revisar en la Fase 6.
 - Drizzle `batch` con selects con join: columnas de igual nombre se pisan; usar alias (ver `findOverview`).
+- Tareas 31–97: superadmin email visible como `actorEmail` en `/audit` para viewers (privacidad, Fase 6). UI admin sin reactivar `disabled`; overrides arrancan vacíos y guardar uno borra el otro. `PATCH /meta/assets` tope 100 cambios sin chunking en UI. `/lanzador` crea borrador nuevo siempre (posibles huérfanos). Tarea 33 debe envolver `AssetPicker` en `ToastProvider`. `RangeError("RANGE_INVALID")` de `insight-range.ts` se mapea a 422 en el servicio. Campañas: cuenta ajena 404 vía `assertAssetAccount`; id rechazado por Meta da 502; CBO = `daily_budget`. `db:seed` usa `tsx` transitivo (no en devDependencies).
 - Cuenta Cloudflare: 9 de 10 bases D1 del plan gratis en uso.
 
 - Proveedor de email para magic links (Resend, plan gratis; requiere cuenta del usuario). Dominio verificado pendiente (~US$10/año): sin él no se pueden invitar clientes beta reales.
