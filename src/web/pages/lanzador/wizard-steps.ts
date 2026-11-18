@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import type { PartialLaunchDraft } from "../../../shared/schemas/launch";
+import { isCreativesStepComplete } from "../../features/launch/creatives-completion";
 import { isProductStepComplete } from "../../features/launch/product-completion";
 import { isAccountStepComplete } from "../../features/launch/step-completion";
 import type { StepProps } from "../../features/launch/step-types";
@@ -8,6 +9,7 @@ import type { TextKey } from "../../i18n/es-AR";
 import { Step1Account } from "./Step1Account";
 import { Step2Structure } from "./Step2Structure";
 import { Step3Product } from "./Step3Product";
+import { Step4Creatives } from "./Step4Creatives";
 
 export type WizardStep = {
   label: TextKey;
@@ -37,7 +39,11 @@ export const WIZARD_STEPS: WizardStep[] = [
     Component: Step3Product,
     isComplete: isProductStepComplete,
   },
-  notBuilt("launcher.steps.creatives"),
+  {
+    label: "launcher.steps.creatives",
+    Component: Step4Creatives,
+    isComplete: isCreativesStepComplete,
+  },
   notBuilt("launcher.steps.budget"),
   notBuilt("launcher.steps.review"),
 ];

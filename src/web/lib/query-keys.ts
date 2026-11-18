@@ -27,4 +27,16 @@ export const qk = {
     adAccountAssetId: string,
     campaignId: string,
   ) => ["meta-campaigns", workspaceId, adAccountAssetId, campaignId] as const,
+  metaCampaignAds: (
+    workspaceId: string,
+    adAccountAssetId: string,
+    campaignId: string,
+  ) =>
+    [
+      "meta-campaigns",
+      workspaceId,
+      adAccountAssetId,
+      campaignId,
+      "ads",
+    ] as const,
 };
