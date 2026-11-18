@@ -375,7 +375,7 @@ Relee campaña (`name, status, daily_budget, objective, bid_strategy`), conjunto
 | `CAMPAIGN_PAUSED`, `BUDGET_MATCH` | Campaña en `PAUSED` y presupuesto esperado (solo `new_cbo`). |
 | `ADSET_PAUSED`, `START_TIME`, `BID` | Conjunto en `PAUSED`; `start_time` esperado; `COST_CAP` + `bid_amount` si corresponde. |
 | `COUNTRIES`, `PIXEL`, `EVENT`, `OPT_GOAL` | Países (solo `new_cbo`), píxel, `custom_event_type=PURCHASE`, `optimization_goal=OFFSITE_CONVERSIONS`. |
-| `AD_COUNT` | Cantidad de anuncios = ítems no fallidos. |
+| `AD_COUNT` | Cantidad de anuncios = ítems del lanzamiento (un ítem fallido lo marca en error). |
 | `LINK`, `LANDING_UP` | Mismo link del producto en todos los anuncios y la landing responde. |
 | `PAGE`, `INSTAGRAM` | `page_id` e `instagram_user_id` esperados. |
 | `TEXTS` | Título, texto y descripción del copy elegido (modo clon: `effective_object_story_id` ∈ `story_ids`). |

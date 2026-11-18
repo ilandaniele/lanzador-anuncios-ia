@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
-import { launches } from "../../../src/db/schema/launches";
+import { launchItems, launches } from "../../../src/db/schema/launches";
 import { launchCheckSchema } from "../../../src/shared/schemas/launch";
 import sessionFixture from "../../fixtures/meta/error-session.json";
 import { expectError } from "../../helpers/factory";
@@ -95,6 +95,34 @@ describe("POST /api/w/:wid/launches/:id/verify", () => {
     expect(await launchRow(context.launch.id)).toMatchObject({
       status: "verified_with_errors",
       checksOk: 0,
+    });
+  });
+
+  it("fails AD_COUNT when an item failed and its ad is missing", async () => {
+    const { context, meta } = await launched(2);
+    const [failed] = await db
+      .select({ id: launchItems.id })
+      .from(launchItems)
+      .where(eq(launchItems.launchId, context.launch.id))
+      .limit(1);
+    await db
+      .update(launchItems)
+      .set({ status: "failed" })
+      .where(eq(launchItems.id, failed!.id));
+    server.use(
+      ...fakeVerify(meta, (path, body) =>
+        path.endsWith("/ads")
+          ? { data: (body.data as object[]).slice(1) }
+          : body,
+      ),
+    );
+
+    const response = await verify(context);
+
+    expect(await response.json()).toMatchObject({
+      checks: expect.arrayContaining([
+        expect.objectContaining({ code: "AD_COUNT", ok: false }),
+      ]),
     });
   });
 

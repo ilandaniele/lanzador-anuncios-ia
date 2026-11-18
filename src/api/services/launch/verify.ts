@@ -57,7 +57,7 @@ async function runChecks(env: Env, scope: Scope, launch: LaunchForVerify) {
     advantageCreativeEnabled: settings.advantageCreativeEnabled,
     landingUrl: product.landingUrl,
     landingUp: landing.status !== "error",
-    expectedAds: items.length,
+    expectedAds: launch.items.length,
     storyIds: uniqueIds(items.map((item) => item.cloneStoryId)),
     now: now(),
   });
