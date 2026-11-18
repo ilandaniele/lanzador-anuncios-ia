@@ -89,3 +89,11 @@ export function StatusChip({ tone, children }: StatusChipProps) {
     </span>
   );
 }
+
+export function NeutralChip({ children }: { children: ReactNode }) {
+  return (
+    <span className={cx(chipBase, "border-rule-strong text-ink")}>
+      {children}
+    </span>
+  );
+}

@@ -24,6 +24,10 @@ export const qk = {
     ["launches", workspaceId, launchId] as const,
   launchProgress: (workspaceId: string, launchId: string) =>
     ["launch-progress", workspaceId, launchId] as const,
+  launchHistory: (workspaceId: string) =>
+    ["launches", workspaceId, "history"] as const,
+  auditHistory: (workspaceId: string, search: string) =>
+    ["audit", workspaceId, search] as const,
   metaAssets: (workspaceId: string) => ["meta-assets", workspaceId] as const,
   metaAssetsAll: (workspaceId: string) =>
     ["meta-assets", workspaceId, "all"] as const,
