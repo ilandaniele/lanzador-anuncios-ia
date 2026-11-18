@@ -71,7 +71,7 @@ export default function AppShell() {
     >
       <SkipLink />
       <Sidebar />
-      <header className="border-rule flex h-14 items-center justify-between border-b px-4">
+      <header className="border-rule flex h-14 items-center justify-between gap-2 border-b px-4">
         <WorkspaceSwitcher />
         <div className="flex items-center gap-3">
           {chat.canChat && (

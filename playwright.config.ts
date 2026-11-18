@@ -14,7 +14,7 @@ export default defineConfig({
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : {
-        command: `npm run build && npx wrangler dev --port 8787 --var APP_ORIGIN:${localBaseUrl}`,
+        command: `npm run build && npx wrangler dev --port 8787 --var APP_ORIGIN:${localBaseUrl} --var ENVIRONMENT:development`,
         url: `${localBaseUrl}/api/health`,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,

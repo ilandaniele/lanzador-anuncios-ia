@@ -21,9 +21,9 @@ export function SegmentedControl<Value extends string>({
   const name = useId();
 
   return (
-    <fieldset className="flex flex-col gap-1">
+    <fieldset className="flex min-w-0 flex-col gap-1">
       <legend className="mb-1 font-medium text-ink">{legend}</legend>
-      <div className="inline-flex overflow-hidden rounded-sm border border-rule-strong">
+      <div className="inline-flex max-w-full flex-wrap overflow-hidden rounded-sm border border-rule-strong">
         {options.map((option) => (
           <label key={option.value} className="relative flex">
             <input

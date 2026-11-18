@@ -72,7 +72,7 @@ export function BottomNav() {
             workspaceId={workspaceId}
             onNavigate={close}
             className={(isActive) =>
-              `flex h-full flex-1 items-center justify-center px-3 ${
+              `flex h-full flex-1 items-center justify-center px-2 ${
                 isActive ? "text-primary font-semibold" : ""
               }`
             }
@@ -82,7 +82,7 @@ export function BottomNav() {
               type="button"
               aria-expanded={moreOpen}
               aria-controls="more-sections"
-              className="flex h-full w-full items-center justify-center px-3"
+              className="flex h-full w-full items-center justify-center px-2"
               onClick={() => setMoreOpen((open) => !open)}
             >
               {t("nav.more")}

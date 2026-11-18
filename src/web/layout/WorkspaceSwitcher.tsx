@@ -14,13 +14,13 @@ export function WorkspaceSwitcher() {
   const section = pathname.split("/")[3] || DEFAULT_SECTION;
 
   return (
-    <div className="flex flex-col">
+    <div className="flex min-w-0 flex-col">
       <label className="sr-only" htmlFor="workspace-switcher">
         {t("layout.workspace")}
       </label>
       <select
         id="workspace-switcher"
-        className="border-rule bg-surface rounded-sm border px-2 py-1 font-semibold"
+        className="border-rule bg-surface max-w-full rounded-sm border px-2 py-1 font-semibold"
         value={workspaceId}
         onChange={(event) =>
           void navigate(workspacePath(event.target.value, section))
