@@ -1,4 +1,5 @@
 import { betaInvites, users } from "../schema/auth";
+import { creatives, uploads } from "../schema/creatives";
 import { launches } from "../schema/launches";
 import { metaAssets, metaConnections } from "../schema/meta";
 import { chatMessages, chatSessions } from "../schema/ops";
@@ -228,3 +229,50 @@ export const buildChatMessage = (
   createdAt: Date.now(),
   ...overrides,
 });
+
+export const buildCreative = (
+  overrides: Pick<
+    typeof creatives.$inferInsert,
+    "workspaceId" | "adAccountAssetId"
+  > &
+    Partial<typeof creatives.$inferInsert>,
+): typeof creatives.$inferInsert => {
+  const id = crypto.randomUUID();
+  const at = Date.now();
+  return {
+    id,
+    kind: "image",
+    originalFilename: `creativo-${id}.png`,
+    contentType: "image/png",
+    sizeBytes: 1024,
+    metaImageHash: `hash_${id}`,
+    source: "browser",
+    status: "ready",
+    createdAt: at,
+    updatedAt: at,
+    ...overrides,
+  };
+};
+
+const UPLOAD_TTL_MS = 24 * 60 * 60 * 1000;
+
+export const buildUpload = (
+  overrides: Pick<
+    typeof uploads.$inferInsert,
+    "workspaceId" | "adAccountAssetId"
+  > &
+    Partial<typeof uploads.$inferInsert>,
+): typeof uploads.$inferInsert => {
+  const at = Date.now();
+  const sizeBytes = overrides.sizeBytes ?? 1024;
+  return {
+    id: crypto.randomUUID(),
+    kind: "image",
+    sizeBytes,
+    sha256: "0".repeat(64),
+    endOffset: sizeBytes,
+    expiresAt: at + UPLOAD_TTL_MS,
+    createdAt: at,
+    ...overrides,
+  };
+};

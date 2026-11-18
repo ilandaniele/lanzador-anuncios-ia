@@ -60,7 +60,7 @@ export type ProductListQuery = {
   size: number;
 };
 
-const escapeLike = (value: string) => value.replace(/[\\%_]/g, "\\$&");
+export const escapeLike = (value: string) => value.replace(/[\\%_]/g, "\\$&");
 
 const nameContains = (q: string) =>
   sql`${products.nameNormalized} LIKE ${`%${escapeLike(q)}%`} ESCAPE '\\'`;

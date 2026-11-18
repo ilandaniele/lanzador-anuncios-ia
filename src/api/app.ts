@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
+import { except } from "hono/combine";
 import { AppError, notFound } from "./lib/errors";
 import { csrf } from "./middleware/csrf";
 import { errorHandler } from "./middleware/error-handler";
@@ -10,6 +11,7 @@ import { adminRoutes } from "./routes/admin";
 import { auditRoutes } from "./routes/audit";
 import { authRoutes } from "./routes/auth";
 import { chatRoutes } from "./routes/chat";
+import { creativeRoutes } from "./routes/creatives";
 import { copyRoutes } from "./routes/copies";
 import { invitationRoutes } from "./routes/invitations";
 import { launchRoutes } from "./routes/launches";
@@ -23,17 +25,23 @@ import { pilotRuleRoutes } from "./routes/pilot-rules";
 import { productRoutes } from "./routes/products";
 import { protectedCampaignRoutes } from "./routes/protected-campaigns";
 import { testSupportRoutes } from "./routes/test-support";
+import { uploadRoutes } from "./routes/uploads";
 import { workspaceRoutes } from "./routes/workspaces";
 import type { AppEnv } from "./types";
 
 const MAX_JSON_BODY_BYTES = 16 * 1024;
 
-const jsonBodyLimit = bodyLimit({
-  maxSize: MAX_JSON_BODY_BYTES,
-  onError: () => {
-    throw new AppError(413, "PAYLOAD_TOO_LARGE");
-  },
-});
+const UPLOAD_CHUNK_PATH = "/api/w/:wid/uploads/:uploadId/chunk";
+
+const jsonBodyLimit = except(
+  UPLOAD_CHUNK_PATH,
+  bodyLimit({
+    maxSize: MAX_JSON_BODY_BYTES,
+    onError: () => {
+      throw new AppError(413, "PAYLOAD_TOO_LARGE");
+    },
+  }),
+);
 
 export function createApp() {
   const app = new Hono<AppEnv>().basePath("/api");
@@ -56,6 +64,8 @@ export function createApp() {
   app.route("/", productRoutes);
   app.route("/", copyRoutes);
   app.route("/", launchRoutes);
+  app.route("/", uploadRoutes);
+  app.route("/", creativeRoutes);
   app.route("/", metaOAuthRoutes);
   app.route("/", metaCallbackRoutes);
   app.route("/", metaConnectionRoutes);

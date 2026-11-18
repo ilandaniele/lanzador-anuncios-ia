@@ -36,13 +36,11 @@ const isCovered = (exportName: string) =>
 
 const PENDING_TABLES = [
   "aiUsage",
-  "creatives",
   "errorEvents",
   "googleConnections",
   "oauthStates",
   "pilotProposals",
   "pilotRuns",
-  "uploads",
 ];
 
 describe("tenancy coverage", () => {

@@ -112,4 +112,25 @@ export const TENANCY_PARAMS: TenancyParams = {
     ...foreignProduct(pair),
     body: { archived: true },
   }),
+  "PUT /api/w/:wid/uploads/:uploadId/chunk": ({ B }) => ({
+    params: { uploadId: B.upload.id },
+    query: { start: "0" },
+  }),
+  "POST /api/w/:wid/uploads/:uploadId/complete": ({ B }) => ({
+    params: { uploadId: B.upload.id },
+  }),
+  "POST /api/w/:wid/uploads/:uploadId/abort": ({ B }) => ({
+    params: { uploadId: B.upload.id },
+  }),
+  "GET /api/w/:wid/creatives/:id": ({ B }) => ({
+    params: { id: B.creative.id },
+  }),
+  "PATCH /api/w/:wid/creatives/:id": ({ B }) => ({
+    params: { id: B.creative.id },
+    body: { name: "Hijack" },
+  }),
+  "POST /api/w/:wid/creatives/:id/archive": ({ B }) => ({
+    params: { id: B.creative.id },
+    body: { archived: true },
+  }),
 };

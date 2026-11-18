@@ -11,6 +11,8 @@ import {
   SESSION_COOKIE,
 } from "../../src/api/services/auth/session";
 import { users } from "../../src/db/schema/auth";
+import { creatives, uploads } from "../../src/db/schema/creatives";
+import { buildCreative, buildUpload } from "../../src/db/fixtures/builders";
 import { launches } from "../../src/db/schema/launches";
 import { metaAssets, metaConnections } from "../../src/db/schema/meta";
 import { chatMessages, chatSessions } from "../../src/db/schema/ops";
@@ -220,4 +222,41 @@ export async function expectError(
 ) {
   expect(response.status).toBe(status);
   expect((await readEnvelope(response)).code).toBe(code);
+}
+
+export async function createCreative(
+  workspaceId: string,
+  adAccountAssetId: string,
+  overrides: Partial<typeof creatives.$inferInsert> = {},
+) {
+  const creative = buildCreative({
+    workspaceId,
+    adAccountAssetId,
+    ...overrides,
+  });
+  await drizzle(env.DB).insert(creatives).values(creative);
+  return creative;
+}
+
+export async function createUpload(
+  workspaceId: string,
+  adAccountAssetId: string,
+  overrides: Partial<typeof uploads.$inferInsert> = {},
+) {
+  const kind = overrides.kind ?? "image";
+  const creative = await createCreative(workspaceId, adAccountAssetId, {
+    kind,
+    contentType: kind === "video" ? "video/mp4" : "image/png",
+    sizeBytes: overrides.sizeBytes ?? 1024,
+    metaImageHash: null,
+    status: "uploading",
+  });
+  const upload = buildUpload({
+    workspaceId,
+    adAccountAssetId,
+    creativeId: creative.id,
+    ...overrides,
+  });
+  await drizzle(env.DB).insert(uploads).values(upload);
+  return { creative, upload };
 }

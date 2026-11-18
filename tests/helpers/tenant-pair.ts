@@ -6,6 +6,7 @@ import {
   createMetaConnection,
   createProduct,
   createProductCopy,
+  createUpload,
   createUser,
   createWorkspace,
 } from "./factory";
@@ -53,6 +54,10 @@ async function seedTenant() {
     ]);
   const adAccount = await createMetaAsset(tenant.workspace.id, connection.id);
   const copy = await createProductCopy(tenant.workspace.id, product.id);
+  const { creative, upload } = await createUpload(
+    tenant.workspace.id,
+    adAccount.id,
+  );
   return {
     ...tenant,
     invitation,
@@ -62,6 +67,8 @@ async function seedTenant() {
     chatSession,
     adAccount,
     copy,
+    creative,
+    upload,
   };
 }
 
