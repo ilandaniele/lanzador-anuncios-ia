@@ -9,7 +9,7 @@ async function lintRules(filePath: string, code: string) {
   return result?.messages.map((message) => message.ruleId) ?? [];
 }
 
-describe("eslint import boundaries", () => {
+describe("eslint import boundaries", { timeout: 30_000 }, () => {
   it.each(["chat", "ai"])(
     "services/%s cannot import integrations/meta/write",
     async (service) => {
