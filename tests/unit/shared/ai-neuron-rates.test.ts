@@ -13,7 +13,7 @@ describe("measureAiUsage", () => {
       model: TEXT_MODEL,
       inputTokens: 1_000_000,
       outputTokens: 1_000_000,
-      neurons: 26_700 + 204_800,
+      neurons: 26_668 + 204_805,
     });
   });
 

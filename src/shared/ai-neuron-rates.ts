@@ -14,12 +14,12 @@ const TOKENS_PER_MILLION = 1_000_000;
 
 export const AI_NEURON_RATES: Readonly<Record<string, NeuronRate>> = {
   "@cf/meta/llama-3.3-70b-instruct-fp8-fast": {
-    inputPerMillionTokens: 26_700,
-    outputPerMillionTokens: 204_800,
+    inputPerMillionTokens: 26_668,
+    outputPerMillionTokens: 204_805,
   },
   "@cf/meta/llama-4-scout-17b-16e-instruct": {
-    inputPerMillionTokens: 24_500,
-    outputPerMillionTokens: 77_300,
+    inputPerMillionTokens: 24_545,
+    outputPerMillionTokens: 77_273,
   },
 };
 
