@@ -1,0 +1,407 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`activation batch > activates campaign, adset and ads with start_time on the adset 1`] = `
+[
+  {
+    "body": {
+      "start_time": undefined,
+      "status": "ACTIVE",
+    },
+    "method": "POST",
+    "path": "120000000000010",
+  },
+  {
+    "body": {
+      "start_time": "2026-12-01T03:00:00.000Z",
+      "status": "ACTIVE",
+    },
+    "method": "POST",
+    "path": "120000000000020",
+  },
+  {
+    "body": {
+      "start_time": undefined,
+      "status": "ACTIVE",
+    },
+    "method": "POST",
+    "path": "120000000000040",
+  },
+]
+`;
+
+exports[`buildAdPayload > builds a paused ad with pixel tracking specs 1`] = `
+{
+  "adset_id": "120000000000020",
+  "creative": {
+    "creative_id": "120000000000030",
+  },
+  "name": "hook-ugc-dolor-1",
+  "status": "PAUSED",
+  "tracking_specs": [
+    {
+      "action.type": [
+        "offsite_conversion",
+      ],
+      "fb_pixel": [
+        "900000000000001",
+      ],
+    },
+  ],
+}
+`;
+
+exports[`buildAdsetPayload > builds a new_cbo adset from workspace defaults and draft countries 1`] = `
+{
+  "attribution_spec": [
+    {
+      "event_type": "CLICK_THROUGH",
+      "window_days": 7,
+    },
+    {
+      "event_type": "VIEW_THROUGH",
+      "window_days": 1,
+    },
+  ],
+  "billing_event": "IMPRESSIONS",
+  "campaign_id": "120000000000010",
+  "name": "CONJ 1",
+  "optimization_goal": "OFFSITE_CONVERSIONS",
+  "promoted_object": {
+    "custom_event_type": "PURCHASE",
+    "pixel_id": "900000000000001",
+  },
+  "status": "PAUSED",
+  "targeting": {
+    "age_min": 18,
+    "geo_locations": {
+      "countries": [
+        "AR",
+        "UY",
+      ],
+    },
+  },
+}
+`;
+
+exports[`buildAdsetPayload > copies the reference adset in existing_cbo 1`] = `
+{
+  "attribution_spec": [
+    {
+      "event_type": "CLICK_THROUGH",
+      "window_days": 1,
+    },
+  ],
+  "billing_event": "IMPRESSIONS",
+  "campaign_id": "120000000000010",
+  "name": "CONJ 1",
+  "optimization_goal": "OFFSITE_CONVERSIONS",
+  "promoted_object": {
+    "custom_event_type": "PURCHASE",
+    "pixel_id": "900000000000001",
+  },
+  "status": "PAUSED",
+  "targeting": {
+    "age_max": 54,
+    "age_min": 25,
+    "brand_safety_content_filter_levels": [
+      "FACEBOOK_STANDARD",
+    ],
+    "flexible_spec": [
+      {
+        "interests": [
+          {
+            "id": "6003",
+            "name": "Fitness",
+          },
+        ],
+      },
+    ],
+    "genders": [
+      2,
+    ],
+    "geo_locations": {
+      "countries": [
+        "MX",
+      ],
+      "location_types": [
+        "home",
+      ],
+    },
+    "publisher_platforms": [
+      "facebook",
+      "instagram",
+    ],
+    "targeting_automation": {
+      "advantage_audience": 1,
+    },
+  },
+}
+`;
+
+exports[`buildCampaignPayload > builds a paused CBO campaign 1`] = `
+{
+  "bid_strategy": "LOWEST_COST_WITHOUT_CAP",
+  "buying_type": "AUCTION",
+  "daily_budget": 5000,
+  "name": "CBO 17-11",
+  "objective": "OUTCOME_SALES",
+  "special_ad_categories": [],
+  "status": "PAUSED",
+}
+`;
+
+exports[`buildCreativePayload > builds a cloned creative from a post of the chosen page 1`] = `
+{
+  "contextual_multi_ads": {
+    "enroll_status": "OPT_OUT",
+  },
+  "degrees_of_freedom_spec": {
+    "creative_features_spec": {
+      "adapt_to_placement": {
+        "enroll_status": "OPT_OUT",
+      },
+      "add_text_overlay": {
+        "enroll_status": "OPT_OUT",
+      },
+      "description_automation": {
+        "enroll_status": "OPT_OUT",
+      },
+      "enhance_cta": {
+        "enroll_status": "OPT_OUT",
+      },
+      "image_animation": {
+        "enroll_status": "OPT_OUT",
+      },
+      "image_brightness_and_contrast": {
+        "enroll_status": "OPT_OUT",
+      },
+      "image_templates": {
+        "enroll_status": "OPT_OUT",
+      },
+      "image_touchups": {
+        "enroll_status": "OPT_OUT",
+      },
+      "image_uncrop": {
+        "enroll_status": "OPT_OUT",
+      },
+      "inline_comment": {
+        "enroll_status": "OPT_OUT",
+      },
+      "media_type_automation": {
+        "enroll_status": "OPT_OUT",
+      },
+      "product_extensions": {
+        "enroll_status": "OPT_OUT",
+      },
+      "reveal_details_over_time": {
+        "enroll_status": "OPT_OUT",
+      },
+      "site_extensions": {
+        "enroll_status": "OPT_OUT",
+      },
+      "text_optimizations": {
+        "enroll_status": "OPT_OUT",
+      },
+      "video_auto_crop": {
+        "enroll_status": "OPT_OUT",
+      },
+    },
+  },
+  "name": "hook-ugc-dolor-1",
+  "object_story_id": "100000000000001_555",
+}
+`;
+
+exports[`buildCreativePayload > builds a video creative with every feature OPT_OUT 1`] = `
+{
+  "contextual_multi_ads": {
+    "enroll_status": "OPT_OUT",
+  },
+  "degrees_of_freedom_spec": {
+    "creative_features_spec": {
+      "adapt_to_placement": {
+        "enroll_status": "OPT_OUT",
+      },
+      "add_text_overlay": {
+        "enroll_status": "OPT_OUT",
+      },
+      "description_automation": {
+        "enroll_status": "OPT_OUT",
+      },
+      "enhance_cta": {
+        "enroll_status": "OPT_OUT",
+      },
+      "image_animation": {
+        "enroll_status": "OPT_OUT",
+      },
+      "image_brightness_and_contrast": {
+        "enroll_status": "OPT_OUT",
+      },
+      "image_templates": {
+        "enroll_status": "OPT_OUT",
+      },
+      "image_touchups": {
+        "enroll_status": "OPT_OUT",
+      },
+      "image_uncrop": {
+        "enroll_status": "OPT_OUT",
+      },
+      "inline_comment": {
+        "enroll_status": "OPT_OUT",
+      },
+      "media_type_automation": {
+        "enroll_status": "OPT_OUT",
+      },
+      "product_extensions": {
+        "enroll_status": "OPT_OUT",
+      },
+      "reveal_details_over_time": {
+        "enroll_status": "OPT_OUT",
+      },
+      "site_extensions": {
+        "enroll_status": "OPT_OUT",
+      },
+      "text_optimizations": {
+        "enroll_status": "OPT_OUT",
+      },
+      "video_auto_crop": {
+        "enroll_status": "OPT_OUT",
+      },
+    },
+  },
+  "object_story_spec": {
+    "instagram_user_id": "170000000000001",
+    "page_id": "100000000000001",
+    "video_data": {
+      "call_to_action": {
+        "type": "SHOP_NOW",
+        "value": {
+          "link": "https://tienda.example/producto",
+        },
+      },
+      "image_url": "https://scontent.fbcdn.net/thumb.jpg",
+      "link_description": "Envío gratis",
+      "message": "Dormí mejor desde la primera noche.",
+      "title": "Almohada ergonómica",
+      "video_id": "300000000000001",
+    },
+  },
+  "url_tags": "utm_source=meta&utm_medium=paid",
+}
+`;
+
+exports[`buildCreativePayload > builds an image creative without instagram or utm 1`] = `
+{
+  "contextual_multi_ads": {
+    "enroll_status": "OPT_OUT",
+  },
+  "degrees_of_freedom_spec": {
+    "creative_features_spec": {
+      "adapt_to_placement": {
+        "enroll_status": "OPT_OUT",
+      },
+      "add_text_overlay": {
+        "enroll_status": "OPT_OUT",
+      },
+      "description_automation": {
+        "enroll_status": "OPT_OUT",
+      },
+      "enhance_cta": {
+        "enroll_status": "OPT_OUT",
+      },
+      "image_animation": {
+        "enroll_status": "OPT_OUT",
+      },
+      "image_brightness_and_contrast": {
+        "enroll_status": "OPT_OUT",
+      },
+      "image_templates": {
+        "enroll_status": "OPT_OUT",
+      },
+      "image_touchups": {
+        "enroll_status": "OPT_OUT",
+      },
+      "image_uncrop": {
+        "enroll_status": "OPT_OUT",
+      },
+      "inline_comment": {
+        "enroll_status": "OPT_OUT",
+      },
+      "media_type_automation": {
+        "enroll_status": "OPT_OUT",
+      },
+      "product_extensions": {
+        "enroll_status": "OPT_OUT",
+      },
+      "reveal_details_over_time": {
+        "enroll_status": "OPT_OUT",
+      },
+      "site_extensions": {
+        "enroll_status": "OPT_OUT",
+      },
+      "text_optimizations": {
+        "enroll_status": "OPT_OUT",
+      },
+      "video_auto_crop": {
+        "enroll_status": "OPT_OUT",
+      },
+    },
+  },
+  "object_story_spec": {
+    "instagram_user_id": undefined,
+    "link_data": {
+      "call_to_action": {
+        "type": "SHOP_NOW",
+        "value": {
+          "link": "https://tienda.example/producto",
+        },
+      },
+      "description": "Envío gratis",
+      "image_hash": "abc123",
+      "link": "https://tienda.example/producto",
+      "message": "Dormí mejor desde la primera noche.",
+      "name": "Almohada ergonómica",
+    },
+    "page_id": "100000000000001",
+  },
+  "url_tags": undefined,
+}
+`;
+
+exports[`cleanTargeting > keeps only whitelisted fields and advantage_audience 1`] = `
+{
+  "age_max": 54,
+  "age_min": 25,
+  "brand_safety_content_filter_levels": [
+    "FACEBOOK_STANDARD",
+  ],
+  "flexible_spec": [
+    {
+      "interests": [
+        {
+          "id": "6003",
+          "name": "Fitness",
+        },
+      ],
+    },
+  ],
+  "genders": [
+    2,
+  ],
+  "geo_locations": {
+    "countries": [
+      "MX",
+    ],
+    "location_types": [
+      "home",
+    ],
+  },
+  "publisher_platforms": [
+    "facebook",
+    "instagram",
+  ],
+  "targeting_automation": {
+    "advantage_audience": 1,
+  },
+}
+`;
