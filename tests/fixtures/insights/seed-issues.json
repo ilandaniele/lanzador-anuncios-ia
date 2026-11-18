@@ -1,0 +1,21 @@
+{
+  "1": [
+    {
+      "adId": "9100000000001",
+      "name": "Anuncio rechazado",
+      "effectiveStatus": "DISAPPROVED",
+      "campaignId": null,
+      "adsetId": null,
+      "issues": [
+        {
+          "level": "AD",
+          "code": 1815869,
+          "summary": "Anuncio rechazado",
+          "message": "El anuncio no cumple las politicas de publicidad",
+          "type": "PERMANENT"
+        }
+      ]
+    }
+  ],
+  "2": []
+}

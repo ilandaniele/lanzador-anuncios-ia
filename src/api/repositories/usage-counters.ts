@@ -9,7 +9,7 @@ export type AiNeurons = {
   globalDay: number;
 };
 
-const GLOBAL_SCOPE_ID = "app";
+export const GLOBAL_SCOPE_ID = "app";
 
 export const aiNeuronsQuery = (
   orm: DrizzleD1Database,

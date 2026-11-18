@@ -1,0 +1,10 @@
+{
+  "accountStatus": 1,
+  "disableReason": null,
+  "currency": "USD",
+  "spendCapMinor": 500000,
+  "amountSpentMinor": 123456,
+  "balanceMinor": 2500,
+  "isPrepay": false,
+  "fundingSource": { "id": "9001", "type": 1, "label": "Visa *4242" }
+}

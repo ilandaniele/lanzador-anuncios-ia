@@ -2,8 +2,19 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { z } from "zod";
+import type {
+  AccountHealth,
+  AdWithIssues,
+  InsightRow,
+} from "../api/integrations/meta/read";
 import { aadFor, encryptToken } from "../api/lib/token-crypto";
+import { utcPeriods } from "../api/lib/time";
 import { DEFAULT_PILOT_RULES } from "../api/repositories/pilot-rules";
+import { GLOBAL_SCOPE_ID } from "../api/repositories/usage-counters";
+import { resolveWindow } from "../shared/insight-range";
+import { measureAiUsage } from "../shared/ai-neuron-rates";
+import { cpaMinor, cpmMinor, ctr, roas } from "../shared/metrics";
 import {
   buildBetaInvite,
   buildCreative,
@@ -11,7 +22,9 @@ import {
   buildMembership,
   buildMetaAsset,
   buildMetaConnection,
+  buildPilotProposal,
   buildPilotRule,
+  buildPilotRun,
   buildProduct,
   buildUser,
   buildWorkspace,
@@ -22,7 +35,14 @@ import { betaInvites, users } from "./schema/auth";
 import { creatives } from "./schema/creatives";
 import { launchItems, launches } from "./schema/launches";
 import { metaAssets, metaConnections } from "./schema/meta";
-import { pilotRules } from "./schema/pilot";
+import { aiUsage, auditLog, usageCounters } from "./schema/ops";
+import {
+  insightsCache,
+  pilotProposals,
+  pilotRules,
+  pilotRuns,
+  protectedCampaigns,
+} from "./schema/pilot";
 import { products } from "./schema/products";
 import {
   memberships,
@@ -119,9 +139,140 @@ const LAUNCHES = [
   },
 ] as const;
 
+const MINUTE_MS = 60 * 1000;
+const SEED_TTL_MS = 30 * 24 * HOUR_MS;
+const FIXTURES_DIR = resolve(ROOT, "tests/fixtures/insights");
+const INSIGHT_PRESETS = ["today", "yesterday", "last_7d"] as const;
+const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+
+const PROPOSALS = [
+  {
+    slug: "scale",
+    ruleType: "scale_winner",
+    action: "scale",
+    campaign: 1,
+    evidence: { minRoas: 2.5 },
+    currentBudgetMinor: 20000,
+    proposedBudgetMinor: 26000,
+    percent: 30,
+    explanation: "ROAS alto sostenido: conviene subir el presupuesto un 30 %",
+  },
+  {
+    slug: "no-sales",
+    ruleType: "pause_no_sales",
+    action: "pause",
+    campaign: 2,
+    evidence: { targetCpaMinor: 1500, spendThresholdMinor: 3000 },
+    currentBudgetMinor: null,
+    proposedBudgetMinor: null,
+    percent: null,
+    explanation: "Gastó más del doble del CPA objetivo sin ninguna venta",
+  },
+  {
+    slug: "low-roas",
+    ruleType: "pause_low_roas",
+    action: "pause",
+    campaign: 3,
+    evidence: { roasMax: 1 },
+    currentBudgetMinor: null,
+    proposedBudgetMinor: null,
+    percent: null,
+    explanation: "El ROAS está por debajo del mínimo con gasto relevante",
+  },
+] as const;
+
+const PILOT_ACCOUNT = 1;
+const PROTECTED_CAMPAIGN = { account: 2, number: 1 };
+const SCALED_CAMPAIGN = { account: 1, number: 1 };
+const PILOT_PAUSED_AD = { id: "9100000000002", name: "Anuncio sin ventas" };
+
+const AI_CALLS = [
+  { feature: "tagging", inputTokens: 1200, outputTokens: 150 },
+  { feature: "tagging", inputTokens: 900, outputTokens: 120 },
+  { feature: "copy", inputTokens: 800, outputTokens: 300 },
+  { feature: "pilot", inputTokens: 1500, outputTokens: 400 },
+  { feature: "chat", inputTokens: 2000, outputTokens: 500 },
+] as const;
+
+const presetMetricsSchema = z.object({
+  spendMinor: z.int(),
+  impressions: z.int(),
+  clicks: z.int(),
+  purchases: z.int(),
+  purchaseValueMinor: z.int(),
+});
+
+const campaignFixturesSchema = z.array(
+  z.object({
+    account: z.int(),
+    number: z.int(),
+    name: z.string(),
+    metrics: z.record(z.enum(INSIGHT_PRESETS), presetMetricsSchema),
+  }),
+);
+
 type DevVars = Record<string, string>;
 type Tenant = (typeof TENANTS)[number];
 type Insert<T extends { $inferInsert: unknown }> = T["$inferInsert"];
+type InsightPreset = (typeof INSIGHT_PRESETS)[number];
+type PresetMetrics = z.infer<typeof presetMetricsSchema>;
+type AuditFields = Omit<
+  Insert<typeof auditLog>,
+  | "id"
+  | "workspaceId"
+  | "actorUserId"
+  | "actorType"
+  | "result"
+  | "requestId"
+  | "createdAt"
+  | "detail"
+> & { detail: object };
+
+interface SeedAccount {
+  number: number;
+  id: string;
+  metaId: string;
+  timezone: string;
+}
+
+function readFixture(name: string): unknown {
+  return JSON.parse(readFileSync(resolve(FIXTURES_DIR, name), "utf8"));
+}
+
+const CAMPAIGN_FIXTURES = campaignFixturesSchema.parse(
+  readFixture("seed-campaigns.json"),
+);
+const HEALTH_FIXTURE = readFixture("seed-health.json") as AccountHealth;
+const ISSUES_FIXTURE = readFixture("seed-issues.json") as Record<
+  string,
+  AdWithIssues[]
+>;
+
+const accountMetaId = (prefix: number, account: number) =>
+  `act_${prefix}000000000${account}`;
+
+const campaignMetaId = (prefix: number, account: number, campaign: number) =>
+  `${prefix}4${account}0000000000${campaign}`;
+
+const findCampaign = (
+  prefix: number,
+  accounts: SeedAccount[],
+  accountNumber: number,
+  number: number,
+) => {
+  const fixture = CAMPAIGN_FIXTURES.find(
+    (campaign) =>
+      campaign.account === accountNumber && campaign.number === number,
+  );
+  if (!fixture) {
+    throw new Error(`Campaign fixture ${accountNumber}/${number} missing`);
+  }
+  return {
+    fixture,
+    account: accounts[accountNumber - 1]!,
+    metaId: campaignMetaId(prefix, accountNumber, number),
+  };
+};
 
 function readDevVars(): DevVars {
   const path = resolve(ROOT, ".dev.vars");
@@ -186,7 +337,7 @@ function buildAssets(
     timezoneName: null,
     accountStatus: null,
   };
-  const accountIds = [1, 2].map((n) => `act_${prefix}000000000${n}`);
+  const accountIds = [1, 2].map((n) => accountMetaId(prefix, n));
   const pageId = `${prefix}10000000000001`;
   return [
     ...accountIds.map((metaId, i) =>
@@ -338,7 +489,7 @@ function buildLaunches(
       phase: "verify",
       mode: "new_cbo",
       adAccountAssetId: draft.adAccountAssetId,
-      adAccountMetaId: `act_${prefix}000000001`,
+      adAccountMetaId: accountMetaId(prefix, 1),
       currency: "USD",
       productId: draft.productId,
       draft: JSON.stringify(draft),
@@ -373,6 +524,299 @@ function buildLaunches(
   };
 }
 
+function toSeedAccounts(assets: Insert<typeof metaAssets>[]): SeedAccount[] {
+  return assets
+    .filter(({ kind }) => kind === "ad_account")
+    .map(({ id, metaId, timezoneName }, i) => ({
+      number: i + 1,
+      id,
+      metaId,
+      timezone: timezoneName ?? "UTC",
+    }));
+}
+
+function insightRow(
+  level: InsightRow["level"],
+  entity: { id: string; name: string | null; campaignId: string | null },
+  date: string,
+  metrics: PresetMetrics,
+): InsightRow {
+  return {
+    level,
+    ...entity,
+    adsetId: null,
+    date,
+    ...metrics,
+    roas: roas(metrics.purchaseValueMinor, metrics.spendMinor),
+    cpaMinor: cpaMinor(metrics.spendMinor, metrics.purchases),
+    ctr: ctr(metrics.clicks, metrics.impressions),
+    cpmMinor: cpmMinor(metrics.spendMinor, metrics.impressions),
+  };
+}
+
+const sumMetrics = (list: PresetMetrics[]): PresetMetrics =>
+  list.reduce((total, metrics) => ({
+    spendMinor: total.spendMinor + metrics.spendMinor,
+    impressions: total.impressions + metrics.impressions,
+    clicks: total.clicks + metrics.clicks,
+    purchases: total.purchases + metrics.purchases,
+    purchaseValueMinor: total.purchaseValueMinor + metrics.purchaseValueMinor,
+  }));
+
+function buildInsightsCache(
+  tenant: Tenant,
+  tenantIndex: number,
+  workspaceId: string,
+  accounts: SeedAccount[],
+) {
+  const prefix = tenantIndex + 1;
+  const at = Date.now();
+  return accounts.flatMap((account) => {
+    const campaigns = CAMPAIGN_FIXTURES.filter(
+      (campaign) => campaign.account === account.number,
+    );
+    const windowOf = (preset: InsightPreset) =>
+      resolveWindow({ preset }, account.timezone, new Date(at));
+    const entry = (
+      level: Insert<typeof insightsCache>["level"],
+      rangeKey: string,
+      window: ReturnType<typeof windowOf>,
+      rows: unknown[],
+    ): Insert<typeof insightsCache> => ({
+      id: `seed-insights-${level}-${rangeKey}-${account.number}-${tenant.key}`,
+      workspaceId,
+      adAccountAssetId: account.id,
+      level,
+      rangeKey,
+      dateFrom: window.since,
+      dateTo: window.until,
+      payload: JSON.stringify(rows),
+      rowCount: rows.length,
+      fetchedAt: at,
+      expiresAt: at + SEED_TTL_MS,
+    });
+    const presetEntries = INSIGHT_PRESETS.flatMap((preset) => {
+      const window = windowOf(preset);
+      const accountRow = insightRow(
+        "account",
+        { id: account.metaId, name: null, campaignId: null },
+        window.since,
+        sumMetrics(campaigns.map(({ metrics }) => metrics[preset])),
+      );
+      const campaignRows = campaigns.map(({ number, name, metrics }) => {
+        const id = campaignMetaId(prefix, account.number, number);
+        return insightRow(
+          "campaign",
+          { id, name, campaignId: id },
+          window.since,
+          metrics[preset],
+        );
+      });
+      return [
+        entry("account", preset, window, [accountRow]),
+        entry("campaign", preset, window, campaignRows),
+      ];
+    });
+    const today = windowOf("today");
+    return [
+      ...presetEntries,
+      entry("health", "today", today, [HEALTH_FIXTURE]),
+      entry("issues", "today", today, ISSUES_FIXTURE[account.number] ?? []),
+    ];
+  });
+}
+
+function buildPilot(
+  tenant: Tenant,
+  tenantIndex: number,
+  workspaceId: string,
+  createdBy: string,
+  accounts: SeedAccount[],
+) {
+  const prefix = tenantIndex + 1;
+  const at = Date.now();
+  const run = buildPilotRun({
+    id: `seed-pilot-run-${tenant.key}`,
+    workspaceId,
+    triggeredBy: createdBy,
+    proposalsCreated: PROPOSALS.length,
+    startedAt: at - HOUR_MS,
+    finishedAt: at - HOUR_MS + MINUTE_MS,
+  });
+  const proposals = PROPOSALS.map((spec, i) => {
+    const { fixture, account, metaId } = findCampaign(
+      prefix,
+      accounts,
+      PILOT_ACCOUNT,
+      spec.campaign,
+    );
+    const metrics = fixture.metrics.last_7d;
+    return buildPilotProposal({
+      id: `seed-pilot-proposal-${spec.slug}-${tenant.key}`,
+      workspaceId,
+      runId: run.id,
+      ruleType: spec.ruleType,
+      action: spec.action,
+      adAccountMetaId: account.metaId,
+      objectMetaId: metaId,
+      objectName: fixture.name,
+      evidence: JSON.stringify({
+        range: "last_7d",
+        spendMinor: metrics.spendMinor,
+        purchases: metrics.purchases,
+        purchaseValueMinor: metrics.purchaseValueMinor,
+        roas: roas(metrics.purchaseValueMinor, metrics.spendMinor),
+        cpaMinor: cpaMinor(metrics.spendMinor, metrics.purchases),
+        ...spec.evidence,
+      }),
+      currentBudgetMinor: spec.currentBudgetMinor,
+      proposedBudgetMinor: spec.proposedBudgetMinor,
+      percent: spec.percent,
+      explanation: spec.explanation,
+      expiresAt: at + SEED_TTL_MS,
+      createdAt: at - i * MINUTE_MS,
+    });
+  });
+  const protectedTarget = findCampaign(
+    prefix,
+    accounts,
+    PROTECTED_CAMPAIGN.account,
+    PROTECTED_CAMPAIGN.number,
+  );
+  const protectedRows: Insert<typeof protectedCampaigns>[] = [
+    {
+      workspaceId,
+      campaignMetaId: protectedTarget.metaId,
+      adAccountMetaId: protectedTarget.account.metaId,
+      protectedBy: createdBy,
+      createdAt: at - 4 * HOUR_MS,
+    },
+  ];
+  return { pilotRuns: [run], pilotProposals: proposals, protectedRows };
+}
+
+function buildAuditEntries(
+  tenant: Tenant,
+  tenantIndex: number,
+  workspaceId: string,
+  actorUserId: string,
+  accounts: SeedAccount[],
+) {
+  const prefix = tenantIndex + 1;
+  const at = Date.now();
+  const campaignTarget = (campaign: { account: number; number: number }) => {
+    const { fixture, account, metaId } = findCampaign(
+      prefix,
+      accounts,
+      campaign.account,
+      campaign.number,
+    );
+    return {
+      objectType: "campaign",
+      objectMetaId: metaId,
+      objectName: fixture.name,
+      adAccountMetaId: account.metaId,
+    };
+  };
+  const entries: [string, AuditFields][] = [
+    [
+      "protect",
+      {
+        origin: "manual",
+        action: "campaign.protect",
+        ...campaignTarget(PROTECTED_CAMPAIGN),
+        detail: { before: { protected: false }, after: { protected: true } },
+      },
+    ],
+    [
+      "scale",
+      {
+        origin: "manual",
+        action: "meta.budget.scale",
+        ...campaignTarget(SCALED_CAMPAIGN),
+        detail: {
+          percent: 20,
+          before: { dailyBudgetMinor: 16700 },
+          after: { dailyBudgetMinor: 20000 },
+        },
+      },
+    ],
+    [
+      "pilot-pause",
+      {
+        origin: "pilot",
+        action: "meta.status.update",
+        objectType: "ad",
+        objectMetaId: PILOT_PAUSED_AD.id,
+        objectName: PILOT_PAUSED_AD.name,
+        adAccountMetaId: accounts[PILOT_ACCOUNT - 1]!.metaId,
+        detail: { before: { status: "ACTIVE" }, after: { status: "PAUSED" } },
+      },
+    ],
+    [
+      "rules",
+      {
+        origin: "manual",
+        action: "pilot.rules.update",
+        objectType: "pilot_rules",
+        detail: { ruleType: "pause_no_sales", enabled: true },
+      },
+    ],
+  ];
+  return entries.map(
+    ([slug, { detail, ...fields }], i): Insert<typeof auditLog> => ({
+      id: `seed-audit-${slug}-${tenant.key}`,
+      workspaceId,
+      actorUserId,
+      actorType: "user",
+      result: "ok",
+      requestId: `seed-request-${slug}-${tenant.key}`,
+      createdAt: at - (i + 1) * HOUR_MS,
+      detail: JSON.stringify(detail),
+      ...fields,
+    }),
+  );
+}
+
+function buildAiUsage(
+  tenant: Tenant,
+  workspaceId: string,
+  userId: string,
+): Insert<typeof aiUsage>[] {
+  const at = Date.now();
+  return AI_CALLS.map(({ feature, inputTokens, outputTokens }, i) => ({
+    id: `seed-ai-usage-${i + 1}-${tenant.key}`,
+    workspaceId,
+    userId,
+    feature,
+    provider: "workers_ai",
+    ...measureAiUsage(AI_MODEL, inputTokens, outputTokens),
+    status: "ok",
+    createdAt: at - i * MINUTE_MS,
+  }));
+}
+
+const totalNeurons = (rows: Insert<typeof aiUsage>[]) =>
+  rows.reduce((total, { neurons }) => total + (neurons ?? 0), 0);
+
+function buildNeuronCounters(
+  scope: "workspace" | "global",
+  scopeId: string,
+  neurons: number,
+): Insert<typeof usageCounters>[] {
+  const at = Date.now();
+  const { day, month } = utcPeriods(at);
+  const periods = scope === "workspace" ? [day, month] : [day];
+  return periods.map((period) => ({
+    scope,
+    scopeId,
+    period,
+    metric: "ai_neurons",
+    value: neurons,
+    updatedAt: at,
+  }));
+}
+
 async function buildTenantRows(
   tenant: Tenant,
   tenantIndex: number,
@@ -398,6 +842,9 @@ async function buildTenantRows(
     workspace.id,
     owner.id,
   );
+  const assets = buildAssets(tenant, tenantIndex, workspace.id, connectionId);
+  const accounts = toSeedAccounts(assets);
+  const aiUsageRows = buildAiUsage(tenant, workspace.id, owner.id);
   return {
     users: roleUsers,
     workspaces: [workspace],
@@ -440,7 +887,7 @@ async function buildTenantRows(
         )),
       }),
     ],
-    assets: buildAssets(tenant, tenantIndex, workspace.id, connectionId),
+    assets,
     products: PRODUCTS.map((product, i) =>
       buildProduct({
         id: `seed-product-${i + 1}-${tenant.key}`,
@@ -451,6 +898,26 @@ async function buildTenantRows(
     ),
     creatives: creativeRows,
     ...buildLaunches(tenant, tenantIndex, workspace.id, owner.id, creativeRows),
+    insightsCache: buildInsightsCache(
+      tenant,
+      tenantIndex,
+      workspace.id,
+      accounts,
+    ),
+    ...buildPilot(tenant, tenantIndex, workspace.id, owner.id, accounts),
+    auditEntries: buildAuditEntries(
+      tenant,
+      tenantIndex,
+      workspace.id,
+      owner.id,
+      accounts,
+    ),
+    aiUsage: aiUsageRows,
+    neuronCounters: buildNeuronCounters(
+      "workspace",
+      workspace.id,
+      totalNeurons(aiUsageRows),
+    ),
   };
 }
 
@@ -469,6 +936,11 @@ async function buildSeedSql(devVars: DevVars) {
   });
   const tenants = await Promise.all(
     TENANTS.map((tenant, i) => buildTenantRows(tenant, i, devVars)),
+  );
+  const globalNeuronCounters = buildNeuronCounters(
+    "global",
+    GLOBAL_SCOPE_ID,
+    totalNeurons(tenants.flatMap((t) => t.aiUsage)),
   );
   return [
     renderInsertOrIgnore(users, [
@@ -516,6 +988,34 @@ async function buildSeedSql(devVars: DevVars) {
       launchItems,
       tenants.flatMap((t) => t.launchItems),
     ),
+    renderInsertOrIgnore(
+      insightsCache,
+      tenants.flatMap((t) => t.insightsCache),
+    ),
+    renderInsertOrIgnore(
+      pilotRuns,
+      tenants.flatMap((t) => t.pilotRuns),
+    ),
+    renderInsertOrIgnore(
+      pilotProposals,
+      tenants.flatMap((t) => t.pilotProposals),
+    ),
+    renderInsertOrIgnore(
+      protectedCampaigns,
+      tenants.flatMap((t) => t.protectedRows),
+    ),
+    renderInsertOrIgnore(
+      auditLog,
+      tenants.flatMap((t) => t.auditEntries),
+    ),
+    renderInsertOrIgnore(
+      aiUsage,
+      tenants.flatMap((t) => t.aiUsage),
+    ),
+    renderInsertOrIgnore(usageCounters, [
+      ...tenants.flatMap((t) => t.neuronCounters),
+      ...globalNeuronCounters,
+    ]),
   ].join("\n");
 }
 

@@ -1,0 +1,114 @@
+[
+  {
+    "account": 1,
+    "number": 1,
+    "name": "CBO Ganadora",
+    "metrics": {
+      "today": {
+        "spendMinor": 12550,
+        "impressions": 10000,
+        "clicks": 250,
+        "purchases": 5,
+        "purchaseValueMinor": 50200
+      },
+      "yesterday": {
+        "spendMinor": 11800,
+        "impressions": 9400,
+        "clicks": 230,
+        "purchases": 4,
+        "purchaseValueMinor": 40100
+      },
+      "last_7d": {
+        "spendMinor": 80000,
+        "impressions": 64000,
+        "clicks": 1500,
+        "purchases": 38,
+        "purchaseValueMinor": 330000
+      }
+    }
+  },
+  {
+    "account": 1,
+    "number": 2,
+    "name": "CBO Sin ventas",
+    "metrics": {
+      "today": {
+        "spendMinor": 4007,
+        "impressions": 3000,
+        "clicks": 30,
+        "purchases": 0,
+        "purchaseValueMinor": 0
+      },
+      "yesterday": {
+        "spendMinor": 3900,
+        "impressions": 2800,
+        "clicks": 26,
+        "purchases": 0,
+        "purchaseValueMinor": 0
+      },
+      "last_7d": {
+        "spendMinor": 25000,
+        "impressions": 21000,
+        "clicks": 190,
+        "purchases": 0,
+        "purchaseValueMinor": 0
+      }
+    }
+  },
+  {
+    "account": 1,
+    "number": 3,
+    "name": "CBO ROAS bajo",
+    "metrics": {
+      "today": {
+        "spendMinor": 6000,
+        "impressions": 5200,
+        "clicks": 90,
+        "purchases": 1,
+        "purchaseValueMinor": 5400
+      },
+      "yesterday": {
+        "spendMinor": 5600,
+        "impressions": 4900,
+        "clicks": 80,
+        "purchases": 1,
+        "purchaseValueMinor": 4700
+      },
+      "last_7d": {
+        "spendMinor": 41000,
+        "impressions": 35000,
+        "clicks": 610,
+        "purchases": 8,
+        "purchaseValueMinor": 32800
+      }
+    }
+  },
+  {
+    "account": 2,
+    "number": 1,
+    "name": "CBO Protegida",
+    "metrics": {
+      "today": {
+        "spendMinor": 8000,
+        "impressions": 7000,
+        "clicks": 140,
+        "purchases": 2,
+        "purchaseValueMinor": 16000
+      },
+      "yesterday": {
+        "spendMinor": 7500,
+        "impressions": 6600,
+        "clicks": 128,
+        "purchases": 2,
+        "purchaseValueMinor": 15200
+      },
+      "last_7d": {
+        "spendMinor": 52000,
+        "impressions": 45000,
+        "clicks": 900,
+        "purchases": 14,
+        "purchaseValueMinor": 98000
+      }
+    }
+  }
+]
