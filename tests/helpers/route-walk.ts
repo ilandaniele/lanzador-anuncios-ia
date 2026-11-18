@@ -12,13 +12,17 @@ export const splitRouteKey = (key: string) => {
   return { method, path };
 };
 
-export function workspaceRouteKeys(app: App): string[] {
+export function routeKeys(app: App): string[] {
   const keys = app.routes
     .filter(({ method, path }) => method !== "ALL" && !path.endsWith("*"))
-    .filter(({ path }) => path.startsWith(WORKSPACE_PREFIX))
     .map(({ method, path }) => routeKey(method, path));
   return [...new Set(keys)].sort();
 }
+
+export const workspaceRouteKeys = (app: App) =>
+  routeKeys(app).filter((key) =>
+    splitRouteKey(key).path.startsWith(WORKSPACE_PREFIX),
+  );
 
 const idParams = (path: string) =>
   [...path.matchAll(PARAM)].map(([, name]) => name).filter((n) => n !== "wid");
