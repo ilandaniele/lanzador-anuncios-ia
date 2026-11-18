@@ -1,5 +1,9 @@
 import type { MouseEvent } from "react";
-import { Outlet } from "react-router";
+import { Outlet, useParams } from "react-router";
+import { cx } from "../components/classes";
+import { AskAiButton } from "../features/chat/AskAiButton";
+import { ChatPanel } from "../features/chat/ChatPanel";
+import { useChatPanel } from "../features/chat/use-chat-panel";
 import { t } from "../i18n/es-AR";
 import { BottomNav } from "./BottomNav";
 import { Sidebar } from "./Sidebar";
@@ -55,13 +59,26 @@ function ThemeSelect() {
 }
 
 export default function AppShell() {
+  const { workspaceId = "" } = useParams();
+  const chat = useChatPanel(workspaceId);
+
   return (
-    <div className="bg-paper text-ink min-h-screen md:pl-[232px]">
+    <div
+      className={cx(
+        "bg-paper text-ink min-h-screen md:pl-[232px]",
+        chat.open && "xl:pr-[400px]",
+      )}
+    >
       <SkipLink />
       <Sidebar />
       <header className="border-rule flex h-14 items-center justify-between border-b px-4">
         <WorkspaceSwitcher />
-        <ThemeSelect />
+        <div className="flex items-center gap-3">
+          {chat.canChat && (
+            <AskAiButton workspaceId={workspaceId} onClick={chat.openChat} />
+          )}
+          <ThemeSelect />
+        </div>
       </header>
       <div
         id={CONTENT_ID}
@@ -71,6 +88,14 @@ export default function AppShell() {
         <Outlet />
       </div>
       <BottomNav />
+      {chat.canChat && (
+        <ChatPanel
+          key={workspaceId}
+          workspaceId={workspaceId}
+          open={chat.open}
+          onClose={chat.closeChat}
+        />
+      )}
     </div>
   );
 }
