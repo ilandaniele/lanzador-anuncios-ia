@@ -121,6 +121,12 @@ export const LAUNCH_ITEM_STATUSES = [
   "failed",
 ] as const;
 
+export const PILOT_RULE_TYPES = [
+  "pause_no_sales",
+  "pause_low_roas",
+  "scale_winner",
+  "duplicate_winner",
+] as const;
 export const PILOT_RUN_TRIGGERS = ["cron", "manual"] as const;
 export const PILOT_RUN_STATUSES = ["running", "done", "failed"] as const;
 export const PROPOSAL_ACTIONS = ["pause", "scale", "duplicate"] as const;

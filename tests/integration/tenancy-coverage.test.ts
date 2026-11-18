@@ -44,7 +44,6 @@ const PENDING_TABLES = [
   "insightsCache",
   "oauthStates",
   "pilotProposals",
-  "pilotRules",
   "pilotRuns",
   "productCopies",
   "protectedCampaigns",

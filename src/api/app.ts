@@ -14,6 +14,7 @@ import { launchRoutes } from "./routes/launches";
 import { memberRoutes } from "./routes/members";
 import { metaConnectionRoutes } from "./routes/meta-connections";
 import { metaOAuthRoutes } from "./routes/meta-oauth";
+import { pilotRuleRoutes } from "./routes/pilot-rules";
 import { productRoutes } from "./routes/products";
 import { testSupportRoutes } from "./routes/test-support";
 import { workspaceRoutes } from "./routes/workspaces";
@@ -51,6 +52,7 @@ export function createApp() {
   app.route("/", metaOAuthRoutes);
   app.route("/", metaConnectionRoutes);
   app.route("/", auditRoutes);
+  app.route("/", pilotRuleRoutes);
   app.route("/", adminRoutes);
   app.route("/", testSupportRoutes);
 
