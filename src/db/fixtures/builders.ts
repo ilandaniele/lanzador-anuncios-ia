@@ -3,7 +3,7 @@ import { launches } from "../schema/launches";
 import { metaAssets, metaConnections } from "../schema/meta";
 import { chatMessages, chatSessions } from "../schema/ops";
 import { pilotRules } from "../schema/pilot";
-import { products } from "../schema/products";
+import { productCopies, products } from "../schema/products";
 import {
   invitations,
   memberships,
@@ -88,6 +88,26 @@ export const buildProduct = (
     landingUrl: "https://tienda.example.test/producto",
     primaryText: "Texto principal",
     headline: "Titular",
+    createdAt: at,
+    updatedAt: at,
+    ...overrides,
+  };
+};
+
+export const buildProductCopy = (
+  overrides: Pick<
+    typeof productCopies.$inferInsert,
+    "workspaceId" | "productId"
+  > &
+    Partial<typeof productCopies.$inferInsert>,
+): typeof productCopies.$inferInsert => {
+  const at = Date.now();
+  return {
+    id: crypto.randomUUID(),
+    angle: "manual",
+    primaryText: "Texto principal",
+    headline: "Titular",
+    source: "manual",
     createdAt: at,
     updatedAt: at,
     ...overrides,

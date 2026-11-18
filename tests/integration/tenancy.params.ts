@@ -13,6 +13,10 @@ const foreignProduct = ({ B }: TenantPair) => ({
   params: { id: B.product.id },
 });
 
+const foreignCopy = ({ B }: TenantPair) => ({
+  params: { copyId: B.copy.id },
+});
+
 const foreignLaunch = ({ B }: TenantPair) => ({
   params: { id: B.launch.id },
 });
@@ -66,6 +70,19 @@ export const TENANCY_PARAMS: TenancyParams = {
   }),
   "POST /api/w/:wid/products/:id/duplicate": foreignProduct,
   "POST /api/w/:wid/products/:id/check-landing": foreignProduct,
+  "POST /api/w/:wid/products/:id/copies/generate": (pair) => ({
+    ...foreignProduct(pair),
+    body: { angle: "dolor" },
+  }),
+  "GET /api/w/:wid/products/:id/copies": foreignProduct,
+  "POST /api/w/:wid/products/:id/copies": (pair) => ({
+    ...foreignProduct(pair),
+    body: { primaryText: "Texto", headline: "Titular" },
+  }),
+  "PATCH /api/w/:wid/copies/:copyId": (pair) => ({
+    ...foreignCopy(pair),
+    body: { favorite: true },
+  }),
   "POST /api/w/:wid/products/:id/archive": (pair) => ({
     ...foreignProduct(pair),
     body: { archived: true },

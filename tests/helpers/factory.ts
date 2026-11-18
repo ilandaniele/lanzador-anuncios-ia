@@ -14,7 +14,7 @@ import { users } from "../../src/db/schema/auth";
 import { launches } from "../../src/db/schema/launches";
 import { metaAssets, metaConnections } from "../../src/db/schema/meta";
 import { chatMessages, chatSessions } from "../../src/db/schema/ops";
-import { products } from "../../src/db/schema/products";
+import { productCopies, products } from "../../src/db/schema/products";
 import {
   invitations,
   memberships,
@@ -30,6 +30,7 @@ import {
   buildMetaAsset,
   buildMetaConnection,
   buildProduct,
+  buildProductCopy,
   buildUser,
   buildWorkspace,
 } from "../../src/db/fixtures/builders";
@@ -95,6 +96,16 @@ export async function createProduct(
   const product = buildProduct({ workspaceId, ...overrides });
   await drizzle(env.DB).insert(products).values(product);
   return product;
+}
+
+export async function createProductCopy(
+  workspaceId: string,
+  productId: string,
+  overrides: Partial<typeof productCopies.$inferInsert> = {},
+) {
+  const copy = buildProductCopy({ workspaceId, productId, ...overrides });
+  await drizzle(env.DB).insert(productCopies).values(copy);
+  return copy;
 }
 
 export async function createLaunch(

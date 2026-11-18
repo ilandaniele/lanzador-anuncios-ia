@@ -42,7 +42,6 @@ const PENDING_TABLES = [
   "oauthStates",
   "pilotProposals",
   "pilotRuns",
-  "productCopies",
   "protectedCampaigns",
   "uploads",
 ];

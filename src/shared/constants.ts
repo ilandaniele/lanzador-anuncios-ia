@@ -70,6 +70,20 @@ export const LANDING_STATUSES = [
 export type LandingStatus = (typeof LANDING_STATUSES)[number];
 export const COPY_SOURCES = ["ai", "manual"] as const;
 export const COPY_STATUSES = ["suggested", "saved", "discarded"] as const;
+export const COPY_GENERATE_ANGLES = [
+  "dolor",
+  "beneficio",
+  "prueba_social",
+  "oferta",
+  "urgencia",
+  "libre",
+] as const;
+export type CopyGenerateAngle = (typeof COPY_GENERATE_ANGLES)[number];
+export const COPY_ANGLES = [...COPY_GENERATE_ANGLES, "manual"] as const;
+export type CopyAngle = (typeof COPY_ANGLES)[number];
+export const COPY_POLICY_RISKS = ["none", "low", "high"] as const;
+export type CopyPolicyRisk = (typeof COPY_POLICY_RISKS)[number];
+export const COPY_VARIANTS_PER_GENERATION = 5;
 
 export const CREATIVE_KINDS = ["video", "image"] as const;
 export const CREATIVE_SOURCES = ["browser", "drive"] as const;

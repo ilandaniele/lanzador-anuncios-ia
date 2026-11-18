@@ -10,6 +10,7 @@ import { adminRoutes } from "./routes/admin";
 import { auditRoutes } from "./routes/audit";
 import { authRoutes } from "./routes/auth";
 import { chatRoutes } from "./routes/chat";
+import { copyRoutes } from "./routes/copies";
 import { invitationRoutes } from "./routes/invitations";
 import { launchRoutes } from "./routes/launches";
 import { memberRoutes } from "./routes/members";
@@ -50,6 +51,7 @@ export function createApp() {
   app.route("/", memberRoutes);
   app.route("/", invitationRoutes);
   app.route("/", productRoutes);
+  app.route("/", copyRoutes);
   app.route("/", launchRoutes);
   app.route("/", metaOAuthRoutes);
   app.route("/", metaConnectionRoutes);

@@ -1,6 +1,9 @@
+import type { AiProvider } from "./integrations/ai/provider";
+
 export interface Env {
   DB: D1Database;
   AI?: Ai;
+  AI_PROVIDER?: AiProvider;
   LAUNCH_WF?: Workflow;
   LAUNCH_ITEM_WF?: Workflow;
   JOB_WF?: Workflow;
