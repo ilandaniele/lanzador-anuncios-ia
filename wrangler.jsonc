@@ -35,21 +35,21 @@
     { "name": "RL_CLIENT_ERR", "namespace_id": "1007", "simple": { "limit": 20, "period": 60 } }
   ],
   "vars": {
-    "APP_ORIGIN": "",
+    "APP_ORIGIN": "https://lanzador.ilandaniele.workers.dev",
     "ENVIRONMENT": "production",
     "GRAPH_API_VERSION": "v24.0",
-    "META_APP_ID": "",
-    "META_LOGIN_CONFIG_ID": "",
+    "META_APP_ID": "1483234463762919",
+    "META_LOGIN_CONFIG_ID": "1449080420743892",
     "TOKEN_ENC_KEY_CURRENT": 1,
-    "GOOGLE_CLIENT_ID": "",
-    "GOOGLE_PICKER_API_KEY": "",
-    "GOOGLE_PROJECT_NUMBER": "",
-    "EMAIL_FROM": "",
+    "GOOGLE_CLIENT_ID": "537090173149-9176bo5pvd0c677vsqf8f7jncqjdk3me.apps.googleusercontent.com",
+    "GOOGLE_PICKER_API_KEY": "AIzaSyAqRFlDBCsQF82sE4cyFgCQn1v_AnsaX2s",
+    "GOOGLE_PROJECT_NUMBER": "537090173149",
+    "EMAIL_FROM": "Lanzador Anuncios IA <onboarding@resend.dev>",
     "WORKERS_AI_TEXT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
     "WORKERS_AI_CHAT_MODEL": "@cf/meta/llama-4-scout-17b-16e-instruct",
     "WORKERS_AI_VISION_MODEL": "@cf/meta/llama-4-scout-17b-16e-instruct",
     "WORKERS_AI_DAILY_NEURON_CAP": 9000,
-    "SUPERADMIN_EMAIL": ""
+    "SUPERADMIN_EMAIL": "ilan.daniele@gmail.com"
   },
   "env": {
     "preview": {
@@ -73,7 +73,7 @@
         { "name": "lanzador-launch-preview", "binding": "LAUNCH_WF", "class_name": "LaunchWorkflow" },
         { "name": "lanzador-launch-item-preview", "binding": "LAUNCH_ITEM_WF", "class_name": "LaunchItemWorkflow" }
       ],
-      "triggers": { "crons": ["0 * * * *"] },
+      "triggers": { "crons": [] },
       "ai": { "binding": "AI" },
       "ratelimits": [
         { "name": "RL_IP", "namespace_id": "2001", "simple": { "limit": 300, "period": 60 } },
