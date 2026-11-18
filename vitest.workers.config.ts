@@ -11,7 +11,13 @@ export default defineConfig({
   plugins: [
     cloudflareTest({
       wrangler: { configPath: "./wrangler.jsonc" },
-      miniflare: { bindings: { TEST_MIGRATIONS: migrations } },
+      miniflare: {
+        bindings: {
+          TEST_MIGRATIONS: migrations,
+          TOKEN_ENC_KEY_V1: "dGVzdC10b2tlbi1lbmNyeXB0aW9uLWtleS0zMmJ5dGU=",
+          META_APP_SECRET: "test-app-secret",
+        },
+      },
     }),
   ],
   test: {

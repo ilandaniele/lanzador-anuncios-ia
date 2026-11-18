@@ -30,12 +30,17 @@ import {
   type UploadRow,
 } from "../repositories/uploads";
 import { toCreativeDto } from "./creatives";
+import { enqueueJob } from "./jobs";
 import { getGraphForAsset } from "./meta/connection";
 import { rethrowMetaError } from "./meta/meta-error";
 
 type UploadEnv = Pick<
   Env,
-  "DB" | "GRAPH_API_VERSION" | "META_APP_SECRET" | "TOKEN_ENC_KEY_CURRENT"
+  | "DB"
+  | "GRAPH_API_VERSION"
+  | "JOB_WF"
+  | "META_APP_SECRET"
+  | "TOKEN_ENC_KEY_CURRENT"
 >;
 
 export interface ChunkBody {
@@ -270,7 +275,14 @@ export async function completeUpload(
     now(),
   );
   if (!creative) throw conflict("UPLOAD_NOT_ACTIVE");
-  // Task 42 enqueues the meta_video_status job here for videos.
+  if (upload.kind === "video") {
+    await enqueueJob(env, {
+      kind: "meta_video_status",
+      key: creative.id,
+      workspaceId: scope.workspaceId,
+      payload: { creativeId: creative.id },
+    });
+  }
   return { creative: toCreativeDto(creative) };
 }
 

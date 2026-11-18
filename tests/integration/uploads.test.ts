@@ -1,8 +1,10 @@
+import { introspectWorkflowInstance } from "cloudflare:test";
 import { env } from "cloudflare:workers";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, describe, expect, it } from "vitest";
 import { createApp } from "../../src/api/app";
+import { jobInstanceId } from "../../src/api/services/jobs";
 import { creatives, uploads } from "../../src/db/schema/creatives";
 import { metaConnections } from "../../src/db/schema/meta";
 import { FILE_LIMITS } from "../../src/shared/constants";
@@ -627,18 +629,33 @@ describe("POST /api/w/:wid/uploads/:uploadId/complete", () => {
     expect((await findUploadRow(created.uploadId))?.status).toBe("completed");
   });
 
-  it("finishes a video in Meta and leaves it processing", async () => {
+  it("finishes a video in Meta, leaves it processing and enqueues meta_video_status", async () => {
     const ctx = await setup();
     const { creative, upload } = await createVideoUpload(ctx, {
       startOffset: 25 * MIB,
       endOffset: 25 * MIB,
     });
+    await db
+      .update(creatives)
+      .set({ metaVideoId: "vid_42" })
+      .where(eq(creatives.id, creative.id));
     server.use(
       metaVideoPhases(`${ctx.asset.metaId}/advideos`, {
         finish: { success: true },
       }),
+      metaReplies("vid_42", { status: { video_status: "ready" } }),
+      metaReplies("vid_42/thumbnails", {
+        data: [{ uri: "https://scontent.fbcdn.net/v.jpg" }],
+      }),
     );
     const requests = captureRequests();
+    await using instance = await introspectWorkflowInstance(
+      env.JOB_WF!,
+      jobInstanceId({ kind: "meta_video_status", key: creative.id }),
+    );
+    await instance.modify(async (m) => {
+      await m.disableSleeps();
+    });
 
     const response = await call(uploadPath(ctx.wid, upload.id, "complete"), {
       as: ctx.owner,
@@ -648,6 +665,11 @@ describe("POST /api/w/:wid/uploads/:uploadId/complete", () => {
     expect(
       completeUploadResponseSchema.parse(await response.json()).creative,
     ).toMatchObject({ id: creative.id, kind: "video", status: "processing" });
+    await instance.waitForStatus("complete");
+    expect(await findCreative(creative.id)).toMatchObject({
+      status: "ready",
+      thumbnailUrl: "https://scontent.fbcdn.net/v.jpg",
+    });
     const form = await requests[0]!.formData();
     expect(form.get("upload_phase")).toBe("finish");
     expect(form.get("upload_session_id")).toBe(SESSION);
