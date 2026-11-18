@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { t } from "../i18n/es-AR";
 import { Button } from "./Button";
 import { Dialog } from "./Dialog";
@@ -18,6 +18,7 @@ type ConfirmDialogProps = {
   submitting?: boolean;
   errorMessage?: string;
   requireText?: string;
+  children?: ReactNode;
 };
 
 export function ConfirmDialog({
@@ -32,6 +33,7 @@ export function ConfirmDialog({
   submitting = false,
   errorMessage,
   requireText,
+  children,
 }: ConfirmDialogProps) {
   const [typed, setTyped] = useState("");
   const textMismatch = requireText !== undefined && typed !== requireText;
@@ -54,6 +56,7 @@ export function ConfirmDialog({
           ))}
         </dl>
       )}
+      {children && <div className="mb-4">{children}</div>}
       {consequence && <p className="mb-4 text-ink-muted">{consequence}</p>}
       {requireText !== undefined && (
         <div className="mb-4">

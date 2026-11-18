@@ -7,13 +7,16 @@ import {
   TABLE_METRIC_KEYS,
 } from "../../features/metrics/metric-format";
 import { MetricValue } from "../../features/metrics/MetricValue";
+import { RowActions } from "../../features/metrics/RowActions";
 import { RowIdentity } from "../../features/metrics/RowIdentity";
+import { useCanEdit } from "../../features/products/use-can-edit";
 import { t } from "../../i18n/es-AR";
 
 const LIST_SKELETON_ROWS = 8;
 const LIST_METRIC_KEYS = ["spendMinor", "roas", "cpaMinor"] as const;
 
 type MetricsViewProps = {
+  workspaceId: string;
   caption: string;
   rows: MetricsRowDto[];
   breakEvenById: ReadonlyMap<string, number | null>;
@@ -34,6 +37,7 @@ export function MetricsTable({
   onSortChange,
   ...view
 }: MetricsTableProps) {
+  const canEdit = useCanEdit(view.workspaceId);
   const columns: Column<MetricsRowDto>[] = [
     {
       key: "name",
@@ -51,6 +55,17 @@ export function MetricsTable({
         <MetricValue row={row} metric={metric} breakEvenById={breakEvenById} />
       ),
     })),
+    ...(canEdit
+      ? [
+          {
+            key: "actions",
+            header: t("metrics.col.actions"),
+            render: (row) => (
+              <RowActions workspaceId={view.workspaceId} row={row} />
+            ),
+          } satisfies Column<MetricsRowDto>,
+        ]
+      : []),
   ];
 
   return (
@@ -71,6 +86,7 @@ export function MetricsTable({
 }
 
 export function MetricsList({
+  workspaceId,
   caption,
   rows,
   breakEvenById,
@@ -79,6 +95,7 @@ export function MetricsList({
   error,
   onRetry,
 }: MetricsViewProps) {
+  const canEdit = useCanEdit(workspaceId);
   if (loading)
     return (
       <SkeletonRegion label={t("metrics.loading")}>
@@ -128,6 +145,7 @@ export function MetricsList({
               </div>
             ))}
           </dl>
+          {canEdit && <RowActions workspaceId={workspaceId} row={row} />}
         </li>
       ))}
     </ul>

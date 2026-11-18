@@ -1,4 +1,5 @@
 import { Button } from "../../components/Button";
+import { ToastProvider } from "../../components/Toast";
 import { filterCaption } from "../../features/metrics/filter-caption";
 import {
   DEFAULT_SORT,
@@ -37,6 +38,7 @@ export default function PerformanceTab({
   const first = metrics.data?.pages[0];
   const totals = first?.totals.length ? first.totals : [undefined];
   const view = {
+    workspaceId,
     caption: filterCaption(filters, {
       account: optionLabel(options.accounts.options, filters.adAccountId),
       product: optionLabel(options.products.options, filters.productId),
@@ -50,7 +52,7 @@ export default function PerformanceTab({
   };
 
   return (
-    <>
+    <ToastProvider>
       {!view.error &&
         totals.map((current, index) => (
           <KpiRow
@@ -89,6 +91,6 @@ export default function PerformanceTab({
           </Button>
         </div>
       )}
-    </>
+    </ToastProvider>
   );
 }
