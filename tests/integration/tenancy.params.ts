@@ -81,6 +81,7 @@ export const TENANCY_PARAMS: TenancyParams = {
     ...foreignLaunch(pair),
     body: { draft: {} },
   }),
+  "POST /api/w/:wid/launches/:id/simulate": foreignLaunch,
   "POST /api/w/:wid/launches/:id/discard": foreignLaunch,
   "PATCH /api/w/:wid/members/:userId": (pair) => ({
     ...foreignMember(pair),

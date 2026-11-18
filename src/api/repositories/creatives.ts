@@ -251,6 +251,26 @@ export const setCreativeArchived = (
         eq(creatives.status, "archived"),
       );
 
+export const selectCreativeFacts = (
+  db: D1Database,
+  scope: Scope,
+  ids: string[],
+) =>
+  drizzle(db)
+    .select({
+      id: creatives.id,
+      kind: sql<CreativeKind>`${creatives.kind}`,
+      status: sql<CreativeStatus>`${creatives.status}`,
+      adAccountAssetId: creatives.adAccountAssetId,
+      formatWarning: sql<"horizontal" | null>`${creatives.formatWarning}`,
+    })
+    .from(creatives)
+    .where(and(inWorkspace(creatives, scope), inIdList(ids)));
+
+export type CreativeFacts = Awaited<
+  ReturnType<typeof selectCreativeFacts>
+>[number];
+
 export async function findTaggingTarget(
   db: D1Database,
   scope: Scope,

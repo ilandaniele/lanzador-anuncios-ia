@@ -166,3 +166,13 @@ export async function transferOwnership(
   ]);
   return workspace ?? null;
 }
+
+export async function findMaxCreativesPerLaunch(db: D1Database, scope: Scope) {
+  const [row] = await drizzle(db)
+    .select({ max: plans.maxCreativesPerLaunch })
+    .from(workspaces)
+    .innerJoin(plans, eq(plans.id, workspaces.planId))
+    .where(eq(workspaces.id, scope.workspaceId))
+    .limit(1);
+  return row?.max ?? null;
+}

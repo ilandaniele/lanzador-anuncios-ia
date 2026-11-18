@@ -276,3 +276,44 @@ export async function discardEditableLaunch(
     .returning({ id: launches.id });
   return rows.length === 1;
 }
+
+export async function findEditableLaunchDraft(
+  db: D1Database,
+  scope: Scope,
+  id: string,
+) {
+  const [row] = await drizzle(db)
+    .select({ draft: launches.draft, updatedAt: launches.updatedAt })
+    .from(launches)
+    .where(
+      and(
+        inWorkspace(launches, scope),
+        eq(launches.id, id),
+        inArray(launches.status, EDITABLE_STATUSES),
+      ),
+    )
+    .limit(1);
+  return row ?? null;
+}
+
+export async function saveLaunchPlan(
+  db: D1Database,
+  scope: Scope,
+  id: string,
+  changes: { plan: string; planHash: string },
+  draftUpdatedAt: number,
+) {
+  const rows = await drizzle(db)
+    .update(launches)
+    .set({ ...changes, status: "simulated" })
+    .where(
+      and(
+        inWorkspace(launches, scope),
+        eq(launches.id, id),
+        inArray(launches.status, EDITABLE_STATUSES),
+        eq(launches.updatedAt, draftUpdatedAt),
+      ),
+    )
+    .returning({ id: launches.id });
+  return rows.length === 1;
+}

@@ -38,7 +38,7 @@ async function toDraftColumns(
   };
 }
 
-async function throwWhyNotEditable(
+export async function throwWhyNotEditable(
   db: D1Database,
   scope: Scope,
   id: string,

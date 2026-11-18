@@ -514,7 +514,7 @@ const REFERENCE_ADSET_STATUSES = [
   "WITH_ISSUES",
   "IN_PROCESS",
 ];
-const REFERENCE_FIELDS = `account_id,daily_budget,bid_strategy,adsets.limit(${MAX_ITEMS_PER_EDGE}){id,name,effective_status,optimization_goal,bid_amount,promoted_object,targeting}`;
+const REFERENCE_FIELDS = `account_id,daily_budget,bid_strategy,adsets.limit(${MAX_ITEMS_PER_EDGE}){id,name,effective_status,optimization_goal,billing_event,bid_amount,bid_constraints,attribution_spec,promoted_object,targeting}`;
 
 const metaCampaignSchema = z.object({
   id: z.string(),
@@ -530,7 +530,10 @@ const referenceAdsetSchema = z.object({
   name: z.string(),
   effective_status: z.string(),
   optimization_goal: z.string().optional(),
+  billing_event: z.string().optional(),
   bid_amount: z.number().int().optional(),
+  bid_constraints: z.unknown().optional(),
+  attribution_spec: z.unknown().optional(),
   promoted_object: z
     .object({
       pixel_id: z.string().optional(),
@@ -538,7 +541,7 @@ const referenceAdsetSchema = z.object({
     })
     .optional(),
   targeting: z
-    .object({
+    .looseObject({
       geo_locations: z
         .object({ countries: z.array(z.string()).optional() })
         .optional(),
@@ -572,9 +575,13 @@ export interface CampaignList {
 export interface ReferenceAdset {
   name: string;
   optimizationGoal: string | null;
+  billingEvent: string | null;
   customEventType: string | null;
   pixelId: string | null;
   bidAmountMinor: number | null;
+  bidConstraints: unknown;
+  attributionSpec: unknown;
+  targeting: Record<string, unknown> | null;
   countries: string[];
 }
 
@@ -623,9 +630,13 @@ const newestIdFirst = (a: { id: string }, b: { id: string }) =>
 const toReferenceAdset = (adset: ReferenceAdsetPayload): ReferenceAdset => ({
   name: adset.name,
   optimizationGoal: adset.optimization_goal ?? null,
+  billingEvent: adset.billing_event ?? null,
   customEventType: adset.promoted_object?.custom_event_type ?? null,
   pixelId: adset.promoted_object?.pixel_id ?? null,
   bidAmountMinor: adset.bid_amount ?? null,
+  bidConstraints: adset.bid_constraints,
+  attributionSpec: adset.attribution_spec,
+  targeting: adset.targeting ?? null,
   countries: adset.targeting?.geo_locations?.countries ?? [],
 });
 
