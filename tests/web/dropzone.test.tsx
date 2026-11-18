@@ -140,6 +140,7 @@ describe("Dropzone", () => {
   it("offers Volver a subir after a failure and re-sends the file", async () => {
     const { calls, pick } = renderDropzone(ACCOUNT_ID, {
       failChunkStarts: [0, 0, 0, 0],
+      statusPolls: ["processing"],
     });
 
     pick(makeFile(MIB));
