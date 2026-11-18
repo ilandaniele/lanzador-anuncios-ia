@@ -23,6 +23,7 @@ export const qk = {
     ["pilot", workspaceId, "history"] as const,
   pilotHistoryStatus: (workspaceId: string, status: string) =>
     ["pilot", workspaceId, "history", status] as const,
+  pilotRules: (workspaceId: string) => ["pilot", workspaceId, "rules"] as const,
   pilotLastRun: (workspaceId: string) =>
     ["pilot", workspaceId, "last-run"] as const,
   adminWorkspaces: () => ["admin", "workspaces"] as const,

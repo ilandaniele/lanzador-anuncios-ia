@@ -1142,6 +1142,60 @@ const esAR = {
       scale_winner: "Escalar ganador",
       duplicate_winner: "Duplicar ganador",
     },
+    rules: {
+      intro:
+        "Editá los valores dentro de cada frase. Los montos van en la moneda del workspace. El piloto solo propone: vos aprobás.",
+      listLabel: "Reglas del piloto",
+      loading: "Cargando reglas",
+      loadError: "No pudimos cargar las reglas.",
+      save: "Guardar reglas",
+      saved: "Reglas guardadas.",
+      saveFailed: "No pudimos guardar las reglas. Probá de nuevo.",
+      invalidValue: "Ingresá un valor válido.",
+      percentMax: "El máximo es 50 %.",
+      someInvalid:
+        "Hay valores inválidos. Se guardan solo las reglas que están bien.",
+      nothingValid: "Corregí los valores marcados para guardar.",
+      field: {
+        level: "Nivel",
+        window: "Período",
+        range: "Período",
+        spendMultiplier: "Múltiplo del CPA objetivo",
+        targetCpaSource: "Origen del CPA objetivo",
+        fallbackTargetCpaMinor: "CPA fijo o de respaldo",
+        roasMax: "ROAS máximo",
+        minSpendMinor: "Gasto mínimo",
+        breakEvenMultiplier: "Múltiplo del ROAS de equilibrio",
+        fallbackMinRoas: "ROAS mínimo de respaldo",
+        days: "Días",
+        percent: "Porcentaje de aumento",
+        minHoursBetween: "Horas entre escalados",
+        minRoas: "ROAS mínimo",
+      },
+      option: {
+        campaign: "campaña",
+        adset: "conjunto",
+        ad: "anuncio",
+        productMargin: "margen del producto",
+        fixed: "valor fijo",
+        today: "hoy",
+        yesterday: "ayer",
+        last3d: "los últimos 3 días",
+        last7d: "los últimos 7 días",
+        last14d: "los últimos 14 días",
+        last30d: "los últimos 30 días",
+      },
+      sentence: {
+        pause_no_sales:
+          "Pausar {level} con gasto ≥ {spendMultiplier} × el CPA objetivo y 0 compras, con datos de {window}. CPA objetivo: {targetCpaSource}. Valor fijo o de respaldo: {fallbackTargetCpaMinor}.",
+        pause_low_roas:
+          "Pausar {level} con ROAS ≤ {roasMax} y gasto ≥ {minSpendMinor}, con datos de {window}.",
+        scale_winner:
+          "Escalar campaña +{percent} % cuando el ROAS de los últimos {days} días es ≥ {breakEvenMultiplier} × el ROAS de equilibrio (o ≥ {fallbackMinRoas} si falta el costo del producto), con gasto ≥ {minSpendMinor} y al menos {minHoursBetween} horas desde el último escalado.",
+        duplicate_winner:
+          "Duplicar anuncio con ROAS ≥ {minRoas} y gasto ≥ {minSpendMinor}, con datos de {range}.",
+      },
+    },
     evidence: {
       label: "Datos que justifican la propuesta",
       spend: "Gasto",

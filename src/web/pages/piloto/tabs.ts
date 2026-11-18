@@ -3,6 +3,7 @@ import { ROLE_RANK, type Role } from "../../../shared/constants";
 import type { TextKey } from "../../i18n/es-AR";
 import HistoryTab from "./HistoryTab";
 import PendingTab from "./PendingTab";
+import RulesTab from "./RulesTab";
 
 export type PilotTabProps = {
   workspaceId: string;
@@ -18,6 +19,7 @@ export type PilotTab = {
 
 export const PENDING_TAB_ID = "pendientes";
 export const HISTORY_TAB_ID = "historial";
+export const RULES_TAB_ID = "reglas";
 
 export const PILOT_TABS: [PilotTab, ...PilotTab[]] = [
   {
@@ -25,6 +27,12 @@ export const PILOT_TABS: [PilotTab, ...PilotTab[]] = [
     label: "pilot.tabs.pending",
     minRole: "viewer",
     panel: PendingTab,
+  },
+  {
+    id: RULES_TAB_ID,
+    label: "pilot.tabs.rules",
+    minRole: "admin",
+    panel: RulesTab,
   },
   {
     id: HISTORY_TAB_ID,
