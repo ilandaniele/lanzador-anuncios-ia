@@ -26,7 +26,7 @@ const LAST_DAYS: Partial<Record<RangePreset, number>> = {
 
 const invalidRange = () => new RangeError("RANGE_INVALID");
 
-const dayNumber = (day: string): number => {
+export const dayNumber = (day: string): number => {
   const time = Date.parse(`${day}T00:00:00Z`);
   const valid =
     /^\d{4}-\d{2}-\d{2}$/.test(day) &&
@@ -36,7 +36,7 @@ const dayNumber = (day: string): number => {
   return time / DAY_MS;
 };
 
-const shiftDay = (day: string, days: number) =>
+export const shiftDay = (day: string, days: number) =>
   new Date((dayNumber(day) + days) * DAY_MS).toISOString().slice(0, 10);
 
 export const dayInZone = (date: Date, timeZone: string) =>
