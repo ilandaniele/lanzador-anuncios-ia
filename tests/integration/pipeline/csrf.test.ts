@@ -4,8 +4,6 @@ import { ORIGIN, readEnvelope, testEnv, trustedHeaders } from "./helpers";
 
 const app = createApp();
 app.post("/echo", (c) => c.json({ ok: true }));
-app.post("/meta/deauthorize", (c) => c.json({ ok: true }));
-app.post("/meta/data-deletion", (c) => c.json({ ok: true }));
 
 const send = (path: string, init: RequestInit) =>
   app.request(path, init, testEnv());
@@ -86,9 +84,14 @@ describe("csrf", () => {
   it.each(["/api/meta/deauthorize", "/api/meta/data-deletion"])(
     "exempts the Meta callback %s",
     async (path) => {
-      const response = await send(path, { method: "POST" });
+      const response = await app.request(
+        path,
+        { method: "POST" },
+        testEnv({ META_APP_SECRET: "test-app-secret" }),
+      );
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(400);
+      expect((await readEnvelope(response)).code).toBe("BAD_SIGNATURE");
     },
   );
 

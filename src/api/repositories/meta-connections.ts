@@ -188,3 +188,41 @@ export async function deleteConnection(
     auditStatement(db, audit),
   ]);
 }
+
+export type MetaUserConnection = {
+  id: string;
+  workspaceId: string;
+  businessName: string | null;
+};
+
+export async function markMetaUserReconnectRequired(
+  db: D1Database,
+  metaUserId: string,
+  auditFor: (connection: MetaUserConnection) => AuditEntry,
+  at: number,
+): Promise<number> {
+  const orm = drizzle(db);
+  const activeOfMetaUser = and(
+    eq(metaConnections.metaUserId, metaUserId),
+    eq(metaConnections.status, "active"),
+  );
+  const connections = await orm
+    .select({
+      id: metaConnections.id,
+      workspaceId: metaConnections.workspaceId,
+      businessName: metaConnections.businessName,
+    })
+    .from(metaConnections)
+    .where(activeOfMetaUser);
+  if (connections.length === 0) return 0;
+  await orm.batch([
+    orm
+      .update(metaConnections)
+      .set({ status: "reconnect_required", updatedAt: at })
+      .where(activeOfMetaUser),
+    ...connections.map((connection) =>
+      auditStatement(db, auditFor(connection)),
+    ),
+  ]);
+  return connections.length;
+}

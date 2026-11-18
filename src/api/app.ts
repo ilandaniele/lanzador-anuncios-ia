@@ -14,6 +14,7 @@ import { copyRoutes } from "./routes/copies";
 import { invitationRoutes } from "./routes/invitations";
 import { launchRoutes } from "./routes/launches";
 import { memberRoutes } from "./routes/members";
+import { metaCallbackRoutes } from "./routes/meta-callbacks";
 import { metaActionRoutes } from "./routes/meta-actions";
 import { metaCampaignRoutes } from "./routes/meta-campaigns";
 import { metaConnectionRoutes } from "./routes/meta-connections";
@@ -56,6 +57,7 @@ export function createApp() {
   app.route("/", copyRoutes);
   app.route("/", launchRoutes);
   app.route("/", metaOAuthRoutes);
+  app.route("/", metaCallbackRoutes);
   app.route("/", metaConnectionRoutes);
   app.route("/", metaCampaignRoutes);
   app.route("/", metaActionRoutes);
