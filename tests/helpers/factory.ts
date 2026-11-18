@@ -11,6 +11,7 @@ import {
   SESSION_COOKIE,
 } from "../../src/api/services/auth/session";
 import { users } from "../../src/db/schema/auth";
+import { launches } from "../../src/db/schema/launches";
 import { metaAssets, metaConnections } from "../../src/db/schema/meta";
 import { products } from "../../src/db/schema/products";
 import {
@@ -21,6 +22,7 @@ import {
 } from "../../src/db/schema/workspaces";
 import {
   buildInvitation,
+  buildLaunch,
   buildMembership,
   buildMetaAsset,
   buildMetaConnection,
@@ -90,6 +92,15 @@ export async function createProduct(
   const product = buildProduct({ workspaceId, ...overrides });
   await drizzle(env.DB).insert(products).values(product);
   return product;
+}
+
+export async function createLaunch(
+  workspaceId: string,
+  overrides: Partial<typeof launches.$inferInsert> = {},
+) {
+  const launch = buildLaunch({ workspaceId, ...overrides });
+  await drizzle(env.DB).insert(launches).values(launch);
+  return launch;
 }
 
 export async function createMetaConnection(

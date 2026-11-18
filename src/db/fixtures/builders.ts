@@ -1,4 +1,5 @@
 import { users } from "../schema/auth";
+import { launches } from "../schema/launches";
 import { metaAssets, metaConnections } from "../schema/meta";
 import { products } from "../schema/products";
 import { invitations, memberships, workspaces } from "../schema/workspaces";
@@ -123,6 +124,19 @@ export const buildMetaAsset = (
     timezoneName: "America/Argentina/Buenos_Aires",
     accountStatus: 1,
     enabled: 1,
+    createdAt: at,
+    updatedAt: at,
+    ...overrides,
+  };
+};
+
+export const buildLaunch = (
+  overrides: Pick<typeof launches.$inferInsert, "workspaceId"> &
+    Partial<typeof launches.$inferInsert>,
+): typeof launches.$inferInsert => {
+  const at = Date.now();
+  return {
+    id: crypto.randomUUID(),
     createdAt: at,
     updatedAt: at,
     ...overrides,

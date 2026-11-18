@@ -13,7 +13,17 @@ const foreignProduct = ({ B }: TenantPair) => ({
   params: { id: B.product.id },
 });
 
+const foreignLaunch = ({ B }: TenantPair) => ({
+  params: { id: B.launch.id },
+});
+
 export const TENANCY_PARAMS: TenancyParams = {
+  "GET /api/w/:wid/launches/:id": foreignLaunch,
+  "PATCH /api/w/:wid/launches/:id": (pair) => ({
+    ...foreignLaunch(pair),
+    body: { draft: {} },
+  }),
+  "POST /api/w/:wid/launches/:id/discard": foreignLaunch,
   "PATCH /api/w/:wid/members/:userId": (pair) => ({
     ...foreignMember(pair),
     body: { role: "viewer" },

@@ -9,6 +9,7 @@ import { requestId } from "./middleware/request-id";
 import { adminRoutes } from "./routes/admin";
 import { authRoutes } from "./routes/auth";
 import { invitationRoutes } from "./routes/invitations";
+import { launchRoutes } from "./routes/launches";
 import { memberRoutes } from "./routes/members";
 import { metaOAuthRoutes } from "./routes/meta-oauth";
 import { productRoutes } from "./routes/products";
@@ -44,6 +45,7 @@ export function createApp() {
   app.route("/", memberRoutes);
   app.route("/", invitationRoutes);
   app.route("/", productRoutes);
+  app.route("/", launchRoutes);
   app.route("/", metaOAuthRoutes);
   app.route("/", adminRoutes);
   app.route("/", testSupportRoutes);

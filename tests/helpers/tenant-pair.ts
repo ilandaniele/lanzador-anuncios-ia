@@ -1,5 +1,6 @@
 import {
   createInvitation,
+  createLaunch,
   createProduct,
   createUser,
   createWorkspace,
@@ -25,11 +26,12 @@ export async function seedWorkspaceWithRoles() {
 
 async function seedTenant() {
   const tenant = await seedWorkspaceWithRoles();
-  const [{ invitation }, product] = await Promise.all([
+  const [{ invitation }, product, launch] = await Promise.all([
     createInvitation(tenant.workspace.id, { invitedBy: tenant.users.admin.id }),
     createProduct(tenant.workspace.id),
+    createLaunch(tenant.workspace.id),
   ]);
-  return { ...tenant, invitation, product };
+  return { ...tenant, invitation, product, launch };
 }
 
 export async function seedTenantPair() {
