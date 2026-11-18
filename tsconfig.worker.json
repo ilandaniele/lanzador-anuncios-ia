@@ -11,5 +11,11 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src/api", "src/shared", "src/db", "src/workflows", "drizzle.config.ts"]
+  "include": [
+    "src/api",
+    "src/shared",
+    "src/db",
+    "src/workflows",
+    "drizzle.config.ts"
+  ]
 }
