@@ -118,7 +118,7 @@ Al terminar la revisión:
 
 Texto para "Testing instructions" (pegar el código solo en el formulario de Meta):
 
-> Go to https://lanzador.ilandaniele.workers.dev/revisor and enter this access code: <CODE>. You will be signed in as the reviewer user. To test Facebook Login for Business, open Ajustes > Conexiones and click Conectar Meta, then follow the screencast steps. All campaigns are created paused; please do not activate them.
+> Go to https://lanzador.ilandaniele.workers.dev/revisor and enter this access code: <CODE>. You will be signed in as the reviewer user. On first sign-in, type any workspace name and click Crear workspace. Step 2 (Conectar Meta) starts Facebook Login for Business; later you can also connect from Ajustes > Conexiones. Then follow the screencast steps. All campaigns are created paused; please do not activate them.
 
 ## Nota del screencast
 
