@@ -1,6 +1,6 @@
 # Estado del proyecto — Lanzador de anuncios con IA
 
-Fase actual: **5 — Desarrollo** (hechas 4–32, 34–36, 38, 40, 43–45, 47, 48, 56, 65, 75, 81, 90, 97; siguientes: 33, 57–61, 76–80, 82, 91, 98).
+Fase actual: **5 — Desarrollo** (hechas 4–36, 38–40, 43–45, 47, 48, 56, 57, 65, 66, 75, 76, 81, 90, 97; en curso: 41, 55, 58, 67, 77, 80).
 
 ## Checklist
 
@@ -34,6 +34,8 @@ Fase actual: **5 — Desarrollo** (hechas 4–32, 34–36, 38, 40, 43–45, 47, 
 ## Pendiente
 
 - Notas de tareas 23–47: `GuardrailError` de `integrations/meta/write.ts` no tiene `ErrorCode`; las rutas que lo usen deben mapearlo. Tope de presupuesto y escalado ≤ 50 % los aplican los llamadores (49, 50, 54). No hay `ToastProvider` global (Miembros monta uno local). Revisión de seguridad de 23 diferida: L3, L4, L6, L7 y rate limit `RL_EXP` en connect. OAuth: la escritura de la conexión y el batch de activos+auditoría ya no son una sola transacción (si falla el batch, la próxima discovery lo arregla). Lanzamientos: `items[].mediaKind` lo manda el cliente; simular (46) debe recalcularlo desde `creatives.kind` y validar `max_creatives_per_launch`, `new_cbo` con presupuesto, `existing_cbo` con `existingCampaignId`, `COST_CAP` con monto. Payloads: lista de 16 `creative_features_spec` a verificar contra una cuenta de prueba; clonar de otra página usa `BLOCKERS` (no hay código propio); `AdsetReference` lo mapea la tarea 46. Helper `olderThan` duplicado en repos de productos y lanzamientos.
+
+- Notas de tareas 33–76: el backend no renderiza las plantillas de nombre (`services/launch/payloads.ts` manda `campaignName`/`adsetName` tal cual); simular y lanzar deben renderizarlas. El paso 1 del lanzador no limpia `existingCampaignId` al cambiar de cuenta. El callback de OAuth vuelve a Ajustes › Conexiones, no al onboarding. `RANGE_PRESETS` no tiene `last_3d` (lo piden 91 y 93). `refreshInsights` no tiene opción `force` (la necesita `POST /metrics/refresh`); el cron (82) necesita una clave de job única por corrida. La vista previa de anuncios acepta `facebook.com` y `www.facebook.com`. Formatos `json_object` e `image_url` de Workers AI sin verificar contra el modelo real. Vitest avisa "close timed out" desde que existe el binding `AI`; los tests pasan.
 
 - Producción: cargar `TOKEN_ENC_KEY_V1` en `lanzador` (valor distinto al de preview) y aplicar migraciones a `lanzador-db` en la Fase 8 (en preview ya están aplicadas). `E2E_SECRET` nunca va a producción.
 - Bindings `AI`, Workflows y rate limits: se agregan en la tarea del plan que los usa.
