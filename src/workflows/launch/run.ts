@@ -2,10 +2,14 @@ import type { WorkflowStep } from "cloudflare:workers";
 import type { Env } from "../../api/env";
 import { setLaunchPhase } from "../../api/repositories/launch-run";
 import type { LaunchParams } from "../../api/services/launch/launch-instance";
+import { verifyLaunchRun } from "../../api/services/launch/verify";
 import type { LaunchPhase } from "../../shared/schemas/launch";
 import { type LaunchContext, loadLaunchContext } from "./context";
 import { createLaunchItems } from "./items";
+import { runLaunchStep } from "./step";
 import { ensureAdset, ensureCampaign, runPreflight } from "./structure";
+
+const VERIFY_SUBREQUESTS = 8;
 
 const enterPhase = (
   { env, step, scope, launchId }: LaunchContext,
@@ -32,6 +36,17 @@ async function createStructure(context: LaunchContext) {
   return adsetId;
 }
 
+async function verifyStructure(context: LaunchContext) {
+  await enterPhase(context, "verify");
+  const { env, step, scope, launchId, budget } = context;
+  return runLaunchStep(
+    step,
+    "verify",
+    () => verifyLaunchRun(env, scope, launchId),
+    { budget, subrequests: VERIFY_SUBREQUESTS },
+  );
+}
+
 export async function runLaunch(
   env: Env,
   step: WorkflowStep,
@@ -43,5 +58,5 @@ export async function runLaunch(
       ? await createStructure(context)
       : context.launch.metaAdsetId!;
   const finished = await createLaunchItems(context, params, adsetId);
-  if (finished) await enterPhase(context, "verify");
+  if (finished) await verifyStructure(context);
 }

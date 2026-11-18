@@ -16,7 +16,7 @@ const createdListSchema = z.object({
   ),
 });
 
-const parseMetaTime = (time: string) =>
+export const parseMetaTime = (time: string) =>
   Date.parse(time.replace(/([+-]\d{2})(\d{2})$/, "$1:$2"));
 
 export async function findCreatedByName(

@@ -108,7 +108,7 @@ describe("LaunchItemWorkflow", () => {
     expect(kept).toMatchObject({ status: "done" });
     expect(meta.adcreatives).toHaveLength(1);
     expect(await launchRow(context.launch.id)).toMatchObject({
-      status: "verifying",
+      status: "verified_with_errors",
       itemsDone: 1,
       itemsFailed: 1,
     });
@@ -134,7 +134,7 @@ describe("LaunchItemWorkflow", () => {
       metaAdId: null,
     });
     expect(await launchRow(context.launch.id)).toMatchObject({
-      status: "verifying",
+      status: "verified_with_errors",
       itemsDone: 1,
       itemsFailed: 1,
     });

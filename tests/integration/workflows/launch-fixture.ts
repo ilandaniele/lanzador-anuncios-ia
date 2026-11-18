@@ -21,6 +21,7 @@ import { graphUrl, metaReplies } from "../../helpers/msw/meta";
 import { server } from "../../helpers/msw/server";
 import { seedWorkspaceWithRoles } from "../../helpers/tenant-pair";
 import { openLimiter } from "../pipeline/helpers";
+import { fakeVerify, type VerifyPatch } from "./verify-fake";
 
 const app = createApp();
 export const db = drizzle(env.DB);
@@ -88,14 +89,19 @@ function fakeEdge(edge: string, options: EdgeOptions = {}) {
   return posts;
 }
 
-export const fakeMeta = (
+export function fakeMeta(
   options: Partial<Record<string, EdgeOptions>> = {},
-) => ({
-  campaigns: fakeEdge("campaigns", options.campaigns),
-  adsets: fakeEdge("adsets", options.adsets),
-  adcreatives: fakeEdge("adcreatives", options.adcreatives),
-  ads: fakeEdge("ads", options.ads),
-});
+  patch?: VerifyPatch,
+) {
+  const edges = {
+    campaigns: fakeEdge("campaigns", options.campaigns),
+    adsets: fakeEdge("adsets", options.adsets),
+    adcreatives: fakeEdge("adcreatives", options.adcreatives),
+    ads: fakeEdge("ads", options.ads),
+  };
+  server.use(...fakeVerify(edges, patch));
+  return edges;
+}
 
 const healthyAccount = () =>
   metaReplies(ACCOUNT_META_ID, {
@@ -149,6 +155,7 @@ export async function setup(itemCount = 7, creative: CreativeOverrides = {}) {
   return {
     wid: workspace.id,
     editor: users.editor,
+    viewer: users.viewer,
     launch,
     images,
     draft,

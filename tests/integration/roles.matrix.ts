@@ -40,6 +40,7 @@ export const ROLE_MATRIX: Record<string, RoleRule> = {
   "GET /api/w/:wid/launches/:id/progress": "viewer",
   "POST /api/w/:wid/launches/:id/retry-failed": "editor",
   "POST /api/w/:wid/launches/:id/discard": "editor",
+  "POST /api/w/:wid/launches/:id/verify": "editor",
   "POST /api/w/:wid/meta/connect": "admin",
   "GET /api/w/:wid/meta/connections": "viewer",
   "GET /api/w/:wid/meta/assets": "viewer",

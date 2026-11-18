@@ -49,7 +49,8 @@ describe("LaunchWorkflow", () => {
       true,
     );
     expect(await launchRow(context.launch.id)).toMatchObject({
-      status: "verifying",
+      status: "paused_verified",
+      checksOk: 1,
       phase: "verify",
       attempt: 1,
       workflowInstanceId: `launch-${context.launch.id}-1`,
@@ -92,7 +93,7 @@ describe("LaunchWorkflow", () => {
     expect(meta.campaigns).toHaveLength(1);
     expect(meta.adsets[0]!.get("campaign_id")).toBe("campaigns-1");
     expect(await launchRow(context.launch.id)).toMatchObject({
-      status: "verifying",
+      status: "paused_verified",
       metaCampaignId: "campaigns-1",
       itemsDone: 1,
     });
@@ -114,7 +115,7 @@ describe("LaunchWorkflow", () => {
       errorMessage: "Texto rechazado: El texto no cumple las políticas",
     });
     expect(await launchRow(context.launch.id)).toMatchObject({
-      status: "verifying",
+      status: "verified_with_errors",
       itemsDone: 1,
       itemsFailed: 1,
     });

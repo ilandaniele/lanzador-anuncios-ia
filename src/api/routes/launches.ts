@@ -21,6 +21,7 @@ import { getLaunchProgress } from "../services/launch/progress";
 import { retryFailedItems } from "../services/launch/retry";
 import { simulateLaunch } from "../services/launch/simulate";
 import { startLaunch } from "../services/launch/start";
+import { reverifyLaunch } from "../services/launch/verify";
 import type { AppEnv } from "../types";
 
 export const launchRoutes = new Hono<AppEnv>()
@@ -100,6 +101,16 @@ export const launchRoutes = new Hono<AppEnv>()
         202,
       );
     },
+  )
+  .post(
+    "/w/:wid/launches/:id/verify",
+    ...member("editor"),
+    expensiveRateLimit,
+    async (c) =>
+      c.json(
+        await reverifyLaunch(c.env, c.get("scope")!, c.req.param("id")),
+        202,
+      ),
   )
   .post("/w/:wid/launches/:id/discard", ...member("editor"), async (c) => {
     await discardLaunch(c.env.DB, c.get("scope")!, c.req.param("id"));
