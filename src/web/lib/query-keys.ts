@@ -16,4 +16,11 @@ export const qk = {
     ["meta-assets", workspaceId, "all"] as const,
   metaConnections: (workspaceId: string) =>
     ["meta-connections", workspaceId] as const,
+  metaCampaigns: (workspaceId: string, adAccountAssetId: string) =>
+    ["meta-campaigns", workspaceId, adAccountAssetId] as const,
+  metaCampaignReference: (
+    workspaceId: string,
+    adAccountAssetId: string,
+    campaignId: string,
+  ) => ["meta-campaigns", workspaceId, adAccountAssetId, campaignId] as const,
 };

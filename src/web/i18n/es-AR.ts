@@ -507,6 +507,36 @@ const esAR = {
         currency: "Solo se puede lanzar con cuentas en USD. Elegí otra cuenta.",
       },
     },
+    step2: {
+      modeLabel: "Estructura",
+      newCbo: "CBO nueva",
+      newCboHint: "Creás una campaña con presupuesto compartido y un conjunto.",
+      existingCbo: "Conjunto nuevo en CBO existente",
+      existingCboHint:
+        "Sumás un conjunto a una campaña CBO que ya tenés en Meta.",
+      campaignLabel: "Campaña",
+      noCampaigns: "No hay campañas activas ni pausadas en esta cuenta.",
+      campaignsTruncated:
+        "Mostramos solo una parte de las campañas de la cuenta. Si falta alguna, revisala en Meta.",
+      copyFrom: "Se copia de",
+      copyAudience: "Público",
+      copyEvent: "Evento",
+      copyBid: "Puja",
+      copyBidLowest: "Mayor volumen",
+      copyBidCostCap: "Límite de costo",
+      referenceLoading: "Leyendo el conjunto de referencia",
+      referenceFailed: "No pudimos leer el conjunto de referencia.",
+      notCbo:
+        "Esta campaña no usa presupuesto a nivel campaña (CBO). Elegí una campaña CBO.",
+      noReferenceAdset:
+        "La campaña no tiene ningún conjunto para copiar. Elegí otra campaña.",
+      campaignNameLabel: "Nombre de la campaña",
+      adsetNameLabel: "Nombre del conjunto",
+      insertPlaceholder: "Insertar",
+      preview: "Vista previa",
+      productFallback: "Producto",
+      settingsFailed: "No pudimos cargar la configuración del workspace.",
+    },
   },
 };
 
