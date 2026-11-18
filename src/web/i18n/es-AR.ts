@@ -97,6 +97,12 @@ const esAR = {
     resendWait: "Esperá un momento para reenviar el link",
     resendReady: "Ya podés reenviar el link",
   },
+  reviewer: {
+    title: "Acceso para revisores",
+    code: "Código de acceso",
+    submit: "Entrar",
+    invalidCode: "Código inválido",
+  },
   confirm: {
     title: "Confirmá tu ingreso",
     enter: "Entrar",

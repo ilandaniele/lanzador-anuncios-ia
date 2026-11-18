@@ -19,6 +19,11 @@ export const verifyRequestSchema = z.object({
 });
 export type VerifyRequest = z.infer<typeof verifyRequestSchema>;
 
+export const reviewerLinkRequestSchema = z.object({
+  code: z.string().min(1).max(TOKEN_MAX),
+});
+export type ReviewerLinkRequest = z.infer<typeof reviewerLinkRequestSchema>;
+
 export const meSchema = z.object({
   user: z.object({
     id: z.string(),

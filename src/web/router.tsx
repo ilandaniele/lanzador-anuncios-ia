@@ -73,6 +73,7 @@ export const appRoutes: RouteObject[] = [
     ...page(() => import("./pages/auth/ConfirmPage")),
   },
   { path: "invitacion", ...page(() => import("./pages/auth/InvitationPage")) },
+  { path: "revisor", ...page(() => import("./pages/auth/ReviewerPage")) },
   {
     element: <RequireSession />,
     children: [

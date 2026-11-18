@@ -36,4 +36,6 @@ export interface Env {
   GOOGLE_CLIENT_SECRET: string;
   RESEND_API_KEY: string;
   E2E_SECRET?: string;
+  REVIEWER_EMAIL?: string;
+  REVIEWER_CODE?: string;
 }

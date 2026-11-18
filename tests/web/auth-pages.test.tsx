@@ -329,3 +329,43 @@ describe("invitation", () => {
     expect(strip.textContent).toContain("otro email");
   });
 });
+
+describe("reviewer", () => {
+  async function submitCode(code = "reviewer-code") {
+    fireEvent.change(await screen.findByLabelText(/Código de acceso/), {
+      target: { value: code },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Entrar" }));
+  }
+
+  it("sends the code and opens the returned magic link", async () => {
+    respondTo("/api/auth/reviewer", () =>
+      HttpResponse.json({
+        link: "https://app.example.test/ingresar/confirmar#t=abc",
+      }),
+    );
+    const router = renderAt("/revisor");
+
+    await submitCode();
+
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe("/ingresar/confirmar"),
+    );
+    expect(router.state.location.hash).toBe("#t=abc");
+    expect(requests).toEqual([
+      {
+        url: expect.stringContaining("/api/auth/reviewer"),
+        body: { code: "reviewer-code" },
+      },
+    ]);
+  });
+
+  it("shows an invalid-code error on 404", async () => {
+    respondTo("/api/auth/reviewer", () => errorBody("NOT_FOUND", 404));
+    renderAt("/revisor");
+
+    await submitCode();
+
+    expect(await screen.findByText("Código inválido")).toBeTruthy();
+  });
+});

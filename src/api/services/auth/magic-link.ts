@@ -22,19 +22,39 @@ const LINK_TTL = 15 * MINUTE;
 
 type LinkEnv = Pick<
   Env,
-  "DB" | "APP_ORIGIN" | "SUPERADMIN_EMAIL" | "RESEND_API_KEY" | "EMAIL_FROM"
+  | "DB"
+  | "APP_ORIGIN"
+  | "SUPERADMIN_EMAIL"
+  | "REVIEWER_EMAIL"
+  | "RESEND_API_KEY"
+  | "EMAIL_FROM"
 >;
 
 type MagicLinkIssue = { id: string; token: string };
 
 const linkExpired = () => new AppError(410, "LINK_EXPIRED");
 
-export const isSuperadminEmail = (env: LinkEnv, email: string) => {
-  const superadmin = env.SUPERADMIN_EMAIL.trim().toLowerCase();
-  return superadmin !== "" && superadmin === email;
+const sameEmail = (configured: string | undefined, email: string) => {
+  const normalized = configured?.trim().toLowerCase() ?? "";
+  return normalized !== "" && normalized === email;
 };
 
+export const isSuperadminEmail = (env: LinkEnv, email: string) =>
+  sameEmail(env.SUPERADMIN_EMAIL, email);
+
+export const isReviewerEmail = (env: LinkEnv, email: string) =>
+  sameEmail(env.REVIEWER_EMAIL, email);
+
 export async function issueMagicLink(
+  env: LinkEnv,
+  email: string,
+  ip?: string,
+): Promise<MagicLinkIssue | null> {
+  if (isReviewerEmail(env, email)) return null;
+  return issueEligibleLink(env, email, ip);
+}
+
+export async function issueEligibleLink(
   env: LinkEnv,
   email: string,
   ip?: string,

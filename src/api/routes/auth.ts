@@ -1,6 +1,7 @@
 import { type Context, Hono } from "hono";
 import {
   magicLinkRequestSchema,
+  reviewerLinkRequestSchema,
   verifyRequestSchema,
 } from "../../shared/schemas/auth";
 import { parseJson } from "../lib/validate";
@@ -12,6 +13,7 @@ import {
   verifyMagicLink,
 } from "../services/auth/magic-link";
 import { getMe } from "../services/auth/me";
+import { issueReviewerLink } from "../services/auth/reviewer";
 import {
   clearSessionCookie,
   destroySession,
@@ -34,6 +36,14 @@ export const authRoutes = new Hono<AppEnv>()
       );
     }
     return c.json({ ok: true }, 202);
+  })
+  .post("/auth/reviewer", authRateLimit, async (c) => {
+    const { code } = await parseJson(c, reviewerLinkRequestSchema);
+    const link = await issueReviewerLink(c.env, code, {
+      ip: requestIp(c),
+      requestId: c.get("requestId"),
+    });
+    return c.json({ link });
   })
   .post("/auth/verify", authRateLimit, async (c) => {
     const { token } = await parseJson(c, verifyRequestSchema);
