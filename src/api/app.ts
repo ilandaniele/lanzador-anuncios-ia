@@ -13,6 +13,7 @@ import { chatRoutes } from "./routes/chat";
 import { invitationRoutes } from "./routes/invitations";
 import { launchRoutes } from "./routes/launches";
 import { memberRoutes } from "./routes/members";
+import { metaCampaignRoutes } from "./routes/meta-campaigns";
 import { metaConnectionRoutes } from "./routes/meta-connections";
 import { metaOAuthRoutes } from "./routes/meta-oauth";
 import { pilotRuleRoutes } from "./routes/pilot-rules";
@@ -52,6 +53,7 @@ export function createApp() {
   app.route("/", launchRoutes);
   app.route("/", metaOAuthRoutes);
   app.route("/", metaConnectionRoutes);
+  app.route("/", metaCampaignRoutes);
   app.route("/", auditRoutes);
   app.route("/", chatRoutes);
   app.route("/", pilotRuleRoutes);

@@ -103,3 +103,10 @@ export async function getGraphForAsset(
   const graph = await graphForStoredConnection(db, env, scope, connection);
   return { graph, asset };
 }
+
+export function assertAssetAccount(
+  asset: { metaId: string },
+  metaAccountId: string,
+) {
+  if (asset.metaId !== `act_${metaAccountId}`) throw notFound();
+}

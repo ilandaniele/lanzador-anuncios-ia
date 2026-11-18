@@ -2,6 +2,7 @@ import {
   createChatSession,
   createInvitation,
   createLaunch,
+  createMetaAsset,
   createMetaConnection,
   createProduct,
   createUser,
@@ -49,6 +50,7 @@ async function seedTenant() {
       ),
       createChatSession(tenant.workspace.id, tenant.users.owner.id),
     ]);
+  const adAccount = await createMetaAsset(tenant.workspace.id, connection.id);
   return {
     ...tenant,
     invitation,
@@ -56,6 +58,7 @@ async function seedTenant() {
     launch,
     connection,
     chatSession,
+    adAccount,
   };
 }
 

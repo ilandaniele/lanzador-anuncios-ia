@@ -32,6 +32,13 @@ export const TENANCY_PARAMS: TenancyParams = {
     ...foreignConnection(pair),
     body: { confirm: true },
   }),
+  "GET /api/w/:wid/meta/ad-accounts/:assetId/campaigns": ({ B }) => ({
+    params: { assetId: B.adAccount.id },
+  }),
+  "GET /api/w/:wid/meta/campaigns/:campaignId/reference": ({ B }) => ({
+    params: { campaignId: "120200000000000001" },
+    query: { adAccountAssetId: B.adAccount.id },
+  }),
   "GET /api/w/:wid/launches/:id": foreignLaunch,
   "PATCH /api/w/:wid/launches/:id": (pair) => ({
     ...foreignLaunch(pair),

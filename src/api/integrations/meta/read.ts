@@ -503,3 +503,149 @@ export async function readIssues(
       })),
     }));
 }
+
+const MAX_CAMPAIGNS = 300;
+const CAMPAIGN_FIELDS =
+  "id,name,effective_status,daily_budget,objective,bid_strategy";
+const REFERENCE_ADSET_STATUSES = [
+  "ACTIVE",
+  "PAUSED",
+  "CAMPAIGN_PAUSED",
+  "WITH_ISSUES",
+  "IN_PROCESS",
+];
+const REFERENCE_FIELDS = `account_id,daily_budget,bid_strategy,adsets.limit(${MAX_ITEMS_PER_EDGE}){id,name,effective_status,optimization_goal,bid_amount,promoted_object,targeting}`;
+
+const metaCampaignSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  effective_status: z.string(),
+  daily_budget: minorSchema.optional(),
+  objective: z.string().optional(),
+  bid_strategy: z.string().optional(),
+});
+
+const referenceAdsetSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  effective_status: z.string(),
+  optimization_goal: z.string().optional(),
+  bid_amount: z.number().int().optional(),
+  promoted_object: z
+    .object({
+      pixel_id: z.string().optional(),
+      custom_event_type: z.string().optional(),
+    })
+    .optional(),
+  targeting: z
+    .object({
+      geo_locations: z
+        .object({ countries: z.array(z.string()).optional() })
+        .optional(),
+    })
+    .optional(),
+});
+
+const campaignReferenceSchema = z.object({
+  account_id: z.string(),
+  daily_budget: minorSchema.optional(),
+  bid_strategy: z.string().optional(),
+  adsets: z.object({ data: z.array(referenceAdsetSchema) }).optional(),
+});
+
+type ReferenceAdsetPayload = z.infer<typeof referenceAdsetSchema>;
+
+export interface MetaCampaign {
+  id: string;
+  name: string;
+  effectiveStatus: string;
+  dailyBudgetMinor: number | null;
+  objective: string | null;
+  bidStrategy: string | null;
+}
+
+export interface CampaignList {
+  campaigns: MetaCampaign[];
+  truncated: boolean;
+}
+
+export interface ReferenceAdset {
+  name: string;
+  optimizationGoal: string | null;
+  customEventType: string | null;
+  pixelId: string | null;
+  bidAmountMinor: number | null;
+  countries: string[];
+}
+
+export interface CampaignReference {
+  accountId: string;
+  dailyBudgetMinor: number | null;
+  bidStrategy: string | null;
+  adsets: ReferenceAdset[];
+}
+
+export async function listCampaigns(
+  graph: Graph,
+  actId: string,
+  statuses: readonly string[],
+): Promise<CampaignList> {
+  const campaigns = await fetchEdge(
+    graph,
+    `${actId}/campaigns`,
+    CAMPAIGN_FIELDS,
+    metaCampaignSchema,
+    {
+      extra: {
+        filtering: JSON.stringify([
+          { field: "effective_status", operator: "IN", value: statuses },
+        ]),
+      },
+      maxItems: MAX_CAMPAIGNS + 1,
+    },
+  );
+  return {
+    campaigns: campaigns.slice(0, MAX_CAMPAIGNS).map((campaign) => ({
+      id: campaign.id,
+      name: campaign.name,
+      effectiveStatus: campaign.effective_status,
+      dailyBudgetMinor: campaign.daily_budget ?? null,
+      objective: campaign.objective ?? null,
+      bidStrategy: campaign.bid_strategy ?? null,
+    })),
+    truncated: campaigns.length > MAX_CAMPAIGNS,
+  };
+}
+
+const newestIdFirst = (a: { id: string }, b: { id: string }) =>
+  b.id.length - a.id.length || b.id.localeCompare(a.id);
+
+const toReferenceAdset = (adset: ReferenceAdsetPayload): ReferenceAdset => ({
+  name: adset.name,
+  optimizationGoal: adset.optimization_goal ?? null,
+  customEventType: adset.promoted_object?.custom_event_type ?? null,
+  pixelId: adset.promoted_object?.pixel_id ?? null,
+  bidAmountMinor: adset.bid_amount ?? null,
+  countries: adset.targeting?.geo_locations?.countries ?? [],
+});
+
+export async function getCampaignReference(
+  graph: Graph,
+  campaignId: string,
+): Promise<CampaignReference> {
+  const campaign = parse(
+    campaignReferenceSchema,
+    await graph.get<unknown>(campaignId, { fields: REFERENCE_FIELDS }),
+  );
+  return {
+    accountId: campaign.account_id,
+    dailyBudgetMinor: campaign.daily_budget ?? null,
+    bidStrategy: campaign.bid_strategy ?? null,
+    adsets: (campaign.adsets?.data ?? [])
+      .filter(({ effective_status }) =>
+        REFERENCE_ADSET_STATUSES.includes(effective_status),
+      )
+      .sort(newestIdFirst)
+      .map(toReferenceAdset),
+  };
+}
