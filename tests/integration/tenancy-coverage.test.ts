@@ -39,7 +39,6 @@ const PENDING_TABLES = [
   "creatives",
   "errorEvents",
   "googleConnections",
-  "insightsCache",
   "oauthStates",
   "pilotProposals",
   "pilotRuns",
