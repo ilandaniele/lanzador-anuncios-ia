@@ -51,6 +51,31 @@ export const TENANCY_PARAMS: TenancyParams = {
     params: { adId: "120200000000000002" },
     query: { adAccountAssetId: B.adAccount.id },
   }),
+  "POST /api/w/:wid/meta/objects/:objectId/status": ({ B }) => ({
+    params: { objectId: "120200000000000001" },
+    body: {
+      adAccountAssetId: B.adAccount.id,
+      level: "campaign",
+      status: "PAUSED",
+      confirm: true,
+    },
+  }),
+  "POST /api/w/:wid/meta/campaigns/:campaignId/scale": ({ B }) => ({
+    params: { campaignId: "120200000000000001" },
+    body: {
+      adAccountAssetId: B.adAccount.id,
+      percent: 20,
+      expectedCurrentBudgetMinor: 5000,
+      confirm: true,
+    },
+  }),
+  "PUT /api/w/:wid/protected-campaigns/:campaignId": ({ B }) => ({
+    params: { campaignId: "120200000000000001" },
+    body: { adAccountAssetId: B.adAccount.id },
+  }),
+  "DELETE /api/w/:wid/protected-campaigns/:campaignId": () => ({
+    params: { campaignId: "120200000000000001" },
+  }),
   "GET /api/w/:wid/launches/:id": foreignLaunch,
   "PATCH /api/w/:wid/launches/:id": (pair) => ({
     ...foreignLaunch(pair),

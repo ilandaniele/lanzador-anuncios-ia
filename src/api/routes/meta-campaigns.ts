@@ -16,7 +16,7 @@ import {
 } from "../services/meta/campaigns";
 import type { AppEnv } from "../types";
 
-function metaIdParam(raw: string) {
+export function metaIdParam(raw: string) {
   const result = metaIdSchema.safeParse(raw);
   if (!result.success) throw notFound();
   return result.data;
