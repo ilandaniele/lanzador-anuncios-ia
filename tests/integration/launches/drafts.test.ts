@@ -187,6 +187,34 @@ describe("POST /api/w/:wid/launches", () => {
     expect((await rowOf(launch.id))?.workspaceId).toBe(workspace.id);
   });
 
+  it("keeps the top ads source of a draft", async () => {
+    const { workspace, users } = await seedWorkspaceWithRoles();
+
+    const response = await call(launchesPath(workspace.id), {
+      as: users.editor,
+      method: "POST",
+      body: { draft: {}, source: "top_ads" },
+    });
+
+    expect(response.status).toBe(201);
+    const { launch } = launchResponseSchema.parse(await response.json());
+    expect(launch.source).toBe("top_ads");
+  });
+
+  it("rejects a source the client cannot set", async () => {
+    const { workspace, users } = await seedWorkspaceWithRoles();
+
+    await expectError(
+      await call(launchesPath(workspace.id), {
+        as: users.editor,
+        method: "POST",
+        body: { draft: {}, source: "pilot" },
+      }),
+      400,
+      "VALIDATION",
+    );
+  });
+
   it("copies product, account, currency and budget from the draft", async () => {
     const { workspace, users } = await seedWorkspaceWithRoles();
     const product = await createProduct(workspace.id);

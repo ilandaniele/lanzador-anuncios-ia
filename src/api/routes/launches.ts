@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import {
+  createLaunchRequestSchema,
   launchDraftRequestSchema,
   launchProgressQuerySchema,
   launchRetryRequestSchema,
@@ -32,16 +33,13 @@ export const launchRoutes = new Hono<AppEnv>()
       ),
     ),
   )
-  .post("/w/:wid/launches", ...member("editor"), async (c) =>
-    c.json(
-      await createLaunchDraft(
-        c.env.DB,
-        c.get("scope")!,
-        (await parseJson(c, launchDraftRequestSchema)).draft,
-      ),
+  .post("/w/:wid/launches", ...member("editor"), async (c) => {
+    const { draft, source } = await parseJson(c, createLaunchRequestSchema);
+    return c.json(
+      await createLaunchDraft(c.env.DB, c.get("scope")!, draft, source),
       201,
-    ),
-  )
+    );
+  })
   .get("/w/:wid/launches/:id", ...member("viewer"), async (c) =>
     c.json(await getLaunch(c.env.DB, c.get("scope")!, c.req.param("id"))),
   )

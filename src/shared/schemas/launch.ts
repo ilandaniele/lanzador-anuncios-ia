@@ -110,6 +110,10 @@ export const launchDraftRequestSchema = z.object({
   draft: partialLaunchDraftSchema,
 });
 
+export const createLaunchRequestSchema = launchDraftRequestSchema.extend({
+  source: z.enum(["manual", "top_ads"]).optional(),
+});
+
 export const launchStartRequestSchema = z.object({
   confirm: z.literal(true),
   planHash: z.string().min(1).max(128),
