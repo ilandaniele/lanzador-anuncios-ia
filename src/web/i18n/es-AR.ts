@@ -54,6 +54,25 @@ const esAR = {
     generic: "Algo salió mal. Probá de nuevo.",
     retry: "Reintentar",
   },
+  common: {
+    cancel: "Cancelar",
+    close: "Cerrar",
+    required: "(obligatorio)",
+    working: "Procesando…",
+    loading: "Cargando",
+  },
+  field: {
+    limitExceeded: "Superaste el límite recomendado",
+  },
+  chip: { remove: "Quitar" },
+  combobox: {
+    empty: "No hay resultados",
+    loading: "Cargando opciones",
+    error: "No pudimos cargar las opciones",
+  },
+  dialog: { typeToConfirm: "Escribí el nombre exacto para confirmar" },
+  table: { empty: "No hay datos para mostrar" },
+  toast: { region: "Notificaciones", undo: "Deshacer" },
 };
 
 type Leaves<T> = {
