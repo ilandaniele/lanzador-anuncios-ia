@@ -39,11 +39,16 @@ export async function findWorkspaceAccess(
   db: D1Database,
   workspaceId: string,
   userId: string,
-): Promise<{ status: WorkspaceStatus; role: Role | null } | null> {
+): Promise<{
+  status: WorkspaceStatus;
+  role: Role | null;
+  lastActivityAt: number | null;
+} | null> {
   const [row] = await drizzle(db)
     .select({
       status: sql<WorkspaceStatus>`${workspaces.status}`,
       role: sql<Role | null>`${memberships.role}`,
+      lastActivityAt: workspaces.lastActivityAt,
     })
     .from(workspaces)
     .leftJoin(

@@ -1,4 +1,14 @@
-import { and, desc, eq, inArray, lt, lte, or, sql } from "drizzle-orm";
+import {
+  and,
+  desc,
+  eq,
+  inArray,
+  lt,
+  lte,
+  or,
+  type SQL,
+  sql,
+} from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { products } from "../../db/schema/products";
 import { pilotProposals, pilotRuns } from "../../db/schema/pilot";
@@ -107,21 +117,26 @@ export async function finishPilotRun(
   return row;
 }
 
-export const expireOverdueProposals = (
-  db: D1Database,
-  scope: Scope,
-  at: number,
-) =>
+const expireOverdue = (db: D1Database, at: number, only?: SQL) =>
   drizzle(db)
     .update(pilotProposals)
     .set({ status: "expired" })
     .where(
       and(
-        inWorkspace(pilotProposals, scope),
+        only,
         eq(pilotProposals.status, "pending"),
         lte(pilotProposals.expiresAt, at),
       ),
     );
+
+export const expireOverdueProposals = (
+  db: D1Database,
+  scope: Scope,
+  at: number,
+) => expireOverdue(db, at, inWorkspace(pilotProposals, scope));
+
+export const expireAllOverdueProposals = (db: D1Database, at: number) =>
+  expireOverdue(db, at);
 
 export async function selectOpenDedupeKeys(db: D1Database, scope: Scope) {
   const rows = await drizzle(db)

@@ -1,4 +1,4 @@
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, isNull, lt, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { betaInvites, plans } from "../../db/schema/auth";
 import { workspaces } from "../../db/schema/workspaces";
@@ -175,4 +175,24 @@ export async function findMaxCreativesPerLaunch(db: D1Database, scope: Scope) {
     .where(eq(workspaces.id, scope.workspaceId))
     .limit(1);
   return row?.max ?? null;
+}
+
+export async function touchWorkspaceActivity(
+  db: D1Database,
+  workspaceId: string,
+  at: number,
+  staleBefore: number,
+): Promise<void> {
+  await drizzle(db)
+    .update(workspaces)
+    .set({ lastActivityAt: at })
+    .where(
+      and(
+        eq(workspaces.id, workspaceId),
+        or(
+          isNull(workspaces.lastActivityAt),
+          lt(workspaces.lastActivityAt, staleBefore),
+        ),
+      ),
+    );
 }
