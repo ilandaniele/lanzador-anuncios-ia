@@ -29,7 +29,19 @@ const foreignChatSession = ({ B }: TenantPair) => ({
   params: { id: B.chatSession.id },
 });
 
+const foreignProposal = ({ B }: TenantPair) => ({
+  params: { id: B.proposal.id },
+});
+
 export const TENANCY_PARAMS: TenancyParams = {
+  "POST /api/w/:wid/pilot/proposals/:id/approve": (pair) => ({
+    ...foreignProposal(pair),
+    body: { confirm: true },
+  }),
+  "POST /api/w/:wid/pilot/proposals/:id/dismiss": (pair) => ({
+    ...foreignProposal(pair),
+    body: {},
+  }),
   "GET /api/w/:wid/chat/sessions/:id/messages": foreignChatSession,
   "POST /api/w/:wid/chat/sessions/:id/messages": (pair) => ({
     ...foreignChatSession(pair),

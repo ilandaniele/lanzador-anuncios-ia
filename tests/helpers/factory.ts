@@ -16,6 +16,7 @@ import { buildCreative, buildUpload } from "../../src/db/fixtures/builders";
 import { launches } from "../../src/db/schema/launches";
 import { metaAssets, metaConnections } from "../../src/db/schema/meta";
 import { chatMessages, chatSessions } from "../../src/db/schema/ops";
+import { pilotProposals, pilotRuns } from "../../src/db/schema/pilot";
 import { productCopies, products } from "../../src/db/schema/products";
 import {
   invitations,
@@ -31,6 +32,8 @@ import {
   buildMembership,
   buildMetaAsset,
   buildMetaConnection,
+  buildPilotProposal,
+  buildPilotRun,
   buildProduct,
   buildProductCopy,
   buildUser,
@@ -143,6 +146,26 @@ export async function createChatMessage(
   });
   await drizzle(env.DB).insert(chatMessages).values(message);
   return message;
+}
+
+export async function createPilotProposal(
+  workspaceId: string,
+  adAccountMetaId: string,
+  overrides: Partial<typeof pilotProposals.$inferInsert> = {},
+) {
+  const run = buildPilotRun({ workspaceId });
+  const proposal = buildPilotProposal({
+    workspaceId,
+    runId: run.id,
+    adAccountMetaId,
+    ...overrides,
+  });
+  const orm = drizzle(env.DB);
+  await orm.batch([
+    orm.insert(pilotRuns).values(run),
+    orm.insert(pilotProposals).values(proposal),
+  ]);
+  return proposal;
 }
 
 export async function createMetaConnection(

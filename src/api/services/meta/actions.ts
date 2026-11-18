@@ -1,3 +1,4 @@
+import type { AuditOrigin } from "../../../shared/constants";
 import {
   type ObjectStatusRequest,
   type ObjectStatusResponse,
@@ -61,6 +62,7 @@ export async function setObjectStatus(
   objectId: string,
   { adAccountAssetId, level, status }: ObjectStatusRequest,
   requestId: string,
+  origin: AuditOrigin = "manual",
 ): Promise<ObjectStatusResponse> {
   if (!isWritableStatus(status)) throw unprocessable("INVALID_STATUS");
   const { graph, asset } = await getGraphForAsset(
@@ -81,6 +83,7 @@ export async function setObjectStatus(
       objectName: object.name,
       detail: { before: { status: object.status }, after: { status } },
     }),
+    origin,
     objectMetaId: objectId,
     adAccountMetaId: asset.metaId,
   };
@@ -98,6 +101,7 @@ export async function scaleCampaign(
     expectedCurrentBudgetMinor,
   }: ScaleCampaignRequest,
   requestId: string,
+  origin: AuditOrigin = "manual",
 ): Promise<ScaleCampaignResponse> {
   const { graph, asset } = await getGraphForAsset(
     env.DB,
@@ -128,6 +132,7 @@ export async function scaleCampaign(
         after: { dailyBudgetMinor: newBudgetMinor },
       },
     }),
+    origin,
     objectMetaId: campaignId,
     adAccountMetaId: asset.metaId,
   };

@@ -4,6 +4,7 @@ import {
   createLaunch,
   createMetaAsset,
   createMetaConnection,
+  createPilotProposal,
   createProduct,
   createProductCopy,
   createUpload,
@@ -53,7 +54,10 @@ async function seedTenant() {
       createChatSession(tenant.workspace.id, tenant.users.owner.id),
     ]);
   const adAccount = await createMetaAsset(tenant.workspace.id, connection.id);
-  const copy = await createProductCopy(tenant.workspace.id, product.id);
+  const [copy, proposal] = await Promise.all([
+    createProductCopy(tenant.workspace.id, product.id),
+    createPilotProposal(tenant.workspace.id, adAccount.metaId),
+  ]);
   const { creative, upload } = await createUpload(
     tenant.workspace.id,
     adAccount.id,
@@ -67,6 +71,7 @@ async function seedTenant() {
     chatSession,
     adAccount,
     copy,
+    proposal,
     creative,
     upload,
   };

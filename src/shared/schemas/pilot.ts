@@ -130,3 +130,35 @@ export type ListPilotProposalsQuery = z.infer<
 export const pilotProposalsResponseSchema = paginatedSchema(
   pilotProposalDtoSchema,
 );
+
+const DISMISS_REASON_MAX = 500;
+
+export const approvePilotProposalRequestSchema = z.strictObject({
+  confirm: z.literal(true),
+  proposedBudgetMinor: minorAmountSchema.optional(),
+});
+export type ApprovePilotProposalRequest = z.infer<
+  typeof approvePilotProposalRequestSchema
+>;
+
+export const dismissPilotProposalRequestSchema = z.strictObject({
+  reason: z.string().trim().min(1).max(DISMISS_REASON_MAX).optional(),
+});
+export type DismissPilotProposalRequest = z.infer<
+  typeof dismissPilotProposalRequestSchema
+>;
+
+export const approvePilotProposalResponseSchema = z.object({
+  proposal: pilotProposalDtoSchema,
+  launchId: z.string().optional(),
+});
+export type ApprovePilotProposalResponse = z.infer<
+  typeof approvePilotProposalResponseSchema
+>;
+
+export const dismissPilotProposalResponseSchema = z.object({
+  proposal: pilotProposalDtoSchema,
+});
+export type DismissPilotProposalResponse = z.infer<
+  typeof dismissPilotProposalResponseSchema
+>;

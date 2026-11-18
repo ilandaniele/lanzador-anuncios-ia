@@ -3,7 +3,7 @@ import { creatives, uploads } from "../schema/creatives";
 import { launches } from "../schema/launches";
 import { metaAssets, metaConnections } from "../schema/meta";
 import { chatMessages, chatSessions } from "../schema/ops";
-import { pilotRules } from "../schema/pilot";
+import { pilotProposals, pilotRules, pilotRuns } from "../schema/pilot";
 import { productCopies, products } from "../schema/products";
 import {
   invitations,
@@ -203,6 +203,44 @@ export const buildPilotRule = (
   updatedAt: Date.now(),
   ...overrides,
 });
+
+export const buildPilotRun = (
+  overrides: Pick<typeof pilotRuns.$inferInsert, "workspaceId"> &
+    Partial<typeof pilotRuns.$inferInsert>,
+): typeof pilotRuns.$inferInsert => ({
+  id: crypto.randomUUID(),
+  trigger: "manual",
+  status: "done",
+  startedAt: Date.now(),
+  ...overrides,
+});
+
+const PROPOSAL_TTL_MS = 12 * 60 * 60 * 1000;
+
+export const buildPilotProposal = (
+  overrides: Pick<
+    typeof pilotProposals.$inferInsert,
+    "workspaceId" | "runId" | "adAccountMetaId"
+  > &
+    Partial<typeof pilotProposals.$inferInsert>,
+): typeof pilotProposals.$inferInsert => {
+  const at = Date.now();
+  const objectMetaId = overrides.objectMetaId ?? "120200000000000100";
+  const action = overrides.action ?? "pause";
+  return {
+    id: crypto.randomUUID(),
+    ruleType: "pause_no_sales",
+    action,
+    objectLevel: "campaign",
+    objectMetaId,
+    objectName: "Campaña Demo",
+    evidence: JSON.stringify({ range: "today", spendMinor: 5000 }),
+    dedupeKey: `${action}:${objectMetaId}`,
+    expiresAt: at + PROPOSAL_TTL_MS,
+    createdAt: at,
+    ...overrides,
+  };
+};
 
 export const buildChatSession = (
   overrides: Pick<typeof chatSessions.$inferInsert, "workspaceId" | "userId"> &

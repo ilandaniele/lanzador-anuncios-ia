@@ -14,6 +14,27 @@ export const manualAuditEntry = (
   ...entry,
 });
 
+export const pilotAuditEntry = (
+  scope: Scope,
+  requestId: string,
+  entry: Pick<
+    AuditEntry,
+    | "action"
+    | "objectType"
+    | "objectName"
+    | "objectMetaId"
+    | "adAccountMetaId"
+    | "detail"
+  >,
+): AuditEntry => ({
+  workspaceId: scope.workspaceId,
+  actorUserId: scope.userId,
+  actorType: "user",
+  origin: "pilot",
+  requestId,
+  ...entry,
+});
+
 export const superadminAuditEntry = (
   workspaceId: string,
   actorUserId: string,

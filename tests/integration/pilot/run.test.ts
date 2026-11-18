@@ -443,13 +443,14 @@ describe("POST /api/w/:wid/pilot/run", () => {
 
   it("returns 404 to a non-member of the workspace", async () => {
     const { A, B } = await seedTenantPair();
+    const seededRuns = await runsOf(A.workspace.id);
 
     await expectError(
       await run(A.workspace.id, echoingProvider(), { as: B.users.owner }),
       404,
       "NOT_FOUND",
     );
-    expect(await runsOf(A.workspace.id)).toEqual([]);
+    expect(await runsOf(A.workspace.id)).toEqual(seededRuns);
   });
 });
 

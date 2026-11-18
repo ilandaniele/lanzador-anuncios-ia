@@ -2,6 +2,7 @@ import {
   and,
   desc,
   eq,
+  gt,
   inArray,
   lt,
   lte,
@@ -10,9 +11,11 @@ import {
   sql,
 } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
+import { metaAssets } from "../../db/schema/meta";
 import { products } from "../../db/schema/products";
 import { pilotProposals, pilotRuns } from "../../db/schema/pilot";
 import type { PilotRunTrigger, ProposalStatus } from "../../shared/constants";
+import { type AuditEntry, auditStatement } from "./audit";
 import { inWorkspace, type Scope } from "./scope";
 
 const PROPOSALS_PER_STATEMENT = 5;
@@ -249,3 +252,85 @@ export const selectPilotProposals = (
     )
     .orderBy(desc(pilotProposals.createdAt), desc(pilotProposals.id))
     .limit(page.size + 1);
+
+const proposalById = (scope: Scope, id: string) =>
+  and(inWorkspace(pilotProposals, scope), eq(pilotProposals.id, id));
+
+export async function findProposalForDecision(
+  db: D1Database,
+  scope: Scope,
+  id: string,
+) {
+  const [row] = await drizzle(db)
+    .select({ ...proposalColumns, adAccountAssetId: metaAssets.id })
+    .from(pilotProposals)
+    .leftJoin(
+      metaAssets,
+      and(
+        eq(metaAssets.workspaceId, pilotProposals.workspaceId),
+        eq(metaAssets.kind, "ad_account"),
+        eq(metaAssets.metaId, pilotProposals.adAccountMetaId),
+      ),
+    )
+    .where(proposalById(scope, id))
+    .limit(1);
+  return row ?? null;
+}
+
+export type ProposalForDecision = NonNullable<
+  Awaited<ReturnType<typeof findProposalForDecision>>
+>;
+
+export async function decidePendingProposal(
+  db: D1Database,
+  scope: Scope,
+  id: string,
+  decision: {
+    status: "executing" | "dismissed";
+    resultMessage: string | null;
+    at: number;
+  },
+) {
+  const [row] = await drizzle(db)
+    .update(pilotProposals)
+    .set({
+      status: decision.status,
+      resultMessage: decision.resultMessage,
+      decidedBy: scope.userId,
+      decidedAt: decision.at,
+    })
+    .where(
+      and(
+        proposalById(scope, id),
+        eq(pilotProposals.status, "pending"),
+        gt(pilotProposals.expiresAt, decision.at),
+      ),
+    )
+    .returning(proposalColumns);
+  return row ?? null;
+}
+
+export async function finishExecutingProposal(
+  db: D1Database,
+  scope: Scope,
+  id: string,
+  result: {
+    status: "executed" | "failed";
+    resultMessage: string | null;
+    launchId: string | null;
+  },
+  audit: AuditEntry,
+) {
+  const orm = drizzle(db);
+  const [[row]] = await orm.batch([
+    orm
+      .update(pilotProposals)
+      .set(result)
+      .where(
+        and(proposalById(scope, id), eq(pilotProposals.status, "executing")),
+      )
+      .returning(proposalColumns),
+    auditStatement(db, audit),
+  ]);
+  return row;
+}
