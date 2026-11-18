@@ -1,5 +1,12 @@
 import { z } from "zod";
-import { PILOT_RULE_TYPES } from "../constants";
+import {
+  PILOT_RULE_TYPES,
+  PILOT_RUN_STATUSES,
+  PILOT_RUN_TRIGGERS,
+  PROPOSAL_ACTIONS,
+  PROPOSAL_STATUSES,
+} from "../constants";
+import { paginatedSchema, paginationQuerySchema } from "./common";
 
 const levelSchema = z.enum(["campaign", "adset", "ad"]);
 const minorAmountSchema = z.int().positive();
@@ -71,3 +78,55 @@ export const pilotRulesResponseSchema = z.object({
   data: z.array(pilotRuleSchema),
 });
 export type PilotRulesResponse = z.infer<typeof pilotRulesResponseSchema>;
+
+export const pilotRunDtoSchema = z.object({
+  id: z.string(),
+  trigger: z.enum(PILOT_RUN_TRIGGERS),
+  status: z.enum(PILOT_RUN_STATUSES),
+  proposalsCreated: z.int().min(0),
+  startedAt: z.string(),
+  finishedAt: z.string().nullable(),
+});
+export type PilotRunDto = z.infer<typeof pilotRunDtoSchema>;
+
+export const pilotProposalDtoSchema = z.object({
+  id: z.string(),
+  runId: z.string(),
+  ruleType: z.enum(PILOT_RULE_TYPES),
+  action: z.enum(PROPOSAL_ACTIONS),
+  adAccountId: z.string(),
+  level: levelSchema,
+  objectId: z.string(),
+  objectName: z.string(),
+  evidence: z.record(z.string(), z.union([z.string(), z.number(), z.null()])),
+  currentBudgetMinor: z.int().nullable(),
+  proposedBudgetMinor: z.int().nullable(),
+  percent: z.int().nullable(),
+  explanation: z.string().nullable(),
+  status: z.enum(PROPOSAL_STATUSES),
+  resultMessage: z.string().nullable(),
+  launchId: z.string().nullable(),
+  decidedAt: z.string().nullable(),
+  expiresAt: z.string(),
+  createdAt: z.string(),
+});
+export type PilotProposalDto = z.infer<typeof pilotProposalDtoSchema>;
+
+export const pilotRunResponseSchema = z.object({
+  run: pilotRunDtoSchema,
+  proposals: z.array(pilotProposalDtoSchema),
+});
+export type PilotRunResponse = z.infer<typeof pilotRunResponseSchema>;
+
+export const pilotRunsResponseSchema = paginatedSchema(pilotRunDtoSchema);
+
+export const listPilotProposalsQuerySchema = paginationQuerySchema.extend({
+  status: z.enum(PROPOSAL_STATUSES).exclude(["executing"]).default("pending"),
+});
+export type ListPilotProposalsQuery = z.infer<
+  typeof listPilotProposalsQuerySchema
+>;
+
+export const pilotProposalsResponseSchema = paginatedSchema(
+  pilotProposalDtoSchema,
+);

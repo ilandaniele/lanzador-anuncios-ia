@@ -39,8 +39,6 @@ const PENDING_TABLES = [
   "errorEvents",
   "googleConnections",
   "oauthStates",
-  "pilotProposals",
-  "pilotRuns",
 ];
 
 describe("tenancy coverage", () => {

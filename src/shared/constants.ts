@@ -143,6 +143,7 @@ export const PILOT_RULE_TYPES = [
   "duplicate_winner",
 ] as const;
 export const PILOT_RUN_TRIGGERS = ["cron", "manual"] as const;
+export type PilotRunTrigger = (typeof PILOT_RUN_TRIGGERS)[number];
 export const PILOT_RUN_STATUSES = ["running", "done", "failed"] as const;
 export const PROPOSAL_ACTIONS = ["pause", "scale", "duplicate"] as const;
 export const PROPOSAL_STATUSES = [
@@ -153,6 +154,7 @@ export const PROPOSAL_STATUSES = [
   "failed",
   "expired",
 ] as const;
+export type ProposalStatus = (typeof PROPOSAL_STATUSES)[number];
 
 export const AUDIT_ACTOR_TYPES = ["user", "superadmin", "system"] as const;
 export type AuditActorType = (typeof AUDIT_ACTOR_TYPES)[number];
