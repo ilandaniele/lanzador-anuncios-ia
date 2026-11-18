@@ -4,6 +4,7 @@ import { runCleanupBatch } from "../../repositories/maintenance";
 const INSIGHTS_GRACE_MS = DAY_MS;
 const ERROR_EVENTS_RETENTION_MS = 30 * DAY_MS;
 const AI_QUEUED_TIMEOUT_MS = 6 * HOUR_MS;
+const DRIVE_IMPORT_TIMEOUT_MS = 6 * HOUR_MS;
 
 export const runCleanup = (db: D1Database, at: number) =>
   runCleanupBatch(db, {
@@ -11,4 +12,5 @@ export const runCleanup = (db: D1Database, at: number) =>
     insightsExpiredBefore: at - INSIGHTS_GRACE_MS,
     errorEventsBefore: at - ERROR_EVENTS_RETENTION_MS,
     aiQueuedBefore: at - AI_QUEUED_TIMEOUT_MS,
+    importingBefore: at - DRIVE_IMPORT_TIMEOUT_MS,
   });

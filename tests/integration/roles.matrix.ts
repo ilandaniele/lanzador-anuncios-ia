@@ -81,4 +81,5 @@ export const ROLE_MATRIX: Record<string, RoleRule> = {
   "GET /api/w/:wid/google/connection": "editor",
   "DELETE /api/w/:wid/google/connection": "viewer",
   "GET /api/w/:wid/google/picker-token": "editor",
+  "POST /api/w/:wid/google/imports": "editor",
 };

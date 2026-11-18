@@ -67,6 +67,17 @@ function uploadKind(contentType: string): CreativeKind {
   return kind;
 }
 
+export function allowedFileKind(
+  contentType: string,
+  sizeBytes: number,
+): CreativeKind {
+  const kind = uploadKind(contentType);
+  if (sizeBytes > MAX_FILE_BYTES[kind]) {
+    throw new AppError(413, "FILE_TOO_LARGE");
+  }
+  return kind;
+}
+
 const chunkEnd = (start: number, metaEnd: number) =>
   Math.min(metaEnd, start + FILE_LIMITS.chunkMaxBytes);
 
@@ -108,10 +119,7 @@ export async function createUpload(
   scope: Scope,
   input: CreateUploadRequest,
 ): Promise<CreateUploadResponse> {
-  const kind = uploadKind(input.contentType);
-  if (input.sizeBytes > MAX_FILE_BYTES[kind]) {
-    throw new AppError(413, "FILE_TOO_LARGE");
-  }
+  const kind = allowedFileKind(input.contentType, input.sizeBytes);
   const [{ graph, asset }, duplicateOf] = await Promise.all([
     getGraphForAsset(env.DB, env, scope, input.adAccountAssetId),
     findDuplicateCreativeId(env.DB, scope, input.sha256),

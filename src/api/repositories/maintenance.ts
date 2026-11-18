@@ -24,6 +24,7 @@ export interface CleanupCutoffs {
   insightsExpiredBefore: number;
   errorEventsBefore: number;
   aiQueuedBefore: number;
+  importingBefore: number;
 }
 
 export async function runCleanupBatch(
@@ -33,6 +34,7 @@ export async function runCleanupBatch(
     insightsExpiredBefore,
     errorEventsBefore,
     aiQueuedBefore,
+    importingBefore,
   }: CleanupCutoffs,
 ): Promise<void> {
   const orm = drizzle(db);
@@ -67,6 +69,15 @@ export async function runCleanupBatch(
         and(
           eq(creatives.aiStatus, "queued"),
           lt(creatives.updatedAt, aiQueuedBefore),
+        ),
+      ),
+    orm
+      .update(creatives)
+      .set({ status: "failed", error: "IMPORT_EXPIRED", updatedAt: at })
+      .where(
+        and(
+          eq(creatives.status, "importing"),
+          lt(creatives.updatedAt, importingBefore),
         ),
       ),
     orm

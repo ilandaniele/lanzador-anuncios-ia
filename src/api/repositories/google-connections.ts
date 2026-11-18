@@ -85,6 +85,17 @@ export async function setGoogleReconnectRequired(
     .where(and(ofCurrentUser(scope), eq(googleConnections.id, connectionId)));
 }
 
+export async function markGoogleReconnectRequired(
+  db: D1Database,
+  scope: Scope,
+  at: number,
+): Promise<void> {
+  await drizzle(db)
+    .update(googleConnections)
+    .set({ status: "reconnect_required", updatedAt: at })
+    .where(ofCurrentUser(scope));
+}
+
 export async function deleteGoogleConnection(
   db: D1Database,
   scope: Scope,

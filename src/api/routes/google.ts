@@ -1,14 +1,18 @@
 import { Hono } from "hono";
-import { googleConnectRequestSchema } from "../../shared/schemas/google";
+import {
+  driveImportRequestSchema,
+  googleConnectRequestSchema,
+} from "../../shared/schemas/google";
 import { parseJson } from "../lib/validate";
 import { member } from "../middleware/member";
-import { authRateLimit } from "../middleware/rate-limit";
+import { authRateLimit, expensiveRateLimit } from "../middleware/rate-limit";
 import { session } from "../middleware/session";
 import {
   disconnectGoogle,
   getGoogleConnection,
   pickerToken,
 } from "../services/google/connection";
+import { startDriveImport } from "../services/google/imports";
 import {
   completeGoogleConnect,
   startGoogleConnect,
@@ -52,4 +56,18 @@ export const googleRoutes = new Hono<AppEnv>()
   })
   .get("/w/:wid/google/picker-token", ...member("editor"), async (c) =>
     c.json(await pickerToken(c.env, c.get("scope")!)),
+  )
+  .post(
+    "/w/:wid/google/imports",
+    ...member("editor"),
+    expensiveRateLimit,
+    async (c) =>
+      c.json(
+        await startDriveImport(
+          c.env,
+          c.get("scope")!,
+          await parseJson(c, driveImportRequestSchema),
+        ),
+        202,
+      ),
   );

@@ -1,4 +1,5 @@
 import type { JobKind } from "../../api/services/jobs";
+import { driveImportFileJob } from "./drive-import-file";
 import { insightsRefreshJob } from "./insights-refresh";
 import { metaDisconnectCleanupJob } from "./meta-disconnect-cleanup";
 import { metaVideoStatusJob } from "./meta-video-status";
@@ -8,6 +9,7 @@ import { tagCreativeJob } from "./tag-creative";
 import type { JobHandler } from "./job-context";
 
 export const JOB_HANDLERS: Partial<Record<JobKind, JobHandler>> = {
+  drive_import_file: driveImportFileJob,
   insights_refresh: insightsRefreshJob,
   meta_disconnect_cleanup: metaDisconnectCleanupJob,
   meta_video_status: metaVideoStatusJob,

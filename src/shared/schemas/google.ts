@@ -35,3 +35,28 @@ export const pickerTokenResponseSchema = z.object({
   appId: z.string(),
 });
 export type PickerTokenResponse = z.infer<typeof pickerTokenResponseSchema>;
+
+export const DRIVE_IMPORT_MAX_FILES = 30;
+export const DRIVE_IMPORT_MAX_IN_FLIGHT = 60;
+
+export const driveFileIdSchema = z.string().regex(/^[A-Za-z0-9_-]{10,128}$/);
+
+const driveFileSchema = z.object({
+  id: driveFileIdSchema,
+  name: z.string().trim().min(1).max(255),
+  mimeType: z.string().trim().toLowerCase().max(100),
+  sizeBytes: z.int().positive(),
+});
+
+export const driveImportRequestSchema = z.object({
+  adAccountAssetId: z.string().min(1).max(64),
+  files: z.array(driveFileSchema).min(1).max(DRIVE_IMPORT_MAX_FILES),
+});
+export type DriveImportRequest = z.infer<typeof driveImportRequestSchema>;
+
+export const driveImportResponseSchema = z.object({
+  data: z.array(
+    z.object({ creativeId: z.string(), status: z.literal("importing") }),
+  ),
+});
+export type DriveImportResponse = z.infer<typeof driveImportResponseSchema>;
