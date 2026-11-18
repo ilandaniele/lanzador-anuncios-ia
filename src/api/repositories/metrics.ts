@@ -30,6 +30,7 @@ export const selectMetricsAccounts = (db: D1Database, scope: Scope) =>
     .select({
       id: metaAssets.id,
       metaId: metaAssets.metaId,
+      name: metaAssets.name,
       currency: metaAssets.currency,
       timezoneName: metaAssets.timezoneName,
     })

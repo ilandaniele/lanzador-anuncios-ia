@@ -69,4 +69,5 @@ export const ROLE_MATRIX: Record<string, RoleRule> = {
   "POST /api/w/:wid/metrics/refresh": "viewer",
   "GET /api/w/:wid/metrics/top-ads": "viewer",
   "GET /api/w/:wid/metrics/winning-tags": "viewer",
+  "GET /api/w/:wid/today": "viewer",
 };

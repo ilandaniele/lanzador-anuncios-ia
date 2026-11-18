@@ -27,6 +27,7 @@ import { pilotRuleRoutes } from "./routes/pilot-rules";
 import { productRoutes } from "./routes/products";
 import { protectedCampaignRoutes } from "./routes/protected-campaigns";
 import { testSupportRoutes } from "./routes/test-support";
+import { todayRoutes } from "./routes/today";
 import { uploadRoutes } from "./routes/uploads";
 import { workspaceRoutes } from "./routes/workspaces";
 import type { AppEnv } from "./types";
@@ -76,6 +77,7 @@ export function createApp() {
   app.route("/", metaActionRoutes);
   app.route("/", protectedCampaignRoutes);
   app.route("/", metricsRoutes);
+  app.route("/", todayRoutes);
   app.route("/", auditRoutes);
   app.route("/", chatRoutes);
   app.route("/", pilotRuleRoutes);

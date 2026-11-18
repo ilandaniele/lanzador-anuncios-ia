@@ -8,6 +8,7 @@ import { DEFAULT_CURRENCY, DEFAULT_TIMEZONE } from "../insights/refresh";
 export interface MetricsAccount {
   id: string;
   metaId: string;
+  name: string;
   currency: string;
   timezone: string;
 }
@@ -20,9 +21,10 @@ export async function listMetricsAccounts(
   const accounts = await selectMetricsAccounts(db, scope);
   return accounts
     .filter(({ id }) => !adAccountIds || adAccountIds.includes(id))
-    .map(({ id, metaId, currency, timezoneName }) => ({
+    .map(({ id, metaId, name, currency, timezoneName }) => ({
       id,
       metaId,
+      name,
       currency: currency ?? DEFAULT_CURRENCY,
       timezone: timezoneName ?? DEFAULT_TIMEZONE,
     }));
