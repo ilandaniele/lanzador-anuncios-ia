@@ -81,6 +81,7 @@ const draftFields = {
   campaignName: text(NAME_MAX),
   adsetName: text(NAME_MAX),
   driveFolderHint: text(HINT_MAX).optional(),
+  startAt: z.iso.datetime().optional(),
 };
 
 type DraftItems = { items?: { mediaKind?: (typeof MEDIA_KINDS)[number] }[] };

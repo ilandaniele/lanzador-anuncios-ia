@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import type { PartialLaunchDraft } from "../../../shared/schemas/launch";
+import { isBudgetStepComplete } from "../../features/launch/budget-completion";
 import { isCreativesStepComplete } from "../../features/launch/creatives-completion";
 import { isProductStepComplete } from "../../features/launch/product-completion";
 import { isAccountStepComplete } from "../../features/launch/step-completion";
@@ -10,18 +11,14 @@ import { Step1Account } from "./Step1Account";
 import { Step2Structure } from "./Step2Structure";
 import { Step3Product } from "./Step3Product";
 import { Step4Creatives } from "./Step4Creatives";
+import { Step5Budget } from "./Step5Budget";
+import { Step6Review } from "./Step6Review";
 
 export type WizardStep = {
   label: TextKey;
   Component: ComponentType<StepProps> | null;
   isComplete: (draft: PartialLaunchDraft) => boolean;
 };
-
-const notBuilt = (label: TextKey): WizardStep => ({
-  label,
-  Component: null,
-  isComplete: () => false,
-});
 
 export const WIZARD_STEPS: WizardStep[] = [
   {
@@ -44,6 +41,14 @@ export const WIZARD_STEPS: WizardStep[] = [
     Component: Step4Creatives,
     isComplete: isCreativesStepComplete,
   },
-  notBuilt("launcher.steps.budget"),
-  notBuilt("launcher.steps.review"),
+  {
+    label: "launcher.steps.budget",
+    Component: Step5Budget,
+    isComplete: isBudgetStepComplete,
+  },
+  {
+    label: "launcher.steps.review",
+    Component: Step6Review,
+    isComplete: () => false,
+  },
 ];
