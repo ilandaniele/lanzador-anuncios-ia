@@ -25,6 +25,7 @@ const NAME_MAX = 255;
 const TAG_MAX = 120;
 const IDS_MAX = 100;
 const Q_MAX = 120;
+const SUMMARY_MAX = 500;
 
 const commaList = <Item extends z.ZodType<unknown, string>>(
   item: Item,
@@ -63,6 +64,18 @@ export const creativeTagsSchema = z.object({
 });
 export type CreativeTags = z.infer<typeof creativeTagsSchema>;
 
+const aiText = z.string().trim();
+
+export const aiCreativeTagsSchema = z.object({
+  hook: aiText.min(1).max(TAG_MAX),
+  angle: aiText.min(1).max(TAG_MAX),
+  format: z.enum(TAG_FORMATS),
+  language: aiText.toLowerCase().regex(/^[a-z]{2}$/),
+  onScreenText: z.boolean(),
+  summary: aiText.max(SUMMARY_MAX),
+});
+export type AiCreativeTags = z.infer<typeof aiCreativeTagsSchema>;
+
 export const creativePatchSchema = z
   .object({
     name: z.string().trim().min(1).max(NAME_MAX),
@@ -94,3 +107,7 @@ export type CreativeDto = z.infer<typeof creativeSchema>;
 export const creativesPageSchema = paginatedSchema(creativeSchema);
 
 export const creativeResponseSchema = z.object({ creative: creativeSchema });
+
+export const tagResponseSchema = z.object({ tags: creativeTagsSchema });
+
+export const retagResponseSchema = z.object({ aiStatus: z.literal("queued") });

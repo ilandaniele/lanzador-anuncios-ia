@@ -58,4 +58,6 @@ export const ROLE_MATRIX: Record<string, RoleRule> = {
   "GET /api/w/:wid/creatives/:id": "viewer",
   "PATCH /api/w/:wid/creatives/:id": "editor",
   "POST /api/w/:wid/creatives/:id/archive": "editor",
+  "POST /api/w/:wid/creatives/:id/tag": "editor",
+  "POST /api/w/:wid/creatives/:id/retag": "editor",
 };

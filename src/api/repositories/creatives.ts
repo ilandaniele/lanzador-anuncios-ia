@@ -10,10 +10,15 @@ import {
   sql,
 } from "drizzle-orm";
 import { type DrizzleD1Database, drizzle } from "drizzle-orm/d1";
-import type { SQLiteUpdateSetSource } from "drizzle-orm/sqlite-core";
+import type {
+  SQLiteColumn,
+  SQLiteUpdateSetSource,
+} from "drizzle-orm/sqlite-core";
 import { creatives } from "../../db/schema/creatives";
 import { launchItems } from "../../db/schema/launches";
+import { workspaceSettings } from "../../db/schema/workspaces";
 import type {
+  AiCreativeTags,
   CreativeAiStatus,
   CreativeKind,
   CreativeStatus,
@@ -29,10 +34,16 @@ const LIBRARY_DUPLICATE_STATUSES: CreativeStatus[] = [
 ];
 const ARCHIVABLE_STATUSES: CreativeStatus[] = ["ready", "failed"];
 
-const outerCreative = (column: "id" | "workspace_id") =>
+const outerCreative = (column: "id" | "workspace_id" | "created_at") =>
   sql.raw(`"${getTableName(creatives)}"."${column}"`);
 
 const usedInLaunches = sql<number>`(select count(distinct ${launchItems.launchId}) from ${launchItems} where ${launchItems.creativeId} = ${outerCreative("id")} and ${launchItems.workspaceId} = ${outerCreative("workspace_id")})`;
+
+const nameSequence = sql<number>`(select count(*) from ${sql.raw(`"${getTableName(creatives)}"`)} as "peer" where "peer"."workspace_id" = ${outerCreative("workspace_id")} and "peer"."created_at" <= ${outerCreative("created_at")})`;
+
+const adNameTemplate = sql<
+  string | null
+>`(select ${workspaceSettings.adNameTemplate} from ${workspaceSettings} where ${workspaceSettings.workspaceId} = ${outerCreative("workspace_id")})`;
 
 export const displayName = sql<string>`coalesce(${creatives.adName}, ${creatives.adNameSuggested}, ${creatives.originalFilename})`;
 
@@ -239,3 +250,67 @@ export const setCreativeArchived = (
         },
         eq(creatives.status, "archived"),
       );
+
+export async function findTaggingTarget(
+  db: D1Database,
+  scope: Scope,
+  id: string,
+) {
+  const [row] = await drizzle(db)
+    .select({
+      id: creatives.id,
+      status: sql<CreativeStatus>`${creatives.status}`,
+      thumbnailUrl: creatives.thumbnailUrl,
+      originalFilename: creatives.originalFilename,
+      adNameTemplate,
+      nameSequence,
+    })
+    .from(creatives)
+    .where(byId(scope, id))
+    .limit(1);
+  return row ?? null;
+}
+
+export type TaggingTarget = NonNullable<
+  Awaited<ReturnType<typeof findTaggingTarget>>
+>;
+
+export interface AppliedTags {
+  tags: AiCreativeTags;
+  aiModel: string;
+  adNameSuggested: string | null;
+}
+
+const unlessEdited = (column: SQLiteColumn, value: string | number) =>
+  sql`CASE WHEN ${creatives.tagsEdited} = 1 THEN ${column} ELSE ${value} END`;
+
+export const applyCreativeTags = (
+  db: D1Database,
+  scope: Scope,
+  id: string,
+  { tags, aiModel, adNameSuggested }: AppliedTags,
+  at: number,
+) =>
+  updateAndRead(db, scope, id, {
+    tagHook: unlessEdited(creatives.tagHook, tags.hook),
+    tagAngle: unlessEdited(creatives.tagAngle, tags.angle),
+    tagFormat: unlessEdited(creatives.tagFormat, tags.format),
+    tagLanguage: unlessEdited(creatives.tagLanguage, tags.language),
+    tagOnScreenText: unlessEdited(
+      creatives.tagOnScreenText,
+      tags.onScreenText ? 1 : 0,
+    ),
+    tagSummary: unlessEdited(creatives.tagSummary, tags.summary),
+    aiStatus: "done",
+    aiModel,
+    adNameSuggested,
+    updatedAt: at,
+  });
+
+export const setCreativeAiStatus = (
+  db: D1Database,
+  scope: Scope,
+  id: string,
+  aiStatus: CreativeAiStatus,
+  at: number,
+) => updateAndRead(db, scope, id, { aiStatus, updatedAt: at });

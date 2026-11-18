@@ -133,4 +133,10 @@ export const TENANCY_PARAMS: TenancyParams = {
     params: { id: B.creative.id },
     body: { archived: true },
   }),
+  "POST /api/w/:wid/creatives/:id/tag": ({ B }) => ({
+    params: { id: B.creative.id },
+  }),
+  "POST /api/w/:wid/creatives/:id/retag": ({ B }) => ({
+    params: { id: B.creative.id },
+  }),
 };

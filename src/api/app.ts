@@ -32,9 +32,10 @@ import type { AppEnv } from "./types";
 const MAX_JSON_BODY_BYTES = 16 * 1024;
 
 const UPLOAD_CHUNK_PATH = "/api/w/:wid/uploads/:uploadId/chunk";
+const CREATIVE_TAG_PATH = "/api/w/:wid/creatives/:id/tag";
 
 const jsonBodyLimit = except(
-  UPLOAD_CHUNK_PATH,
+  [UPLOAD_CHUNK_PATH, CREATIVE_TAG_PATH],
   bodyLimit({
     maxSize: MAX_JSON_BODY_BYTES,
     onError: () => {

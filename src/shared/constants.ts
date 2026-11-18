@@ -42,6 +42,7 @@ export const FILE_LIMITS = {
   videoMaxBytes: 500 * MIB,
   imageMaxBytes: 30 * MIB,
   chunkMaxBytes: 10 * MIB,
+  contactSheetMaxBytes: MIB,
 } as const;
 
 export const PAGINATION = {

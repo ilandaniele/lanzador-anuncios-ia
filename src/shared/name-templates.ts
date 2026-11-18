@@ -7,11 +7,12 @@ export type NameValues = {
 
 const PLACEHOLDER = /\{(\w+)\}/g;
 
-export const renderNameTemplate = (template: string, values: NameValues) =>
+export const renderNameTemplate = (
+  template: string,
+  values: Readonly<Record<string, string | number>>,
+) =>
   template.replace(PLACEHOLDER, (placeholder, key: string) =>
-    Object.hasOwn(values, key)
-      ? String(values[key as keyof NameValues])
-      : placeholder,
+    Object.hasOwn(values, key) ? String(values[key]) : placeholder,
   );
 
 export function nameValuesAt(
