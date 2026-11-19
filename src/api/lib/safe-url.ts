@@ -4,7 +4,8 @@ export type UrlRejection =
   | "credentials"
   | "port"
   | "ip_literal"
-  | "internal_host";
+  | "internal_host"
+  | "app_host";
 
 export type SafeUrlResult = { url: URL } | { rejection: UrlRejection };
 
@@ -34,11 +35,10 @@ const isIpLiteral = (host: string) =>
 const hasSuffix = (host: string, suffix: string) =>
   host === suffix || host.endsWith(`.${suffix}`);
 
-const isInternalHost = (host: string, blockedHosts: readonly string[]) =>
+const isInternalHost = (host: string) =>
   !host.includes(".") ||
   host.split(".").includes("") ||
-  INTERNAL_SUFFIXES.some((suffix) => hasSuffix(host, suffix)) ||
-  blockedHosts.includes(host);
+  INTERNAL_SUFFIXES.some((suffix) => hasSuffix(host, suffix));
 
 const rejectionFor = (
   url: URL,
@@ -49,7 +49,8 @@ const rejectionFor = (
   if (url.port) return "port";
   const host = url.hostname.replace(/\.+$/, "");
   if (isIpLiteral(host)) return "ip_literal";
-  if (isInternalHost(host, blockedHosts)) return "internal_host";
+  if (isInternalHost(host)) return "internal_host";
+  if (blockedHosts.includes(host)) return "app_host";
   return null;
 };
 

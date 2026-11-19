@@ -549,6 +549,8 @@ const esAR = {
       needsSave: "Guardá el producto para probar la landing",
       needsSaveChanges: "Guardá los cambios para probar la URL nueva",
       errorDetail: "Detalle",
+      appHost:
+        "La landing no puede ser la URL de esta app. Usá la URL de tu sitio.",
     },
     cta: {
       SHOP_NOW: "Comprar ahora",

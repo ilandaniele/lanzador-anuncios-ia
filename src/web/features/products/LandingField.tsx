@@ -14,6 +14,8 @@ type LandingFieldProps = {
   error?: string;
 };
 
+const APP_HOST_ERROR = "app_host";
+
 function testBlockedReason(product: ProductDto | undefined, value: string) {
   if (!product) return t("products.landing.needsSave");
   if (product.landingUrl !== value)
@@ -65,10 +67,14 @@ export function LandingField({
       {checkedUrlIsCurrent && status !== "unchecked" && (
         <p className="flex flex-wrap items-center gap-2" role="status">
           <LandingStatusChip status={status} />
-          {detail && (
-            <span className="text-ink-muted">
-              {t("products.landing.errorDetail")}: {detail}
-            </span>
+          {detail === APP_HOST_ERROR ? (
+            <span className="text-loss">{t("products.landing.appHost")}</span>
+          ) : (
+            detail && (
+              <span className="text-ink-muted">
+                {t("products.landing.errorDetail")}: {detail}
+              </span>
+            )
           )}
         </p>
       )}

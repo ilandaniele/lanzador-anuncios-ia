@@ -89,10 +89,10 @@ describe("checkLanding blocked urls", () => {
     const fetchImpl = fetchReturning(reply(302, "https://APP.example.test./x"));
     const redirected = await checkLanding(LANDING, fetchImpl, { blockedHosts });
 
-    expect(direct).toMatchObject({ status: "error", error: "internal_host" });
+    expect(direct).toMatchObject({ status: "error", error: "app_host" });
     expect(redirected).toMatchObject({
       status: "error",
-      error: "internal_host",
+      error: "app_host",
     });
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });

@@ -411,6 +411,25 @@ describe("Productos > formulario", () => {
     await screen.findByText("Verificada con avisos");
   });
 
+  it("explains a landing that points at the app itself", async () => {
+    useBackend();
+    server.use(
+      http.get("/api/w/w1/products/:id", () =>
+        HttpResponse.json({
+          product: productDto({
+            landingStatus: "error",
+            landingHttpStatus: null,
+            landingError: "app_host",
+          }),
+        }),
+      ),
+    );
+    renderAt("/w/w1/productos/p1");
+
+    await screen.findByText(/no puede ser la URL de esta app/);
+    expect(screen.queryByText(/app_host/)).toBeNull();
+  });
+
   it("archives only after the receipt is confirmed", async () => {
     const calls = useBackend();
     renderAt("/w/w1/productos/p1");
