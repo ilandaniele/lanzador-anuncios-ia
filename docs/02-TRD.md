@@ -478,7 +478,8 @@ Con 2.000 por día alcanza para unas 4 corridas de copys + 6 etiquetados + 2 pil
 | `META_APP_SECRET` | secreto | `wrangler secret` / `.dev.vars` |
 | `TOKEN_ENC_KEY_V1` (AES-256, base64; futuras `_V2`…) | secreto | `wrangler secret` / `.dev.vars` |
 | `TOKEN_ENC_KEY_CURRENT` (número de versión activa) | var | `wrangler.jsonc` |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_PICKER_API_KEY` (restringida por referrer a `APP_ORIGIN`), `GOOGLE_PROJECT_NUMBER` | var | `wrangler.jsonc` |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_PROJECT_NUMBER` | var | `wrangler.jsonc` |
+| `GOOGLE_PICKER_API_KEY` (restringida por referrer a `APP_ORIGIN` y a la Picker API) | secreto | `wrangler secret` / `.dev.vars` (no va en git: los escáneres de secretos la marcan) |
 | `GOOGLE_CLIENT_SECRET` | secreto | `wrangler secret` |
 | `RESEND_API_KEY` | secreto | `wrangler secret` |
 | `EMAIL_FROM` | var | `wrangler.jsonc` |
