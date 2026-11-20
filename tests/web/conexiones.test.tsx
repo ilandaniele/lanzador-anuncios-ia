@@ -121,8 +121,8 @@ function useBackend(
       HttpResponse.json({ data: connections }),
     ),
     http.get("/api/w/w1/google/connection", () => HttpResponse.json(google)),
-    http.post("/api/w/w1/google/connect", () => {
-      calls.googleConnect();
+    http.post("/api/w/w1/google/connect", async ({ request }) => {
+      calls.googleConnect(await request.json());
       return HttpResponse.json({
         authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth?state=s",
       });
@@ -392,6 +392,7 @@ describe("Ajustes Conexiones: Google block", () => {
       ),
     );
     expect(calls.googleConnect).toHaveBeenCalledTimes(1);
+    expect(calls.googleConnect).toHaveBeenCalledWith({});
   });
 
   it("asks to reconnect when Google needs it", async () => {

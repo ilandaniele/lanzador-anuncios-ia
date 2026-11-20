@@ -24,7 +24,7 @@ export function useStartGoogleConnect(workspaceId: string, launchId?: string) {
     mutationFn: () =>
       apiFetch<GoogleConnectResponse>(`${googleApi(workspaceId)}/connect`, {
         method: "POST",
-        body: launchId ? { launchId } : undefined,
+        body: launchId ? { launchId } : {},
       }),
     onSuccess: ({ authorizeUrl }) => redirectToExternal(authorizeUrl),
   });
