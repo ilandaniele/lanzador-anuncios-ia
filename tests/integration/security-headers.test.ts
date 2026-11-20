@@ -29,6 +29,7 @@ const REQUIRED_HEADERS: Record<string, string> = {
 const SPA_REQUIRED_HEADERS = [
   "Content-Security-Policy: default-src 'self';",
   "frame-ancestors 'none'",
+  "style-src 'self' 'unsafe-inline';",
   "X-Content-Type-Options: nosniff",
   "Referrer-Policy: strict-origin-when-cross-origin",
 ];
@@ -138,6 +139,8 @@ describe("security headers", { timeout: 60_000 }, () => {
       SPA_REQUIRED_HEADERS.filter((header) => !spaHeaders.includes(header)),
     ).toEqual([]);
     expect(spaHeaders).not.toMatch(/Access-Control-Allow-Origin/i);
-    expect(spaHeaders).not.toMatch(/'unsafe-(inline|eval)'/);
+    expect(spaHeaders).not.toMatch(/'unsafe-eval'/);
+    expect(spaHeaders).not.toMatch(/script-src[^;]*'unsafe-inline'/);
+    expect(spaHeaders.match(/'unsafe-inline'/g)).toHaveLength(1);
   });
 });

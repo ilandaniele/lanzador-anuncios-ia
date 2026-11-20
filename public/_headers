@@ -1,5 +1,5 @@
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://apis.google.com; frame-src https://www.facebook.com https://docs.google.com https://drive.google.com; img-src 'self' data: blob: https://*.fbcdn.net https://*.googleusercontent.com; media-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://apis.google.com; style-src 'self' 'unsafe-inline'; frame-src https://www.facebook.com https://docs.google.com https://drive.google.com; img-src 'self' data: blob: https://*.fbcdn.net https://*.googleusercontent.com; media-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
 
