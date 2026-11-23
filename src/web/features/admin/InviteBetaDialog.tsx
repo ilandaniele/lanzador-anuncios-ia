@@ -7,6 +7,14 @@ import { t } from "../../i18n/es-AR";
 import { inviteErrorMessage } from "./admin-errors";
 import { useCreateBetaInvite } from "./use-admin";
 
+const inviteNotice = (emailSent: boolean) =>
+  emailSent
+    ? { tone: "success" as const, message: t("admin.inviteBetaDone") }
+    : {
+        tone: "info" as const,
+        message: `${t("admin.inviteBetaEmailFailed")} ${window.location.origin}/login.`,
+      };
+
 export function InviteBetaDialog({ onClose }: { onClose: () => void }) {
   const [email, setEmail] = useState("");
   const [note, setNote] = useState("");
@@ -19,8 +27,8 @@ export function InviteBetaDialog({ onClose }: { onClose: () => void }) {
     invite.mutate(
       { email, ...(trimmedNote && { note: trimmedNote }) },
       {
-        onSuccess: () => {
-          notify({ tone: "success", message: t("admin.inviteBetaDone") });
+        onSuccess: ({ emailSent }) => {
+          notify(inviteNotice(emailSent));
           onClose();
         },
       },

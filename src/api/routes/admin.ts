@@ -60,7 +60,10 @@ export const adminRoutes = new Hono<AppEnv>()
   )
   .post("/admin/beta-invites", async (c) => {
     const input = await parseJson(c, createBetaInviteRequestSchema);
-    return c.json(await createBetaInvite(c.env, c.get("user")!, input), 201);
+    return c.json(
+      await createBetaInvite(c.env, c.get("user")!, input, c.get("requestId")),
+      201,
+    );
   })
   .delete("/admin/beta-invites/:id", async (c) => {
     await revokeInvite(c.env.DB, c.req.param("id"));

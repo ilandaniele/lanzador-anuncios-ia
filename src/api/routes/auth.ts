@@ -1,4 +1,5 @@
 import { type Context, Hono } from "hono";
+import { getCookie } from "hono/cookie";
 import {
   magicLinkRequestSchema,
   reviewerLinkRequestSchema,
@@ -12,6 +13,12 @@ import {
   issueMagicLink,
   verifyMagicLink,
 } from "../services/auth/magic-link";
+import {
+  clearGoogleStateCookie,
+  completeGoogleLogin,
+  GOOGLE_STATE_COOKIE,
+  startGoogleLogin,
+} from "../services/auth/google-login";
 import { getMe } from "../services/auth/me";
 import { issueReviewerLink } from "../services/auth/reviewer";
 import {
@@ -53,6 +60,22 @@ export const authRoutes = new Hono<AppEnv>()
     });
     c.header("Set-Cookie", cookie, { append: true });
     return c.json(me);
+  })
+  .get("/auth/google/start", authRateLimit, async (c) => {
+    const { redirectUrl, stateCookie } = await startGoogleLogin(c.env);
+    if (stateCookie) c.header("Set-Cookie", stateCookie, { append: true });
+    return c.redirect(redirectUrl, 302);
+  })
+  .get("/auth/google/callback", async (c) => {
+    const { path, sessionCookie } = await completeGoogleLogin(c.env, {
+      rawQuery: c.req.query(),
+      stateCookie: getCookie(c, GOOGLE_STATE_COOKIE),
+      meta: { userAgent: c.req.header("User-Agent"), ip: requestIp(c) },
+      requestId: c.get("requestId"),
+    });
+    c.header("Set-Cookie", clearGoogleStateCookie(), { append: true });
+    if (sessionCookie) c.header("Set-Cookie", sessionCookie, { append: true });
+    return c.redirect(path, 302);
   })
   .post("/auth/logout", session({ required: true }), async (c) => {
     await destroySession(c.env.DB, c.get("user")!.sessionId);

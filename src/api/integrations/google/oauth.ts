@@ -3,13 +3,13 @@ import type { Env } from "../../env";
 import { base64urlDecode } from "../../lib/hash";
 import { GoogleError, postForm, postFormJson } from "./client";
 
-const AUTHORIZE_URL = "https://accounts.google.com/o/oauth2/v2/auth";
-const TOKEN_URL = "https://oauth2.googleapis.com/token";
+export const AUTHORIZE_URL = "https://accounts.google.com/o/oauth2/v2/auth";
+export const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const REVOKE_URL = "https://oauth2.googleapis.com/revoke";
 export const DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file";
 const GOOGLE_SCOPES = [DRIVE_FILE_SCOPE, "openid", "email"];
 
-type OAuthEnv = Pick<
+export type OAuthEnv = Pick<
   Env,
   "APP_ORIGIN" | "GOOGLE_CLIENT_ID" | "GOOGLE_CLIENT_SECRET"
 >;
@@ -41,7 +41,7 @@ export interface GoogleAccessToken {
 const googleCallbackUrl = (env: Pick<Env, "APP_ORIGIN">) =>
   `${env.APP_ORIGIN}/api/google/oauth/callback`;
 
-const clientCredentials = (env: OAuthEnv) => ({
+export const clientCredentials = (env: OAuthEnv) => ({
   client_id: env.GOOGLE_CLIENT_ID,
   client_secret: env.GOOGLE_CLIENT_SECRET,
 });
@@ -62,16 +62,22 @@ export function googleAuthorizeUrl(
   return `${AUTHORIZE_URL}?${query}`;
 }
 
-function emailFromIdToken(idToken: string): string {
+export function idTokenPayload<S extends z.ZodType>(
+  idToken: string,
+  schema: S,
+): z.infer<S> {
   try {
     const payload = new TextDecoder().decode(
       base64urlDecode(idToken.split(".")[1] ?? ""),
     );
-    return idTokenClaimsSchema.parse(JSON.parse(payload)).email;
+    return schema.parse(JSON.parse(payload));
   } catch {
     throw new GoogleError(200, "invalid_id_token");
   }
 }
+
+const emailFromIdToken = (idToken: string) =>
+  idTokenPayload(idToken, idTokenClaimsSchema).email;
 
 export async function exchangeCode(
   env: OAuthEnv,

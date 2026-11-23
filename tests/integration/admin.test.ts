@@ -656,7 +656,10 @@ describe("POST /api/admin/beta-invites", () => {
     });
 
     expect(response.status).toBe(201);
-    const { invite } = betaInviteResponseSchema.parse(await response.json());
+    const { invite, emailSent } = betaInviteResponseSchema.parse(
+      await response.json(),
+    );
+    expect(emailSent).toBe(true);
     expect(Object.keys(invite).sort()).toEqual([
       "email",
       "id",
@@ -766,40 +769,27 @@ describe("POST /api/admin/beta-invites", () => {
     ).toHaveLength(0);
   });
 
-  it("revokes the invite on email failure so it can be retried", async () => {
+  it("keeps the invite active and reports emailSent false on email failure", async () => {
     server.use(resendServerError());
     const admin = await superadmin();
     const email = uniqueEmail();
-    const body = { email };
 
-    await expectError(
-      await call("/api/admin/beta-invites", {
-        as: admin,
-        method: "POST",
-        body,
-      }),
-      503,
-      "EMAIL_SEND_FAILED",
-    );
-
-    const [row] = await db
-      .select()
-      .from(betaInvites)
-      .where(eq(betaInvites.email, email));
-    expect(row!.revokedAt).not.toBeNull();
-    expect((await findMagicLinkAccess(env.DB, email, Date.now())).invited).toBe(
-      false,
-    );
-
-    server.resetHandlers(resendSuccess());
-    const retry = await call("/api/admin/beta-invites", {
+    const response = await call("/api/admin/beta-invites", {
       as: admin,
       method: "POST",
-      body,
+      body: { email },
     });
 
-    expect(retry.status).toBe(201);
-    expect((await betaInviteRow(row!.id)).revokedAt).toBeNull();
+    expect(response.status).toBe(201);
+    const { invite, emailSent } = betaInviteResponseSchema.parse(
+      await response.json(),
+    );
+    expect(emailSent).toBe(false);
+    expect(invite.revokedAt).toBeNull();
+    expect((await betaInviteRow(invite.id)).revokedAt).toBeNull();
+    expect((await findMagicLinkAccess(env.DB, email, Date.now())).invited).toBe(
+      true,
+    );
   });
 });
 

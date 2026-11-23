@@ -91,6 +91,7 @@ function useBackend() {
             usedAt: null,
             revokedAt: null,
           },
+          emailSent: true,
         },
         { status: 201 },
       );
@@ -327,5 +328,45 @@ describe("Admin", () => {
     const alert = await within(dialog).findByRole("alert");
     expect(alert.textContent).toBe("Ese email ya tiene una invitación beta.");
     expect(calls.invite).toHaveBeenCalledWith({ email: "nuevo@example.com" });
+  });
+
+  it("tells the admin to share the login link when the email was not sent", async () => {
+    useBackend();
+    server.use(
+      http.post("/api/admin/beta-invites", () =>
+        HttpResponse.json(
+          {
+            invite: {
+              id: "b2",
+              email: "nuevo@example.com",
+              note: null,
+              usedAt: null,
+              revokedAt: null,
+            },
+            emailSent: false,
+          },
+          { status: 201 },
+        ),
+      ),
+    );
+    await renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: "Invitar beta" }));
+    const dialog = await screen.findByRole("dialog", {
+      name: "Invitar a la beta",
+    });
+    fireEvent.change(within(dialog).getByLabelText(/Email/), {
+      target: { value: "nuevo@example.com" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Enviar invitación" }),
+    );
+
+    const notice = await screen.findByRole("status");
+    expect(notice.textContent).toContain(
+      `No se pudo enviar el email: avisale que entre con Google en ${window.location.origin}/login.`,
+    );
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 });

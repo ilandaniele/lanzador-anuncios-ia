@@ -8,12 +8,15 @@ export const DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file";
 const encodeJson = (value: unknown) =>
   base64urlEncode(new TextEncoder().encode(JSON.stringify(value)));
 
-export const fakeIdToken = (email: string) =>
+export const idTokenFor = (claims: Record<string, unknown>) =>
   [
     encodeJson({ alg: "RS256", typ: "JWT" }),
-    encodeJson({ iss: "https://accounts.google.com", email }),
+    encodeJson(claims),
     "signature",
   ].join(".");
+
+export const fakeIdToken = (email: string) =>
+  idTokenFor({ iss: "https://accounts.google.com", email });
 
 export const googleTokenReplies = (body: JsonBodyType, status = 200) =>
   http.post(GOOGLE_TOKEN_URL, () => HttpResponse.json(body, { status }));
@@ -52,3 +55,12 @@ export const googleServerError = (url: string) =>
 
 export const googleRevokes = (status = 200) =>
   http.post(GOOGLE_REVOKE_URL, () => new HttpResponse(null, { status }));
+
+export const googleLoginExchange = (claims: Record<string, unknown>) =>
+  googleTokenReplies({
+    access_token: "ya29.login-access",
+    expires_in: 3599,
+    scope: "openid https://www.googleapis.com/auth/userinfo.email",
+    token_type: "Bearer",
+    id_token: idTokenFor(claims),
+  });

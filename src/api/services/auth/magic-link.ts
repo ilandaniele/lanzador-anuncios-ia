@@ -13,9 +13,9 @@ import {
   insertMagicLinkWithinCaps,
   invalidateMagicLink,
 } from "../../repositories/magic-links";
-import { findUserByEmail, upsertLoginUser } from "../../repositories/users";
-import { getMe } from "./me";
-import { createSession, type SessionMeta } from "./session";
+import { isReviewerEmail, isSuperadminEmail } from "./emails";
+import { signInVerifiedEmail } from "./login";
+import type { SessionMeta } from "./session";
 
 const MINUTE = 60_000;
 const LINK_TTL = 15 * MINUTE;
@@ -33,17 +33,6 @@ type LinkEnv = Pick<
 type MagicLinkIssue = { id: string; token: string };
 
 const linkExpired = () => new AppError(410, "LINK_EXPIRED");
-
-const sameEmail = (configured: string | undefined, email: string) => {
-  const normalized = configured?.trim().toLowerCase() ?? "";
-  return normalized !== "" && normalized === email;
-};
-
-export const isSuperadminEmail = (env: LinkEnv, email: string) =>
-  sameEmail(env.SUPERADMIN_EMAIL, email);
-
-export const isReviewerEmail = (env: LinkEnv, email: string) =>
-  sameEmail(env.REVIEWER_EMAIL, email);
 
 export async function issueMagicLink(
   env: LinkEnv,
@@ -105,11 +94,6 @@ export async function deliverMagicLink(
   }
 }
 
-async function canCreateUser(env: LinkEnv, email: string, at: number) {
-  if (isSuperadminEmail(env, email)) return true;
-  return (await findMagicLinkAccess(env.DB, email, at)).invited;
-}
-
 export async function verifyMagicLink(
   env: LinkEnv,
   token: string,
@@ -119,22 +103,7 @@ export async function verifyMagicLink(
   const link = await consumeMagicLink(env.DB, await sha256Hex(token), at);
   if (!link) throw linkExpired();
 
-  const existing = await findUserByEmail(env.DB, link.email);
-  if (existing?.status === "disabled") throw linkExpired();
-  if (!existing && !(await canCreateUser(env, link.email, at))) {
-    throw linkExpired();
-  }
-
-  const user = await upsertLoginUser(env.DB, {
-    id: newId(),
-    email: link.email,
-    isSuperadmin: isSuperadminEmail(env, link.email),
-    at,
-  });
-  const { cookie } = await createSession(env.DB, user.id, meta);
-  const me = await getMe(env.DB, {
-    ...user,
-    isSuperadmin: user.isSuperadmin === 1,
-  });
-  return { me, cookie };
+  const signedIn = await signInVerifiedEmail(env, link.email, meta);
+  if (!signedIn) throw linkExpired();
+  return signedIn;
 }

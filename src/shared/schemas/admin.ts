@@ -71,7 +71,11 @@ export type BetaInviteDto = z.infer<typeof betaInviteSchema>;
 
 export const betaInvitesPageSchema = paginatedSchema(betaInviteSchema);
 
-export const betaInviteResponseSchema = z.object({ invite: betaInviteSchema });
+export const betaInviteResponseSchema = z.object({
+  invite: betaInviteSchema,
+  emailSent: z.boolean(),
+});
+export type BetaInviteResponse = z.infer<typeof betaInviteResponseSchema>;
 
 export const createBetaInviteRequestSchema = z.object({
   email: emailSchema,

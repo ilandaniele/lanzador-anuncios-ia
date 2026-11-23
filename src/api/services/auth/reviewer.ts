@@ -3,7 +3,8 @@ import { magicLinkUrl } from "../../emails/magic-link";
 import { notFound } from "../../lib/errors";
 import { timingSafeEqual } from "../../lib/hash";
 import { logEvent } from "../../lib/logger";
-import { issueEligibleLink, isSuperadminEmail } from "./magic-link";
+import { isSuperadminEmail } from "./emails";
+import { issueEligibleLink } from "./magic-link";
 
 const MIN_CODE_LENGTH = 32;
 

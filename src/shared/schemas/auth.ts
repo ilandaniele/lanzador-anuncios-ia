@@ -24,6 +24,16 @@ export const reviewerLinkRequestSchema = z.object({
 });
 export type ReviewerLinkRequest = z.infer<typeof reviewerLinkRequestSchema>;
 
+export const googleLoginFailureSchema = z.enum([
+  "STATE_INVALID",
+  "GOOGLE_DENIED",
+  "TOKEN_EXCHANGE_FAILED",
+  "EMAIL_UNVERIFIED",
+  "NOT_ALLOWED",
+  "INTERNAL",
+]);
+export type GoogleLoginFailure = z.infer<typeof googleLoginFailureSchema>;
+
 export const meSchema = z.object({
   user: z.object({
     id: z.string(),

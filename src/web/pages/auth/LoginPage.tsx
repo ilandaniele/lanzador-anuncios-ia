@@ -9,6 +9,10 @@ import {
   RedirectIfSession,
   Strip,
 } from "../../features/auth/AuthColumn";
+import {
+  GoogleLoginButton,
+  googleFailureStrip,
+} from "../../features/auth/google-login";
 import { safeNext } from "../../features/auth/link-params";
 import { rememberLogin } from "../../features/auth/login-memory";
 import { useCountdown } from "../../features/auth/use-countdown";
@@ -107,7 +111,7 @@ export default function LoginPage() {
         </AuthColumn>
       ) : (
         <AuthColumn title={t("login.title")}>
-          {strip}
+          {strip ?? googleFailureStrip(params)}
           <form noValidate onSubmit={submit} className="flex flex-col gap-4">
             <Input
               type="email"
@@ -126,6 +130,7 @@ export default function LoginPage() {
               {t("login.submit")}
             </Button>
           </form>
+          <GoogleLoginButton />
           <p className="text-ink-subtle">{t("login.hint")}</p>
         </AuthColumn>
       )}

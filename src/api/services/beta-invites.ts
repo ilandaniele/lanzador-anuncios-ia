@@ -9,6 +9,7 @@ import { sendEmail } from "../integrations/resend/client";
 import { decodeCursor, paginate } from "../lib/cursor";
 import { conflict, notFound } from "../lib/errors";
 import { newId } from "../lib/ids";
+import { logEvent } from "../lib/logger";
 import { now, toIsoOrNull } from "../lib/time";
 import {
   type BetaInviteRow,
@@ -43,10 +44,28 @@ export async function listBetaInvites(
   return { data: page.rows.map(toBetaInviteDto), nextCursor: page.nextCursor };
 }
 
+async function trySendWelcomeEmail(
+  env: BetaInviteEnv,
+  to: string,
+  requestId: string,
+): Promise<boolean> {
+  try {
+    await sendEmail(env, {
+      to,
+      ...buildBetaWelcomeEmail({ appOrigin: env.APP_ORIGIN }),
+    });
+    return true;
+  } catch {
+    logEvent("warn", "beta_invite.email_failed", { requestId });
+    return false;
+  }
+}
+
 export async function createBetaInvite(
   env: BetaInviteEnv,
   admin: SessionUser,
   { email, note }: CreateBetaInviteRequest,
+  requestId: string,
 ) {
   const invite = await insertBetaInvite(env.DB, {
     id: newId(),
@@ -57,16 +76,8 @@ export async function createBetaInvite(
   });
   if (!invite) throw conflict("ALREADY_INVITED");
 
-  try {
-    await sendEmail(env, {
-      to: email,
-      ...buildBetaWelcomeEmail({ appOrigin: env.APP_ORIGIN }),
-    });
-  } catch (error) {
-    await revokeBetaInvite(env.DB, invite.id, now());
-    throw error;
-  }
-  return { invite: toBetaInviteDto(invite) };
+  const emailSent = await trySendWelcomeEmail(env, email, requestId);
+  return { invite: toBetaInviteDto(invite), emailSent };
 }
 
 export async function revokeInvite(db: D1Database, id: string) {

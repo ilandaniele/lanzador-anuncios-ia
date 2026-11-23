@@ -96,6 +96,18 @@ const esAR = {
     resendIn: "Reenviar en",
     resendWait: "Esperá un momento para reenviar el link",
     resendReady: "Ya podés reenviar el link",
+    or: "o",
+    google: "Entrar con Google",
+    googleFailure: {
+      STATE_INVALID: "La sesión de Google expiró. Probá de nuevo.",
+      GOOGLE_DENIED: "Cancelaste el ingreso con Google.",
+      TOKEN_EXCHANGE_FAILED:
+        "No pudimos validar tu cuenta de Google. Probá de nuevo.",
+      EMAIL_UNVERIFIED: "Tu email de Google no está verificado.",
+      NOT_ALLOWED:
+        "Tu cuenta todavía no tiene acceso a la beta. Pedí una invitación.",
+      INTERNAL: "Algo falló. Probá de nuevo en un rato.",
+    },
   },
   reviewer: {
     title: "Acceso para revisores",
@@ -212,6 +224,8 @@ const esAR = {
     inviteBetaNote: "Nota (opcional)",
     inviteBetaSubmit: "Enviar invitación",
     inviteBetaDone: "Invitación beta enviada",
+    inviteBetaEmailFailed:
+      "Invitación creada. No se pudo enviar el email: avisale que entre con Google en",
     errorAlreadyInvited: "Ese email ya tiene una invitación beta.",
   },
   adminUsage: {

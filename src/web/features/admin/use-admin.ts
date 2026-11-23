@@ -7,6 +7,7 @@ import type { z } from "zod";
 import { PAGINATION } from "../../../shared/constants";
 import type {
   adminWorkspacesPageSchema,
+  BetaInviteResponse,
   CreateBetaInviteRequest,
   PatchAdminWorkspace,
 } from "../../../shared/schemas/admin";
@@ -42,5 +43,8 @@ export function usePatchAdminWorkspace() {
 export const useCreateBetaInvite = () =>
   useMutation({
     mutationFn: (body: CreateBetaInviteRequest) =>
-      apiFetch("/api/admin/beta-invites", { method: "POST", body }),
+      apiFetch<BetaInviteResponse>("/api/admin/beta-invites", {
+        method: "POST",
+        body,
+      }),
   });

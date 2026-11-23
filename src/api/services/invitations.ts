@@ -27,7 +27,7 @@ import {
 import type { Scope } from "../repositories/scope";
 import type { SessionUser } from "../types";
 import { manualAuditEntry } from "./audit-entry";
-import { isSuperadminEmail } from "./auth/magic-link";
+import { isSuperadminEmail } from "./auth/emails";
 import { createSession, type SessionMeta } from "./auth/session";
 import { upsertLoginUser } from "../repositories/users";
 

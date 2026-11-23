@@ -159,6 +159,31 @@ describe("login", () => {
     expect((input as HTMLInputElement).value).toBe("ana@example.com");
   });
 
+  it("offers Google login as a plain link to the start endpoint", async () => {
+    renderAt("/login");
+
+    const link = await screen.findByRole("link", {
+      name: "Entrar con Google",
+    });
+    expect(link.getAttribute("href")).toBe("/api/auth/google/start");
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it.each([
+    ["STATE_INVALID", "La sesión de Google expiró. Probá de nuevo."],
+    ["GOOGLE_DENIED", "Cancelaste el ingreso con Google."],
+    [
+      "NOT_ALLOWED",
+      "Tu cuenta todavía no tiene acceso a la beta. Pedí una invitación.",
+    ],
+    ["whatever", "Algo falló. Probá de nuevo en un rato."],
+  ])("explains the Google failure %s", async (motivo, message) => {
+    renderAt(`/login?google=error&motivo=${motivo}`);
+
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toBe(message);
+  });
+
   it("sends a visitor who already has a session to next", async () => {
     server.use(http.get("/api/me", () => HttpResponse.json(me)));
     const router = renderAt("/login?next=%2Fw%2Fw1%2Fhoy");
