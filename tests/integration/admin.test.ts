@@ -548,6 +548,24 @@ describe("PATCH /api/admin/workspaces/:id", () => {
     });
   });
 
+  it("refuses to restore a workspace whose owner already owns three", async () => {
+    const admin = await superadmin();
+    const { workspace, owner } = await seedWorkspace({
+      status: "deleting",
+      deletedAt: Date.now() - DAY,
+    });
+    for (let index = 0; index < 3; index += 1) {
+      await createWorkspace({ owner });
+    }
+
+    const response = await patchWorkspace(admin, workspace.id, {
+      status: "active",
+    });
+
+    await expectError(response, 422, "WORKSPACE_LIMIT");
+    expect((await workspaceRow(workspace.id)).status).toBe("deleting");
+  });
+
   it("refuses to restore a deleting workspace deleted 8 days ago", async () => {
     const admin = await superadmin();
     const deletedAt = Date.now() - 8 * DAY;

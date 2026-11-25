@@ -449,6 +449,21 @@ describe("POST /api/auth/verify", () => {
     expect(await (await me(cookie)).json()).toEqual(body);
   });
 
+  it("ends the session the browser had before logging in", async () => {
+    const email = await uniqueUser();
+    const previous = await loginAs(email);
+
+    const response = await post(
+      "/api/auth/verify",
+      { token: await requestToken(email) },
+      { cookie: previous },
+    );
+
+    expect(response.status).toBe(200);
+    expect((await me(previous)).status).toBe(401);
+    expect((await me(cookieToken(response))).status).toBe(200);
+  });
+
   it("answers 410 when the link is reused", async () => {
     const email = uniqueEmail();
     await insertUser(email);

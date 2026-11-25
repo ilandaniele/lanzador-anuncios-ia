@@ -82,6 +82,13 @@ export async function deleteSession(
   await drizzle(db).delete(sessions).where(eq(sessions.id, sessionId));
 }
 
+export async function deleteSessionByTokenHash(
+  db: D1Database,
+  tokenHash: string,
+): Promise<void> {
+  await drizzle(db).delete(sessions).where(eq(sessions.tokenHash, tokenHash));
+}
+
 export async function deleteUserSessions(
   db: D1Database,
   userId: string,

@@ -58,6 +58,7 @@ export const invitationRoutes = new Hono<AppEnv>()
         token,
         c.get("user"),
         { userAgent: c.req.header("User-Agent"), ip: requestIp(c) },
+        c.get("requestId"),
       );
       if (cookie) c.header("Set-Cookie", cookie, { append: true });
       return c.json(result);

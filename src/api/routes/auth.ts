@@ -24,13 +24,20 @@ import { issueReviewerLink } from "../services/auth/reviewer";
 import {
   clearSessionCookie,
   destroySession,
+  destroySessionByToken,
   destroyUserSessions,
+  SESSION_COOKIE,
 } from "../services/auth/session";
 import type { AppEnv } from "../types";
 
 const loggedOut = (c: Context<AppEnv>) => {
   c.header("Set-Cookie", clearSessionCookie(), { append: true });
   return c.body(null, 204);
+};
+
+const endPreviousSession = async (c: Context<AppEnv>) => {
+  const previous = getCookie(c, SESSION_COOKIE);
+  if (previous) await destroySessionByToken(c.env.DB, previous);
 };
 
 export const authRoutes = new Hono<AppEnv>()
@@ -58,6 +65,7 @@ export const authRoutes = new Hono<AppEnv>()
       userAgent: c.req.header("User-Agent"),
       ip: requestIp(c),
     });
+    await endPreviousSession(c);
     c.header("Set-Cookie", cookie, { append: true });
     return c.json(me);
   })
@@ -74,7 +82,10 @@ export const authRoutes = new Hono<AppEnv>()
       requestId: c.get("requestId"),
     });
     c.header("Set-Cookie", clearGoogleStateCookie(), { append: true });
-    if (sessionCookie) c.header("Set-Cookie", sessionCookie, { append: true });
+    if (sessionCookie) {
+      await endPreviousSession(c);
+      c.header("Set-Cookie", sessionCookie, { append: true });
+    }
     return c.redirect(path, 302);
   })
   .post("/auth/logout", session({ required: true }), async (c) => {

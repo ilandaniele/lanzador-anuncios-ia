@@ -430,6 +430,22 @@ describe("DELETE /api/w/:wid/members/:userId", () => {
 });
 
 describe("POST /api/w/:wid/transfer-ownership", () => {
+  it("returns 422 WORKSPACE_LIMIT when the successor already owns three workspaces", async () => {
+    const { workspace, users } = await seedWorkspaceWithRoles();
+    for (let index = 0; index < 3; index += 1) {
+      await createWorkspace({ owner: users.editor });
+    }
+
+    const response = await transfer(workspace.id, users.owner, {
+      userId: users.editor.id,
+      confirm: true,
+    });
+
+    await expectError(response, 422, "WORKSPACE_LIMIT");
+    expect(await roleOf(workspace.id, users.owner.id)).toBe("owner");
+    expect(await roleOf(workspace.id, users.editor.id)).toBe("editor");
+  });
+
   it("moves ownership, demotes the old owner and audits both changes", async () => {
     const { workspace, users } = await seedWorkspaceWithRoles();
 

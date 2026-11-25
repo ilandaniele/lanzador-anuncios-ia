@@ -79,7 +79,10 @@ export const selectAuditEntries = (
   drizzle(db)
     .select({
       id: auditLog.id,
-      actorEmail: users.email,
+      actorEmail: sql<
+        string | null
+      >`CASE WHEN ${auditLog.actorType} = 'superadmin'
+        THEN NULL ELSE ${users.email} END`,
       origin: sql<AuditOrigin>`${auditLog.origin}`,
       action: auditLog.action,
       objectType: auditLog.objectType,

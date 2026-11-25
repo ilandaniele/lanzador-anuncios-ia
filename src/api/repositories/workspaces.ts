@@ -5,6 +5,7 @@ import { workspaces } from "../../db/schema/workspaces";
 import type { WorkspaceStatus } from "../../shared/constants";
 import type { UtcPeriods } from "../lib/time";
 import { type AuditEntry, auditStatement } from "./audit";
+import { catchRaisedAbort, isRaisedAbort } from "./db-errors";
 import {
   demoteOwnerStatement,
   insertOwnerMembership,
@@ -48,22 +49,27 @@ export async function insertWorkspaceWithDefaults(
 ) {
   const { id, name, ownerUserId, at } = row;
   const orm = drizzle(db);
-  const [[workspace]] = await orm.batch([
-    orm
-      .insert(workspaces)
-      .values({ id, name, ownerUserId, createdAt: at, updatedAt: at })
-      .returning(workspaceColumns),
-    insertOwnerMembership(db, { workspaceId: id, userId: ownerUserId, at }),
-    insertDefaultSettings(db, id, at),
-    insertDefaultPilotRules(db, id, at),
-    orm
-      .update(betaInvites)
-      .set({ usedAt: at })
-      .where(
-        and(eq(betaInvites.email, ownerEmail), isNull(betaInvites.usedAt)),
-      ),
-  ]);
-  return workspace!;
+  try {
+    const [[workspace]] = await orm.batch([
+      orm
+        .insert(workspaces)
+        .values({ id, name, ownerUserId, createdAt: at, updatedAt: at })
+        .returning(workspaceColumns),
+      insertOwnerMembership(db, { workspaceId: id, userId: ownerUserId, at }),
+      insertDefaultSettings(db, id, at),
+      insertDefaultPilotRules(db, id, at),
+      orm
+        .update(betaInvites)
+        .set({ usedAt: at })
+        .where(
+          and(eq(betaInvites.email, ownerEmail), isNull(betaInvites.usedAt)),
+        ),
+    ]);
+    return workspace!;
+  } catch (error) {
+    if (isRaisedAbort(error, "WORKSPACE_LIMIT")) return null;
+    throw error;
+  }
 }
 
 export async function findOverview(
@@ -149,7 +155,7 @@ export async function transferOwnership(
 ) {
   const { successorId, at } = transfer;
   const orm = drizzle(db);
-  const [, , [workspace]] = await orm.batch([
+  const batch = orm.batch([
     demoteOwnerStatement(orm, scope, successorId, at),
     promoteToOwnerStatement(orm, scope, successorId, at),
     orm
@@ -164,7 +170,8 @@ export async function transferOwnership(
       .returning(workspaceColumns),
     ...audits.map((audit) => auditStatement(db, audit)),
   ]);
-  return workspace ?? null;
+  const result = await catchRaisedAbort(batch, "WORKSPACE_LIMIT");
+  return typeof result === "string" ? result : (result[2][0] ?? null);
 }
 
 export async function findMaxCreativesPerLaunch(db: D1Database, scope: Scope) {

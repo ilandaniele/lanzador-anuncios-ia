@@ -6,7 +6,7 @@ import { usageCounters } from "../../db/schema/ops";
 import { memberships, workspaces } from "../../db/schema/workspaces";
 import type { ConnectionStatus, WorkspaceStatus } from "../../shared/constants";
 import { type AuditEntry, auditStatement } from "./audit";
-import { isForeignKeyViolation } from "./db-errors";
+import { isForeignKeyViolation, isRaisedAbort } from "./db-errors";
 
 export type WorkspaceState = {
   status: WorkspaceStatus;
@@ -91,7 +91,7 @@ export async function updateAdminWorkspace(
   id: string,
   update: { changes: WorkspaceChanges; month: string; at: number },
   audits: AuditEntry[],
-): Promise<AdminWorkspaceRow | null> {
+): Promise<AdminWorkspaceRow | "WORKSPACE_LIMIT" | null> {
   const { changes, month, at } = update;
   const orm = drizzle(db);
   try {
@@ -106,6 +106,7 @@ export async function updateAdminWorkspace(
     return row ?? null;
   } catch (error) {
     if (isForeignKeyViolation(error)) return null;
+    if (isRaisedAbort(error, "WORKSPACE_LIMIT")) return "WORKSPACE_LIMIT";
     throw error;
   }
 }

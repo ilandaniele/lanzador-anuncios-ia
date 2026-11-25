@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { member } from "../middleware/member";
-import { authRateLimit } from "../middleware/rate-limit";
+import { authRateLimit, expensiveRateLimit } from "../middleware/rate-limit";
 import { session } from "../middleware/session";
 import { completeMetaConnect, startMetaConnect } from "../services/meta/oauth";
 import type { AppEnv } from "../types";
@@ -8,8 +8,11 @@ import type { AppEnv } from "../types";
 const LOGIN_PATH = "/login";
 
 export const metaOAuthRoutes = new Hono<AppEnv>()
-  .post("/w/:wid/meta/connect", ...member("admin"), async (c) =>
-    c.json(await startMetaConnect(c.env, c.get("scope")!)),
+  .post(
+    "/w/:wid/meta/connect",
+    ...member("admin"),
+    expensiveRateLimit,
+    async (c) => c.json(await startMetaConnect(c.env, c.get("scope")!)),
   )
   .get(
     "/meta/oauth/callback",

@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../../src/api/app";
+import { insertWorkspaceWithDefaults } from "../../src/api/repositories/workspaces";
 import { betaInvites } from "../../src/db/schema/auth";
 import { auditLog, usageCounters } from "../../src/db/schema/ops";
 import { pilotRules } from "../../src/db/schema/pilot";
@@ -141,6 +142,26 @@ describe("POST /api/workspaces", () => {
     }
 
     await expectError(await post(user), 422, "WORKSPACE_LIMIT");
+  });
+
+  it("enforces the limit in the database when the eligibility check races", async () => {
+    const user = await inviteUser();
+    for (let i = 0; i < MAX_OWNED_WORKSPACES; i++) {
+      await createWorkspace({ owner: user });
+    }
+
+    const raced = await insertWorkspaceWithDefaults(
+      env.DB,
+      {
+        id: crypto.randomUUID(),
+        name: "Raced",
+        ownerUserId: user.id,
+        at: Date.now(),
+      },
+      user.email,
+    );
+
+    expect(raced).toBeNull();
   });
 
   it("does not count deleting workspaces toward the limit", async () => {

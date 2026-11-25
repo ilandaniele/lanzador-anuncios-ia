@@ -120,6 +120,18 @@ describe("GET /api/w/:wid/audit", () => {
     expect(page.data[0]).toMatchObject({ actorEmail: null, detail: null });
   });
 
+  it("hides the superadmin's email from workspace members", async () => {
+    const { workspace, users } = await seedWorkspaceWithRoles();
+    await insertAudit(workspace.id, {
+      actorType: "superadmin",
+      actorUserId: users.owner.id,
+    });
+
+    const page = await readPage(workspace.id, users.viewer);
+
+    expect(page.data[0]!.actorEmail).toBeNull();
+  });
+
   it("lists newest first", async () => {
     const { workspace, users } = await seedWorkspaceWithRoles();
     const older = await insertAudit(workspace.id, { createdAt: 1_000 });

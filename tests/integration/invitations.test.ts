@@ -373,8 +373,33 @@ describe("POST /api/w/:wid/invitations", () => {
       expiresAt: Date.now() + DAY,
     });
 
-    expect(await insertInvitation(env.DB, scope, row("hash-1"))).not.toBeNull();
-    expect(await insertInvitation(env.DB, scope, row("hash-2"))).toBeNull();
+    expect(await insertInvitation(env.DB, scope, row("hash-1"))).toMatchObject({
+      status: "created",
+    });
+    expect(await insertInvitation(env.DB, scope, row("hash-2"))).toEqual({
+      status: "duplicate",
+    });
+  });
+
+  it("refuses an insert that would pass the plan member limit", async () => {
+    const { workspace, users } = await seedWorkspaceWithRoles();
+    await limitMembers(workspace.id, 4);
+    const scope = {
+      workspaceId: workspace.id,
+      userId: users.admin.id,
+      role: "admin" as Role,
+    };
+
+    const result = await insertInvitation(env.DB, scope, {
+      id: crypto.randomUUID(),
+      email: uniqueEmail(),
+      role: "viewer",
+      tokenHash: "hash-full",
+      createdAt: Date.now(),
+      expiresAt: Date.now() + DAY,
+    });
+
+    expect(result).toEqual({ status: "full" });
   });
 
   it("allows a new invitation after an expired or revoked one", async () => {
@@ -570,6 +595,13 @@ describe("POST /api/invitations/accept", () => {
     const row = await invitationById(invitation.id);
     expect(row.acceptedBy).toBe(user!.id);
     expect(row.acceptedAt).not.toBeNull();
+    const [audit] = await auditRows(workspace.id, "member.join");
+    expect(audit).toMatchObject({
+      actorUserId: user!.id,
+      actorType: "user",
+      objectName: email,
+    });
+    expect(audit!.detail).not.toContain(token);
 
     const sessionToken = cookieToken(response);
     expect(sessionToken).toBeDefined();

@@ -8,6 +8,7 @@ import { newId } from "../../lib/ids";
 import { now } from "../../lib/time";
 import {
   deleteSession,
+  deleteSessionByTokenHash,
   deleteUserSessions,
   findSessionByTokenHash,
   insertSession,
@@ -113,6 +114,13 @@ export async function destroySession(
   sessionId: string,
 ): Promise<void> {
   await deleteSession(db, sessionId);
+}
+
+export async function destroySessionByToken(
+  db: D1Database,
+  token: string,
+): Promise<void> {
+  await deleteSessionByTokenHash(db, await sha256Hex(token));
 }
 
 export async function destroyUserSessions(

@@ -50,6 +50,7 @@ export async function createWorkspace(
     { id: newId(), name, ownerUserId: user.id, at: now() },
     user.email,
   );
+  if (!workspace) throw unprocessable("WORKSPACE_LIMIT");
   return { workspace: toWorkspaceDto(workspace), role: "owner" as const };
 }
 

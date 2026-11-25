@@ -102,14 +102,21 @@ async function signIn(
   {
     claims = {},
     overrides,
-  }: { claims?: Record<string, unknown>; overrides?: Partial<Env> } = {},
+    sessionCookie,
+  }: {
+    claims?: Record<string, unknown>;
+    overrides?: Partial<Env>;
+    sessionCookie?: string;
+  } = {},
 ) {
   const { state } = await startLogin();
   server.use(
     googleLoginExchange({ ...(await validClaims(state, email)), ...claims }),
   );
   return get(`${CALLBACK}?${new URLSearchParams({ code: "code_1", state })}`, {
-    cookie: `${STATE_COOKIE}=${state}`,
+    cookie: [`${STATE_COOKIE}=${state}`, sessionCookie]
+      .filter(Boolean)
+      .join("; "),
     env: overrides,
   });
 }
@@ -414,6 +421,18 @@ describe("GET /api/auth/google/callback", () => {
     expect(response.headers.get("Location")).toBe("/");
     expect(cookieValue(response, SESSION_COOKIE)).toBeDefined();
     expect((await findUser(user.email))?.id).toBe(user.id);
+  });
+
+  it("ends the session the browser had before logging in", async () => {
+    const user = await createUser({ email: uniqueEmail() });
+    const first = await signIn(user.email);
+    const previous = cookieValue(first, SESSION_COOKIE)!.split(";")[0];
+
+    const second = await signIn(user.email, { sessionCookie: previous });
+
+    expect(cookieValue(second, SESSION_COOKIE)).toBeDefined();
+    expect(await countSessions(user.email)).toBe(1);
+    expect((await get("/api/me", { cookie: previous })).status).toBe(401);
   });
 
   it("logs in the superadmin email and flags it", async () => {

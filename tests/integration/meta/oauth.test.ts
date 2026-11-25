@@ -29,7 +29,7 @@ import {
   metaServerError,
 } from "../../helpers/msw/meta";
 import { server } from "../../helpers/msw/server";
-import { openLimiter, ORIGIN } from "../pipeline/helpers";
+import { blockedLimiter, openLimiter, ORIGIN } from "../pipeline/helpers";
 
 const app = createApp();
 const TOKEN = "EAABoauthFlowTestToken789";
@@ -221,6 +221,18 @@ describe("POST /api/w/:wid/meta/connect", () => {
       usedAt: null,
     });
     expect(row!.expiresAt - row!.createdAt).toBe(10 * 60 * 1000);
+  });
+
+  it("applies RL_EXP", async () => {
+    const { owner, wid } = await adminWorkspace();
+
+    const response = await api(app, `/api/w/${wid}/meta/connect`, {
+      as: owner,
+      method: "POST",
+      env: { ...oauthEnv, RL_EXP: blockedLimiter },
+    });
+
+    await expectError(response, 429, "RATE_LIMITED");
   });
 
   it.each(["viewer", "editor"] as const)(

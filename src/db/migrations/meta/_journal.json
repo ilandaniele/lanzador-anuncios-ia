@@ -36,6 +36,13 @@
       "when": 1794919716895,
       "tag": "0005_create_launches_pilot_ops",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1795640263184,
+      "tag": "0006_workspace_owner_limit",
+      "breakpoints": true
     }
   ]
 }

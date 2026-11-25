@@ -122,6 +122,7 @@ export async function transferWorkspaceOwnership(
       }),
     ],
   );
+  if (workspace === "WORKSPACE_LIMIT") throw unprocessable("WORKSPACE_LIMIT");
   if (!workspace) throw unprocessable("NOT_A_MEMBER");
   return { workspace: toWorkspaceDto(workspace) };
 }

@@ -82,12 +82,12 @@ export async function createInvitation(
   const context = await findInviteContext(env.DB, scope, email, at);
   if (context.isMember) throw conflict("ALREADY_MEMBER");
   if (context.hasPending) throw conflict("INVITATION_PENDING");
-  if (context.memberCount + context.pendingCount >= context.maxMembers) {
+  if (context.seatsTaken >= context.maxMembers) {
     throw unprocessable("PLAN_MEMBER_LIMIT");
   }
 
   const token = randomToken(32);
-  const invitation = await insertInvitation(env.DB, scope, {
+  const inserted = await insertInvitation(env.DB, scope, {
     id: newId(),
     email,
     role,
@@ -95,7 +95,9 @@ export async function createInvitation(
     createdAt: at,
     expiresAt: at + INVITATION_TTL,
   });
-  if (!invitation) throw conflict("INVITATION_PENDING");
+  if (inserted.status === "full") throw unprocessable("PLAN_MEMBER_LIMIT");
+  if (inserted.status !== "created") throw conflict("INVITATION_PENDING");
+  const { invitation } = inserted;
 
   try {
     await sendEmail(env, {
@@ -155,6 +157,7 @@ export async function acceptInvitation(
   token: string,
   sessionUser: SessionUser | undefined,
   meta: SessionMeta,
+  requestId: string,
 ): Promise<{ result: AcceptInvitationResponse; cookie?: string }> {
   const at = now();
   const tokenHash = await sha256Hex(token);
@@ -178,6 +181,20 @@ export async function acceptInvitation(
     at,
   });
   if (!consumed) throw invitationExpired();
+  await writeAudit(env.DB, {
+    workspaceId: consumed.workspaceId,
+    actorUserId: user.id,
+    actorType: "user",
+    origin: "manual",
+    action: "member.join",
+    objectType: "invitation",
+    objectName: invitation.email,
+    detail: {
+      invitationId: invitation.id,
+      role: invitation.memberRole ?? consumed.role,
+    },
+    requestId,
+  });
 
   const result = {
     workspaceId: consumed.workspaceId,

@@ -45,8 +45,7 @@ export type NewInvitation = {
 export type InviteContext = {
   workspaceName: string;
   maxMembers: number;
-  memberCount: number;
-  pendingCount: number;
+  seatsTaken: number;
   isMember: boolean;
   hasPending: boolean;
 };
@@ -91,10 +90,7 @@ export async function findInviteContext(
     .select({
       workspaceName: workspaces.name,
       maxMembers: plans.maxMembers,
-      memberCount: sql<number>`(SELECT count(*) FROM ${memberships}
-        WHERE ${inWorkspace(memberships, scope)})`,
-      pendingCount: sql<number>`(SELECT count(*) FROM ${invitations}
-        WHERE ${inWorkspace(invitations, scope)} AND ${pendingAt(at)})`,
+      seatsTaken: seatsTaken(scope, at),
       isMember: sql<number>`EXISTS (SELECT 1 FROM ${memberships}
         INNER JOIN ${users} ON ${users.id} = ${memberships.userId}
         WHERE ${inWorkspace(memberships, scope)} AND ${users.email} = ${email})`,
@@ -113,11 +109,21 @@ export async function findInviteContext(
   };
 }
 
+export type InsertInvitationResult =
+  | { status: "created"; invitation: InvitationRow }
+  | { status: "duplicate" | "full" };
+
+const seatsTaken = (scope: Scope, at: number) =>
+  sql<number>`(SELECT count(*) FROM ${memberships}
+    WHERE ${inWorkspace(memberships, scope)})
+    + (SELECT count(*) FROM ${invitations}
+    WHERE ${inWorkspace(invitations, scope)} AND ${pendingAt(at)})`;
+
 export async function insertInvitation(
   db: D1Database,
   scope: Scope,
   row: NewInvitation,
-): Promise<InvitationRow | null> {
+): Promise<InsertInvitationResult> {
   const orm = drizzle(db);
   try {
     const [, [inserted]] = await orm.batch([
@@ -134,16 +140,37 @@ export async function insertInvitation(
         ),
       orm
         .insert(invitations)
-        .values({
-          ...row,
-          workspaceId: scope.workspaceId,
-          invitedBy: scope.userId,
-        })
+        .select(
+          orm
+            .select({
+              id: sql<string>`${row.id}`.as("id"),
+              workspaceId: workspaces.id,
+              email: sql<string>`${row.email}`.as("email"),
+              role: sql<string>`${row.role}`.as("role"),
+              tokenHash: sql<string>`${row.tokenHash}`.as("token_hash"),
+              invitedBy: sql<string>`${scope.userId}`.as("invited_by"),
+              createdAt: sql<number>`${row.createdAt}`.as("created_at"),
+              expiresAt: sql<number>`${row.expiresAt}`.as("expires_at"),
+              acceptedAt: sql<null>`NULL`.as("accepted_at"),
+              acceptedBy: sql<null>`NULL`.as("accepted_by"),
+              revokedAt: sql<null>`NULL`.as("revoked_at"),
+            })
+            .from(workspaces)
+            .innerJoin(plans, eq(plans.id, workspaces.planId))
+            .where(
+              and(
+                eq(workspaces.id, scope.workspaceId),
+                sql`${seatsTaken(scope, row.createdAt)} < ${plans.maxMembers}`,
+              ),
+            ),
+        )
         .returning(invitationColumns),
     ]);
-    return inserted ?? null;
+    return inserted
+      ? { status: "created", invitation: inserted }
+      : { status: "full" };
   } catch (error) {
-    if (isUniqueViolation(error)) return null;
+    if (isUniqueViolation(error)) return { status: "duplicate" };
     throw error;
   }
 }

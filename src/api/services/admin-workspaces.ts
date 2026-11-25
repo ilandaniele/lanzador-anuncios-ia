@@ -105,6 +105,7 @@ export async function patchAdminWorkspace(
     },
     audits,
   );
+  if (row === "WORKSPACE_LIMIT") throw unprocessable("WORKSPACE_LIMIT");
   if (!row) {
     throw new AppError(400, "VALIDATION", { fields: { planId: "unknown" } });
   }
