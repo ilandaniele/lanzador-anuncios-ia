@@ -10,6 +10,7 @@ import { requestId } from "./middleware/request-id";
 import { adminRoutes } from "./routes/admin";
 import { auditRoutes } from "./routes/audit";
 import { authRoutes } from "./routes/auth";
+import { billingRoutes } from "./routes/billing";
 import { chatRoutes } from "./routes/chat";
 import { clientErrorRoutes } from "./routes/client-errors";
 import { creativeRoutes } from "./routes/creatives";
@@ -86,6 +87,7 @@ export function createApp() {
   app.route("/", pilotRuleRoutes);
   app.route("/", pilotRoutes);
   app.route("/", clientErrorRoutes);
+  app.route("/", billingRoutes);
   app.route("/", adminRoutes);
   app.route("/", testSupportRoutes);
 

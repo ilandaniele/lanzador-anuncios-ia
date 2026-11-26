@@ -6,6 +6,7 @@ import { usageCounters } from "../../db/schema/ops";
 import { workspaces } from "../../db/schema/workspaces";
 import type { CreativeAiStatus } from "../../shared/schemas/creatives";
 import type { UtcPeriods } from "../lib/time";
+import { billingAllowed } from "./billing-access";
 import { GLOBAL_SCOPE_ID } from "./usage-counters";
 
 const neuronsUsed = (
@@ -35,7 +36,7 @@ const tagsThatFit = (cap: unknown, used: SQL, neuronsPerTag: number) =>
 
 export function selectPendingTagsWithBudget(
   db: D1Database,
-  { day, month }: Pick<UtcPeriods, "day" | "month">,
+  { at, day, month }: Pick<UtcPeriods, "day" | "month"> & { at: number },
   globalDailyCap: number,
   { neuronsPerTag, perWorkspace, total }: RetagLimits,
 ): Promise<PendingTag[]> {
@@ -68,6 +69,7 @@ export function selectPendingTagsWithBudget(
         eq(creatives.status, "ready"),
         isNotNull(creatives.thumbnailUrl),
         eq(workspaces.status, "active"),
+        billingAllowed(at),
       ),
     )
     .as("ranked");

@@ -86,7 +86,15 @@ const meAs = (role: Role): Me => ({
     name: "Ana",
     isSuperadmin: false,
   },
-  workspaces: [{ id: "w1", name: "Mi negocio", role, status: "active" }],
+  workspaces: [
+    {
+      id: "w1",
+      name: "Mi negocio",
+      role,
+      status: "active",
+      billingBlocked: false,
+    },
+  ],
 });
 
 const fail = (code: ErrorCode, status: number) =>

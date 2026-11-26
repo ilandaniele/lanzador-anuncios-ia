@@ -4,7 +4,9 @@ import { drizzle } from "drizzle-orm/d1";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../../src/api/app";
 import { insertWorkspaceWithDefaults } from "../../src/api/repositories/workspaces";
-import { betaInvites } from "../../src/db/schema/auth";
+import { betaInvites, users } from "../../src/db/schema/auth";
+import { buildSubscription } from "../../src/db/fixtures/builders";
+import { subscriptions } from "../../src/db/schema/billing";
 import { auditLog, usageCounters } from "../../src/db/schema/ops";
 import { pilotRules } from "../../src/db/schema/pilot";
 import {
@@ -12,6 +14,7 @@ import {
   workspaceSettings,
   workspaces,
 } from "../../src/db/schema/workspaces";
+import { TRIAL_MS } from "../../src/shared/billing";
 import { MAX_OWNED_WORKSPACES } from "../../src/shared/constants";
 import {
   createWorkspaceResponseSchema,
@@ -28,12 +31,22 @@ import {
   createWorkspace,
   expectError,
 } from "../helpers/factory";
+import {
+  mercadoPagoCancel,
+  mercadoPagoServerError,
+  preapprovalFixture,
+} from "../helpers/msw/mercadopago";
+import { server } from "../helpers/msw/server";
 import { seedTenantPair } from "../helpers/tenant-pair";
 import { openLimiter } from "./pipeline/helpers";
 
 const app = createApp();
 const db = drizzle(env.DB);
-const openLimits = { RL_IP: openLimiter, RL_USER: openLimiter };
+const openLimits = {
+  RL_IP: openLimiter,
+  RL_USER: openLimiter,
+  RL_EXP: openLimiter,
+};
 
 type Caller = NonNullable<Parameters<typeof api>[2]>;
 
@@ -52,6 +65,20 @@ async function inviteUser(email = `${crypto.randomUUID()}@example.test`) {
   return createUser({ email });
 }
 
+const workspaceRow = (workspaceId: string) =>
+  db
+    .select()
+    .from(workspaces)
+    .where(eq(workspaces.id, workspaceId))
+    .then(([row]) => row!);
+
+const trialStartedAtOf = (userId: string) =>
+  db
+    .select({ trialStartedAt: users.trialStartedAt })
+    .from(users)
+    .where(eq(users.id, userId))
+    .then(([row]) => row!.trialStartedAt);
+
 const auditRowsOf = (workspaceId: string) =>
   db.select().from(auditLog).where(eq(auditLog.workspaceId, workspaceId));
 
@@ -60,28 +87,104 @@ describe("POST /api/workspaces", () => {
     await expectError(await post(undefined), 401, "UNAUTHENTICATED");
   });
 
-  it("returns 403 BETA_INVITE_REQUIRED without an invite", async () => {
-    await expectError(
-      await post(await createUser()),
-      403,
-      "BETA_INVITE_REQUIRED",
+  it("starts a 7 day starter trial for an uninvited user", async () => {
+    const user = await createUser();
+    const before = Date.now();
+
+    const response = await post(user);
+
+    expect(response.status).toBe(201);
+    const { workspace } = createWorkspaceResponseSchema.parse(
+      await response.json(),
     );
+    expect(workspace.planId).toBe("starter");
+    const row = await workspaceRow(workspace.id);
+    expect(row.trialEndsAt).toBeGreaterThanOrEqual(before + TRIAL_MS);
+    expect(row.trialEndsAt).toBeLessThanOrEqual(Date.now() + TRIAL_MS);
+    expect(await trialStartedAtOf(user.id)).toEqual(expect.any(Number));
   });
 
-  it("returns 403 BETA_INVITE_REQUIRED for a revoked invite", async () => {
+  it("starts a starter trial for a revoked invite", async () => {
     const user = await inviteUser();
     await db
       .update(betaInvites)
       .set({ revokedAt: Date.now() })
       .where(eq(betaInvites.email, user.email));
 
-    await expectError(await post(user), 403, "BETA_INVITE_REQUIRED");
+    const response = await post(user);
+
+    expect(response.status).toBe(201);
+    const { workspace } = createWorkspaceResponseSchema.parse(
+      await response.json(),
+    );
+    expect(workspace.planId).toBe("starter");
   });
 
-  it("lets a superadmin create without an invite", async () => {
+  it("puts an invited user on the free beta plan without a trial", async () => {
+    const user = await inviteUser();
+
+    const { workspace } = createWorkspaceResponseSchema.parse(
+      await (await post(user)).json(),
+    );
+
+    expect(workspace.planId).toBe("beta");
+    expect((await workspaceRow(workspace.id)).trialEndsAt).toBeNull();
+    expect(await trialStartedAtOf(user.id)).toBeNull();
+    const [invite] = await db
+      .select({ usedAt: betaInvites.usedAt })
+      .from(betaInvites)
+      .where(eq(betaInvites.email, user.email));
+    expect(invite!.usedAt).toEqual(expect.any(Number));
+  });
+
+  it("puts a superadmin on the free beta plan", async () => {
     const superadmin = await createUser({ isSuperadmin: 1 });
 
-    expect((await post(superadmin)).status).toBe(201);
+    const response = await post(superadmin);
+
+    expect(response.status).toBe(201);
+    const { workspace } = createWorkspaceResponseSchema.parse(
+      await response.json(),
+    );
+    expect(workspace.planId).toBe("beta");
+    expect((await workspaceRow(workspace.id)).trialEndsAt).toBeNull();
+  });
+
+  it("gives the second workspace of a user the same trial end", async () => {
+    const user = await createUser();
+
+    const first = createWorkspaceResponseSchema.parse(
+      await (await post(user)).json(),
+    );
+    const second = createWorkspaceResponseSchema.parse(
+      await (await post(user)).json(),
+    );
+
+    const firstTrial = (await workspaceRow(first.workspace.id)).trialEndsAt;
+    expect(firstTrial).toEqual(expect.any(Number));
+    expect((await workspaceRow(second.workspace.id)).trialEndsAt).toBe(
+      firstTrial,
+    );
+  });
+
+  it("does not extend the trial when the workspace is deleted and recreated", async () => {
+    const user = await createUser();
+    const first = createWorkspaceResponseSchema.parse(
+      await (await post(user)).json(),
+    );
+    await call(`/api/w/${first.workspace.id}`, {
+      as: user,
+      method: "DELETE",
+      body: { confirmName: first.workspace.name },
+    });
+
+    const second = createWorkspaceResponseSchema.parse(
+      await (await post(user)).json(),
+    );
+
+    expect((await workspaceRow(second.workspace.id)).trialEndsAt).toBe(
+      (await workspaceRow(first.workspace.id)).trialEndsAt,
+    );
   });
 
   it("creates workspace, owner, settings and default pilot rules", async () => {
@@ -157,6 +260,8 @@ describe("POST /api/workspaces", () => {
         name: "Raced",
         ownerUserId: user.id,
         at: Date.now(),
+        planId: "beta",
+        trialEndsAt: null,
       },
       user.email,
     );
@@ -441,6 +546,98 @@ describe("DELETE /api/w/:wid", () => {
       404,
       "NOT_FOUND",
     );
+  });
+
+  it.each(["pending", "authorized", "paused"] as const)(
+    "cancels a %s preapproval at Mercado Pago before deleting",
+    async (status) => {
+      const { workspace, users } = (await seedTenantPair()).A;
+      const row = buildSubscription({ workspaceId: workspace.id, status });
+      await db.insert(subscriptions).values(row);
+      server.use(
+        mercadoPagoCancel(
+          preapprovalFixture({ id: row.providerSubscriptionId! }),
+        ),
+      );
+      const cancelled: string[] = [];
+      server.events.on("request:start", ({ request }) => {
+        if (request.method === "PUT") {
+          cancelled.push(new URL(request.url).pathname);
+        }
+      });
+
+      const response = await call(`/api/w/${workspace.id}`, {
+        as: users.owner,
+        method: "DELETE",
+        body: { confirmName: workspace.name },
+      });
+      server.events.removeAllListeners();
+
+      expect(response.status).toBe(202);
+      expect(cancelled).toEqual([`/preapproval/${row.providerSubscriptionId}`]);
+      expect((await workspaceRow(workspace.id)).status).toBe("deleting");
+      const [stored] = await db
+        .select()
+        .from(subscriptions)
+        .where(eq(subscriptions.id, row.id));
+      expect(stored?.status).toBe("cancelled");
+    },
+  );
+
+  it("returns 503 and deletes nothing when Mercado Pago cannot cancel", async () => {
+    const { workspace, users } = (await seedTenantPair()).A;
+    const row = buildSubscription({ workspaceId: workspace.id });
+    await db.insert(subscriptions).values(row);
+    server.use(mercadoPagoServerError());
+
+    await expectError(
+      await call(`/api/w/${workspace.id}`, {
+        as: users.owner,
+        method: "DELETE",
+        body: { confirmName: workspace.name },
+      }),
+      503,
+      "BILLING_UNAVAILABLE",
+    );
+    expect((await workspaceRow(workspace.id)).status).toBe("active");
+    const [stored] = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.id, row.id));
+    expect(stored?.status).toBe("authorized");
+  });
+
+  it("deletes without calling Mercado Pago when only cancelled rows exist", async () => {
+    const { workspace, users } = (await seedTenantPair()).A;
+    await db
+      .insert(subscriptions)
+      .values(
+        buildSubscription({ workspaceId: workspace.id, status: "cancelled" }),
+      );
+
+    const response = await call(`/api/w/${workspace.id}`, {
+      as: users.owner,
+      method: "DELETE",
+      body: { confirmName: workspace.name },
+    });
+
+    expect(response.status).toBe(202);
+  });
+
+  it("returns 202 for an expired workspace without a subscription", async () => {
+    const { workspace, users } = (await seedTenantPair()).A;
+    await db
+      .update(workspaces)
+      .set({ planId: "starter", trialEndsAt: Date.now() - 1000 })
+      .where(eq(workspaces.id, workspace.id));
+
+    const response = await call(`/api/w/${workspace.id}`, {
+      as: users.owner,
+      method: "DELETE",
+      body: { confirmName: workspace.name },
+    });
+
+    expect(response.status).toBe(202);
   });
 
   it("returns 404 for another tenant", async () => {

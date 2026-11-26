@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, describe, expect, it } from "vitest";
 import { createApp } from "../../../src/api/app";
+import { DAY_MS } from "../../../src/api/lib/time";
 import { plans } from "../../../src/db/schema/auth";
 import { launches } from "../../../src/db/schema/launches";
 import { workspaces } from "../../../src/db/schema/workspaces";
@@ -482,7 +483,7 @@ describe("simulate blockers", () => {
       .onConflictDoNothing();
     await db
       .update(workspaces)
-      .set({ planId: "tiny" })
+      .set({ planId: "tiny", trialEndsAt: Date.now() + DAY_MS })
       .where(eq(workspaces.id, context.wid));
 
     expect(await blockerCodes(context)).toEqual(["TOO_MANY_ITEMS"]);

@@ -71,7 +71,13 @@ const meAs = (role: Role): Me => ({
     isSuperadmin: false,
   },
   workspaces: [
-    { id: WORKSPACE_ID, name: "Mi negocio", role, status: "active" },
+    {
+      id: WORKSPACE_ID,
+      name: "Mi negocio",
+      role,
+      status: "active",
+      billingBlocked: false,
+    },
   ],
 });
 

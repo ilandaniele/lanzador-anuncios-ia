@@ -76,7 +76,7 @@ export const authRoutes = new Hono<AppEnv>()
     if (stateCookie) c.header("Set-Cookie", stateCookie, { append: true });
     return c.redirect(redirectUrl, 302);
   })
-  .get("/auth/google/callback", async (c) => {
+  .get("/auth/google/callback", authRateLimit, async (c) => {
     const { path, sessionCookie } = await completeGoogleLogin(c.env, {
       rawQuery: c.req.query(),
       stateCookie: getCookie(c, GOOGLE_STATE_COOKIE),

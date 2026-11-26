@@ -1,4 +1,5 @@
 import { betaInvites, users } from "../schema/auth";
+import { subscriptions } from "../schema/billing";
 import { creatives, uploads } from "../schema/creatives";
 import { launches } from "../schema/launches";
 import { metaAssets, metaConnections } from "../schema/meta";
@@ -165,6 +166,26 @@ export const buildLaunch = (
   const at = Date.now();
   return {
     id: crypto.randomUUID(),
+    createdAt: at,
+    updatedAt: at,
+    ...overrides,
+  };
+};
+
+export const buildSubscription = (
+  overrides: Pick<typeof subscriptions.$inferInsert, "workspaceId"> &
+    Partial<typeof subscriptions.$inferInsert>,
+): typeof subscriptions.$inferInsert => {
+  const at = Date.now();
+  const status = overrides.status ?? "authorized";
+  return {
+    id: crypto.randomUUID(),
+    planId: "starter",
+    providerSubscriptionId: `mp-${crypto.randomUUID()}`,
+    status,
+    amountMinor: 3000000,
+    currency: "ARS",
+    authorizedAt: status === "authorized" ? at : null,
     createdAt: at,
     updatedAt: at,
     ...overrides,

@@ -113,7 +113,9 @@ async function verifiedEmail(
 async function signIn(env: LoginEnv, request: LoginRequest): Promise<string> {
   const email = await verifiedEmail(env, request);
   if (isReviewerEmail(env, email)) throw new LoginFailure("NOT_ALLOWED");
-  const signedIn = await signInVerifiedEmail(env, email, request.meta);
+  const signedIn = await signInVerifiedEmail(env, email, request.meta, {
+    allowNewUser: true,
+  });
   if (!signedIn) throw new LoginFailure("NOT_ALLOWED");
   return signedIn.cookie;
 }

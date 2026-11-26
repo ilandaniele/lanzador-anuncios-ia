@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { users } from "../../db/schema/auth";
 import { memberships, workspaces } from "../../db/schema/workspaces";
 import type { Role, WorkspaceStatus } from "../../shared/constants";
+import { billingStateColumns } from "./billing-access";
 
 const userColumns = {
   id: users.id,
@@ -52,6 +53,7 @@ export async function listUserWorkspaces(db: D1Database, userId: string) {
       name: workspaces.name,
       role: sql<Role>`${memberships.role}`,
       status: sql<WorkspaceStatus>`${workspaces.status}`,
+      ...billingStateColumns,
     })
     .from(memberships)
     .innerJoin(workspaces, eq(workspaces.id, memberships.workspaceId))

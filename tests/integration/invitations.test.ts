@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createApp } from "../../src/api/app";
 import type { Env } from "../../src/api/env";
 import { sha256Hex } from "../../src/api/lib/hash";
+import { DAY_MS } from "../../src/api/lib/time";
 import { insertInvitation } from "../../src/api/repositories/invitations";
 import { plans, users } from "../../src/db/schema/auth";
 import { auditLog } from "../../src/db/schema/ops";
@@ -116,7 +117,7 @@ async function limitMembers(workspaceId: string, maxMembers: number) {
     .values({ id: planId, name: planId, maxMembers, createdAt: Date.now() });
   await db
     .update(workspaces)
-    .set({ planId })
+    .set({ planId, trialEndsAt: Date.now() + DAY_MS })
     .where(eq(workspaces.id, workspaceId));
 }
 

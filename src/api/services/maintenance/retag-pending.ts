@@ -20,7 +20,7 @@ export async function requeuePendingTags(
 ): Promise<void> {
   const pending = await selectPendingTagsWithBudget(
     env.DB,
-    utcPeriods(at),
+    { at, ...utcPeriods(at) },
     env.WORKERS_AI_DAILY_NEURON_CAP,
     RETAG_LIMITS,
   );

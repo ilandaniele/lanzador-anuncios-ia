@@ -3,6 +3,7 @@ import { Navigate, Outlet, useLocation, useParams } from "react-router";
 import { PageSkeleton } from "../../components/PageSkeleton";
 import { t } from "../../i18n/es-AR";
 import NotFoundPage from "../../pages/not-found/NotFoundPage";
+import { Paywall } from "../billing/Paywall";
 import { useMe } from "./use-me";
 
 function loginUrl(path: string): string {
@@ -37,10 +38,14 @@ function Allow({ when, children }: { when: boolean; children: ReactNode }) {
 export function RequireMembership() {
   const { workspaceId } = useParams();
   const me = useMe().data;
-  const isMember = me?.workspaces.some(({ id }) => id === workspaceId);
+  const member = me?.workspaces.find(({ id }) => id === workspaceId);
   return (
-    <Allow when={Boolean(isMember)}>
-      <Outlet />
+    <Allow when={Boolean(member)}>
+      {member?.billingBlocked ? (
+        <Paywall workspaceId={member.id} role={member.role} />
+      ) : (
+        <Outlet />
+      )}
     </Allow>
   );
 }
@@ -55,7 +60,9 @@ export function RequireSuperadmin() {
 }
 
 export function HomeRedirect() {
-  const firstWorkspace = useMe().data?.workspaces[0];
+  const workspaces = useMe().data?.workspaces ?? [];
+  const firstWorkspace =
+    workspaces.find(({ billingBlocked }) => !billingBlocked) ?? workspaces[0];
   return (
     <Navigate
       replace

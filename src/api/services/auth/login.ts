@@ -19,11 +19,18 @@ export async function signInVerifiedEmail(
   env: LoginEnv,
   email: string,
   meta: SessionMeta,
+  options: { allowNewUser?: boolean } = {},
 ): Promise<{ me: Me; cookie: string } | null> {
   const at = now();
   const existing = await findUserByEmail(env.DB, email);
   if (existing?.status === "disabled") return null;
-  if (!existing && !(await canCreateUser(env, email, at))) return null;
+  if (
+    !existing &&
+    !options.allowNewUser &&
+    !(await canCreateUser(env, email, at))
+  ) {
+    return null;
+  }
 
   const user = await upsertLoginUser(env.DB, {
     id: newId(),

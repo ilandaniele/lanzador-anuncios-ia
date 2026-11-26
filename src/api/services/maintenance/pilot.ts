@@ -13,6 +13,7 @@ export async function enqueuePilotRuns(
   if (!PILOT_HOURS_UTC.includes(new Date(at).getUTCHours())) return;
   const workspaceIds = await selectPilotEligibleWorkspaceIds(
     env.DB,
+    at,
     MAX_WORKSPACES_PER_RUN,
   );
   const hour = Math.floor(at / HOUR_MS);

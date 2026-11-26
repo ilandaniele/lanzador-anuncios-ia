@@ -16,6 +16,8 @@ export default defineConfig({
           TEST_MIGRATIONS: migrations,
           TOKEN_ENC_KEY_V1: "dGVzdC10b2tlbi1lbmNyeXB0aW9uLWtleS0zMmJ5dGU=",
           META_APP_SECRET: "test-app-secret",
+          MP_ACCESS_TOKEN: "test-mp-access-token",
+          MP_WEBHOOK_SECRET: "test-mp-webhook-secret",
           APP_ORIGIN: "http://localhost:5173",
         },
       },

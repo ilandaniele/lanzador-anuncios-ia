@@ -27,7 +27,13 @@ import { appRoutes } from "../../src/web/router";
 const me: Me = {
   user: { id: "u1", email: "ana@example.com", name: null, isSuperadmin: false },
   workspaces: [
-    { id: "w1", name: "Mi negocio", role: "owner", status: "active" },
+    {
+      id: "w1",
+      name: "Mi negocio",
+      role: "owner",
+      status: "active",
+      billingBlocked: false,
+    },
   ],
 };
 

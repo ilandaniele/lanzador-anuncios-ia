@@ -38,6 +38,7 @@ export const users = sqliteTable(
     createdAt: integer("created_at").notNull(),
     lastLoginAt: integer("last_login_at"),
     metaTesterFacebookId: text("meta_tester_facebook_id"),
+    trialStartedAt: integer("trial_started_at"),
   },
   (t) => [
     check("users_is_superadmin_check", sql`${t.isSuperadmin} IN (0,1)`),

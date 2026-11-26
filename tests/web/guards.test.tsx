@@ -11,6 +11,7 @@ const workspace = {
   name: "Mi negocio",
   role: "owner" as const,
   status: "active" as const,
+  billingBlocked: false,
 };
 
 const meFor = (overrides: Partial<Me["user"]> = {}): Me => ({
@@ -126,5 +127,19 @@ describe("route guards", () => {
 
     await screen.findByRole("heading", { name: "Hoy" });
     expect(router.state.location.pathname).toBe("/w/w1/hoy");
+  });
+
+  it("redirects / to the first workspace that is not billing blocked", async () => {
+    stubMe({
+      ...meFor(),
+      workspaces: [
+        { ...workspace, id: "blocked", billingBlocked: true },
+        { ...workspace, id: "w2" },
+      ],
+    });
+    const router = renderAt("/");
+
+    await screen.findByRole("heading", { name: "Hoy" });
+    expect(router.state.location.pathname).toBe("/w/w2/hoy");
   });
 });

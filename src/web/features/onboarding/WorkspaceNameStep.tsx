@@ -5,11 +5,7 @@ import { Input } from "../../components/TextField";
 import { ApiError } from "../../lib/api";
 import { t } from "../../i18n/es-AR";
 import { OnboardingLayout } from "./OnboardingLayout";
-import {
-  isBetaInviteRequired,
-  useCreateWorkspace,
-} from "./use-create-workspace";
-import { WaitlistScreen } from "./WaitlistScreen";
+import { useCreateWorkspace } from "./use-create-workspace";
 
 function createErrorMessage(error: unknown) {
   const limitReached =
@@ -21,8 +17,6 @@ export function WorkspaceNameStep() {
   const [name, setName] = useState("");
   const [invalid, setInvalid] = useState(false);
   const create = useCreateWorkspace();
-
-  if (isBetaInviteRequired(create.error)) return <WaitlistScreen />;
 
   function submit(event: FormEvent) {
     event.preventDefault();

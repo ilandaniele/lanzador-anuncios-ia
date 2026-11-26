@@ -1,6 +1,6 @@
 import { and, eq, isNull, lt, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { betaInvites, plans } from "../../db/schema/auth";
+import { betaInvites, plans, users } from "../../db/schema/auth";
 import { workspaces } from "../../db/schema/workspaces";
 import type { WorkspaceStatus } from "../../shared/constants";
 import type { UtcPeriods } from "../lib/time";
@@ -25,35 +25,63 @@ const workspaceColumns = {
   createdAt: workspaces.createdAt,
 };
 
-export type CreationEligibility = { invited: boolean; ownedCount: number };
+export type CreationEligibility = {
+  invited: boolean;
+  ownedCount: number;
+  trialStartedAt: number | null;
+};
 
 export async function findCreationEligibility(
   db: D1Database,
   userId: string,
   email: string,
 ): Promise<CreationEligibility> {
-  const row = await drizzle(db).get<{ invited: number; ownedCount: number }>(
+  const row = await drizzle(db).get<{
+    invited: number;
+    ownedCount: number;
+    trialStartedAt: number | null;
+  }>(
     sql`SELECT
       EXISTS (SELECT 1 FROM ${betaInvites}
         WHERE ${betaInvites.email} = ${email} AND ${betaInvites.revokedAt} IS NULL) AS invited,
       (SELECT count(*) FROM ${workspaces}
-        WHERE ${workspaces.ownerUserId} = ${userId} AND ${workspaces.status} != 'deleting') AS ownedCount`,
+        WHERE ${workspaces.ownerUserId} = ${userId} AND ${workspaces.status} != 'deleting') AS ownedCount,
+      (SELECT ${users.trialStartedAt} FROM ${users} WHERE ${users.id} = ${userId}) AS trialStartedAt`,
   );
-  return { invited: row?.invited === 1, ownedCount: row?.ownedCount ?? 0 };
+  return {
+    invited: row?.invited === 1,
+    ownedCount: row?.ownedCount ?? 0,
+    trialStartedAt: row?.trialStartedAt ?? null,
+  };
 }
 
 export async function insertWorkspaceWithDefaults(
   db: D1Database,
-  row: { id: string; name: string; ownerUserId: string; at: number },
+  row: {
+    id: string;
+    name: string;
+    ownerUserId: string;
+    at: number;
+    planId: string;
+    trialEndsAt: number | null;
+  },
   ownerEmail: string,
 ) {
-  const { id, name, ownerUserId, at } = row;
+  const { id, name, ownerUserId, at, planId, trialEndsAt } = row;
   const orm = drizzle(db);
   try {
     const [[workspace]] = await orm.batch([
       orm
         .insert(workspaces)
-        .values({ id, name, ownerUserId, createdAt: at, updatedAt: at })
+        .values({
+          id,
+          name,
+          ownerUserId,
+          planId,
+          trialEndsAt,
+          createdAt: at,
+          updatedAt: at,
+        })
         .returning(workspaceColumns),
       insertOwnerMembership(db, { workspaceId: id, userId: ownerUserId, at }),
       insertDefaultSettings(db, id, at),
@@ -63,6 +91,16 @@ export async function insertWorkspaceWithDefaults(
         .set({ usedAt: at })
         .where(
           and(eq(betaInvites.email, ownerEmail), isNull(betaInvites.usedAt)),
+        ),
+      orm
+        .update(users)
+        .set({ trialStartedAt: at })
+        .where(
+          and(
+            eq(users.id, ownerUserId),
+            isNull(users.trialStartedAt),
+            sql`${trialEndsAt} IS NOT NULL`,
+          ),
         ),
     ]);
     return workspace!;

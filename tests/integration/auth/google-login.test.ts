@@ -198,14 +198,15 @@ describe("GET /api/auth/google/start", () => {
 });
 
 describe("GET /api/auth/google/callback", () => {
-  it("does not use the RL_AUTH bucket", async () => {
+  it("applies RL_AUTH", async () => {
     const { state } = await startLogin();
 
     const response = await get(`${CALLBACK}?code=code_1&state=${state}`, {
       env: { RL_AUTH: { limit: async () => ({ success: false }) } },
     });
 
-    expectFailure(response, "STATE_INVALID");
+    expect(response.status).toBe(429);
+    expect((await readEnvelope(response)).code).toBe("RATE_LIMITED");
   });
 
   it("answers STATE_INVALID without the state cookie", async () => {
@@ -350,20 +351,27 @@ describe("GET /api/auth/google/callback", () => {
     expect(await findUser(email)).not.toBeNull();
   });
 
-  it("answers NOT_ALLOWED for an uninvited Workspace email", async () => {
+  it("logs in an uninvited Workspace email", async () => {
     const email = uniqueEmail("example.test");
 
     const response = await signIn(email, { claims: { hd: "example.test" } });
 
-    expectFailure(response, "NOT_ALLOWED");
-    expect(await findUser(email)).toBeNull();
+    expect(response.headers.get("Location")).toBe("/");
+    expect(cookieValue(response, SESSION_COOKIE)).toBeDefined();
+    expect(await findUser(email)).not.toBeNull();
   });
 
-  it("answers NOT_ALLOWED for an uninvited email and creates no user", async () => {
+  it("creates the user and the session for an uninvited email", async () => {
     const email = uniqueEmail();
 
-    expectFailure(await signIn(email), "NOT_ALLOWED");
-    expect(await findUser(email)).toBeNull();
+    const response = await signIn(email);
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get("Location")).toBe("/");
+    expectStateCleared(response);
+    expect(cookieValue(response, SESSION_COOKIE)).toBeDefined();
+    expect(await findUser(email)).not.toBeNull();
+    expect(await countSessions(email)).toBe(1);
   });
 
   it("answers NOT_ALLOWED for a disabled user even with a beta invite", async () => {

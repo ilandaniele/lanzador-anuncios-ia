@@ -12,7 +12,7 @@ export async function enqueueInsightsPrewarm(
 ): Promise<void> {
   const workspaceIds = await selectRecentlyActiveWorkspaceIds(
     env.DB,
-    at - ACTIVE_WINDOW_MS,
+    { at, activeSince: at - ACTIVE_WINDOW_MS },
     MAX_WORKSPACES_PER_RUN,
   );
   const hour = Math.floor(at / HOUR_MS);

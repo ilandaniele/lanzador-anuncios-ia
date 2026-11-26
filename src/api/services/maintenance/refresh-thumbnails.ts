@@ -97,7 +97,7 @@ export async function refreshStaleThumbnails(
 ): Promise<void> {
   const stale = await selectStaleThumbnails(
     env.DB,
-    at - REFRESH_AFTER_MS,
+    { at, refreshedBefore: at - REFRESH_AFTER_MS },
     CREATIVES_PER_RUN,
   );
   const byConnection = groupBy(stale, ({ connection }) => connection.id);

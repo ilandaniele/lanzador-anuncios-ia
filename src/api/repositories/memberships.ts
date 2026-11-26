@@ -8,6 +8,7 @@ import type {
   WorkspaceStatus,
 } from "../../shared/constants";
 import { newId } from "../lib/ids";
+import { billingStateColumns } from "./billing-access";
 import { type AuditEntry, auditStatement } from "./audit";
 import { deleteMemberGoogleConnection } from "./google-connections";
 import { inWorkspace, type Scope } from "./scope";
@@ -44,12 +45,17 @@ export async function findWorkspaceAccess(
   status: WorkspaceStatus;
   role: Role | null;
   lastActivityAt: number | null;
+  planId: string;
+  trialEndsAt: number | null;
+  firstAuthorizedAt: number | null;
+  paidUntil: number | null;
 } | null> {
   const [row] = await drizzle(db)
     .select({
       status: sql<WorkspaceStatus>`${workspaces.status}`,
       role: sql<Role | null>`${memberships.role}`,
       lastActivityAt: workspaces.lastActivityAt,
+      ...billingStateColumns,
     })
     .from(workspaces)
     .leftJoin(

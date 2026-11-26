@@ -149,9 +149,6 @@ const esAR = {
     createWorkspace: "Crear workspace",
     creating: "Creando…",
     errorWorkspaceLimit: "Ya llegaste al máximo de workspaces propios.",
-    waitlistTitle: "Estás en lista de espera",
-    waitlistBody:
-      "Lanzador está en beta cerrada. Cuando tu email tenga invitación te avisamos por email y vas a poder crear tu workspace.",
     connectIntro: "Meta te va a pedir permisos para:",
     permissionRead:
       "Leer tus cuentas publicitarias, páginas, Instagram y píxeles.",
@@ -279,9 +276,40 @@ const esAR = {
     members: "Miembros",
     connections: "Conexiones",
     danger: "Peligro",
+    billing: "Facturación",
     ai: "IA",
     navLabel: "Secciones de ajustes",
     forbidden: "No tenés permiso para ver esta sección.",
+  },
+  billing: {
+    title: "Facturación",
+    currentPlan: "Plan actual: {plan}",
+    freePlan: "Plan Beta gratuito. No tenés que pagar nada.",
+    trialDaysLeft: "Te quedan {days} días de prueba.",
+    trialEnded: "Tu prueba gratuita terminó.",
+    status: {
+      pending: "Pago pendiente",
+      authorized: "Suscripción activa",
+      paused: "Suscripción pausada",
+      cancelled: "Suscripción cancelada",
+    },
+    paidUntil: "Acceso hasta el {date}.",
+    perMonth: "{price} por mes",
+    limits: "Hasta {members} miembros y {adAccounts} cuentas publicitarias",
+    subscribe: "Suscribirme a {plan}",
+    cancel: "Cancelar suscripción",
+    cancelConfirm: "¿Cancelar la suscripción? No se te va a cobrar de nuevo.",
+    cancelled: "Suscripción cancelada.",
+    redirecting: "Te llevamos a Mercado Pago…",
+    error: "No pudimos conectar con Mercado Pago. Probá de nuevo en un rato.",
+    alreadyActive:
+      "Ya tenés una suscripción activa. Cancelala para cambiar de plan.",
+    paywall: {
+      title: "Este espacio necesita una suscripción",
+      ownerBody: "Elegí un plan para seguir usando el Lanzador.",
+      askOwner: "Pedile al dueño del espacio que active una suscripción.",
+      goHome: "Ir a mis espacios",
+    },
   },
   aiSettings: {
     loadError: "No pudimos cargar el consumo de IA",
@@ -1152,6 +1180,13 @@ const esAR = {
           disable: "Deshabilitó el workspace",
         },
         settings: { update: "Actualizó la configuración" },
+        billing: {
+          subscription: {
+            create: "Suscripción iniciada",
+            update: "Suscripción actualizada",
+            cancel: "Suscripción cancelada",
+          },
+        },
         campaign: {
           protect: "Protegió una campaña",
           unprotect: "Quitó la protección de una campaña",

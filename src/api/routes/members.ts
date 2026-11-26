@@ -37,7 +37,7 @@ export const memberRoutes = new Hono<AppEnv>()
   })
   .delete(
     "/w/:wid/members/:userId",
-    ...memberOrSelf("admin", "userId"),
+    ...memberOrSelf("admin", "userId", { billingExempt: true }),
     async (c) => {
       await removeMember(
         c.env.DB,

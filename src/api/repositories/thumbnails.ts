@@ -3,10 +3,11 @@ import { drizzle } from "drizzle-orm/d1";
 import { creatives } from "../../db/schema/creatives";
 import { metaAssets, metaConnections } from "../../db/schema/meta";
 import { workspaces } from "../../db/schema/workspaces";
+import { billingAllowed } from "./billing-access";
 
 export const selectStaleThumbnails = (
   db: D1Database,
-  refreshedBefore: number,
+  { at, refreshedBefore }: { at: number; refreshedBefore: number },
   limit: number,
 ) =>
   drizzle(db)
@@ -46,6 +47,7 @@ export const selectStaleThumbnails = (
         lt(creatives.thumbnailRefreshedAt, refreshedBefore),
         eq(metaConnections.status, "active"),
         eq(workspaces.status, "active"),
+        billingAllowed(at),
       ),
     )
     .orderBy(asc(creatives.thumbnailRefreshedAt))

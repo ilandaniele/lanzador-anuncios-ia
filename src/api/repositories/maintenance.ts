@@ -17,6 +17,7 @@ import { errorEvents } from "../../db/schema/ops";
 import { metaConnections } from "../../db/schema/meta";
 import { insightsCache, pilotRules } from "../../db/schema/pilot";
 import { oauthStates, workspaces } from "../../db/schema/workspaces";
+import { billingAllowed } from "./billing-access";
 import { expireAllOverdueProposals } from "./pilot";
 
 export interface CleanupCutoffs {
@@ -98,7 +99,7 @@ export async function runCleanupBatch(
 
 export async function selectRecentlyActiveWorkspaceIds(
   db: D1Database,
-  activeSince: number,
+  { at, activeSince }: { at: number; activeSince: number },
   limit: number,
 ): Promise<string[]> {
   const rows = await drizzle(db)
@@ -108,6 +109,7 @@ export async function selectRecentlyActiveWorkspaceIds(
       and(
         eq(workspaces.status, "active"),
         gt(workspaces.lastActivityAt, activeSince),
+        billingAllowed(at),
       ),
     )
     .orderBy(desc(workspaces.lastActivityAt))
@@ -117,6 +119,7 @@ export async function selectRecentlyActiveWorkspaceIds(
 
 export async function selectPilotEligibleWorkspaceIds(
   db: D1Database,
+  at: number,
   limit: number,
 ): Promise<string[]> {
   const orm = drizzle(db);
@@ -126,6 +129,7 @@ export async function selectPilotEligibleWorkspaceIds(
     .where(
       and(
         eq(workspaces.status, "active"),
+        billingAllowed(at),
         exists(
           orm
             .select({ id: metaConnections.id })

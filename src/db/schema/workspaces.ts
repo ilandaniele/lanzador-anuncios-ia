@@ -40,6 +40,7 @@ export const workspaces = sqliteTable(
     disabledReason: text("disabled_reason"),
     aiDailyNeuronsOverride: integer("ai_daily_neurons_override"),
     aiMonthlyNeuronsOverride: integer("ai_monthly_neurons_override"),
+    trialEndsAt: integer("trial_ends_at"),
     lastActivityAt: integer("last_activity_at"),
     createdAt: integer("created_at").notNull(),
     updatedAt: integer("updated_at").notNull(),

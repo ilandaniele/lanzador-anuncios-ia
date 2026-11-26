@@ -47,6 +47,7 @@ export const meSchema = z.object({
       name: z.string(),
       role: z.enum(ROLES),
       status: z.enum(WORKSPACE_STATUSES),
+      billingBlocked: z.boolean(),
     }),
   ),
 });

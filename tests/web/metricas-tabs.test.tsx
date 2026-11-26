@@ -118,7 +118,15 @@ function useBackend({
     http.get("/api/me", () =>
       HttpResponse.json({
         user: { id: "u1", email: "ana@example.com", name: "Ana" },
-        workspaces: [{ id: "w1", name: "Mi negocio", role, status: "active" }],
+        workspaces: [
+          {
+            id: "w1",
+            name: "Mi negocio",
+            role,
+            status: "active",
+            billingBlocked: false,
+          },
+        ],
       }),
     ),
     http.get("/api/w/w1/meta/assets", () =>

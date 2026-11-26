@@ -157,7 +157,7 @@ Leyenda de auth: `pub` público · `ses` sesión · `ses+ws` sesión + membresí
 | F1 | POST | `/api/auth/logout` | ses | — | — | 204 + cookie expirada | — | USR | no |
 | F1 | POST | `/api/auth/logout-all` | ses | — | — | 204 + cookie expirada (borra todas las sesiones del usuario) | — | USR | no |
 | F1 | GET | `/api/me` | ses | — | — | `{user:{id,email,name,isSuperadmin}, workspaces:[{id,name,role,status}]}` | — | USR | no |
-| F1 | POST | `/api/workspaces` | ses | — | `{name}` | 201 `{workspace, role:"owner"}` | 403 `BETA_INVITE_REQUIRED`, 422 `WORKSPACE_LIMIT` (3 por usuario) | USR | no |
+| F1 | POST | `/api/workspaces` | ses | — | `{name}` | 201 `{workspace, role:"owner"}` | 422 `WORKSPACE_LIMIT` (3 por usuario); el workspace nace en `starter` con prueba de 7 días por usuario (ver 5.7) | USR | no |
 | F1 | GET | `/api/w/:wid` | ses+ws | viewer | — | `{workspace, role, plan:{limits}, settings, aiUsage:{neuronsToday, dailyCap, neuronsMonth, monthlyCap, globalExhausted, resetsAt}}` | — | USR | no |
 | F1 | PATCH | `/api/w/:wid` | ses+ws | admin | `{name}` | `{workspace}` | — | USR | no |
 | F1 | DELETE | `/api/w/:wid` | ses+ws | owner | `{confirmName}` | 202 `{purgeAfter}` (borrado lógico, purga de D1 a los 7 días) | 422 `CONFIRM_MISMATCH` | USR | no |
@@ -425,6 +425,16 @@ Estimación de neurons (las tarifas se re-verifican en la tarea 108): Llama 3.3 
 
 Con 2.000 por día alcanza para unas 4 corridas de copys + 6 etiquetados + 2 pilotos + 2 chats. El tope global de 9.000 por día soporta 4 o 5 workspaces muy activos a la vez.
 
+### 5.7 Cobro (Mercado Pago, suscripciones `preapproval`)
+
+- Planes: `starter` ARS 30.000/mes (3 miembros, 2 cuentas publicitarias) y `pro` ARS 80.000/mes (10 miembros, 10 cuentas). `beta` queda gratis para los workspaces previos.
+- Prueba: 7 días por usuario (`users.trial_started_at`); cada workspace guarda `trial_ends_at`. Registro abierto con Google.
+- Acceso: `isBillingBlocked` (`src/shared/billing.ts`) y su espejo SQL `billingAllowed` (`repositories/billing-access.ts`), con test de paridad. Permitido si es beta, prueba vigente, `paid_until` + 2 días de margen de renovación > now, o gracia de 3 días desde el primer `authorized_at` de cualquier suscripción del workspace (una sola gracia por workspace, solo si nunca hubo cobro). Bloqueado → 402 `PAYMENT_REQUIRED`; GET/DELETE del workspace y salir de él quedan exentos. Los crons saltan workspaces bloqueados.
+- Endpoints (owner): `GET /api/w/:wid/billing`, `POST /api/w/:wid/billing/subscribe` `{planId}` → `{initPoint}` (409 `SUBSCRIPTION_ACTIVE`, 503 `BILLING_UNAVAILABLE`), `POST /api/w/:wid/billing/cancel`. Webhook `POST /api/billing/mercadopago/webhook` (sin CSRF, firma `x-signature` HMAC-SHA256 con `MP_WEBHOOK_SECRET`, `ts` con ventana de 10 min).
+- Una sola suscripción abierta por workspace (índice único parcial). La fila se inserta antes de llamar a MP y su id viaja como `external_reference`. El webhook vuelve a pedir el preapproval a MP, valida monto y moneda, fija `paid_until` = `last_charged_date` + 1 mes solo si hubo cobro, y recalcula `plan_id` (gana la fila con `paid_until` vigente más tardío; una fila `authorized` sin cobro solo otorga plan dentro de la gracia). Topics: `subscription_preapproval` y `subscription_authorized_payment` (renovaciones: se resuelve `preapproval_id` desde `/authorized_payments/{id}`). Una fila local `cancelled` nunca vuelve a abierta: si MP la reporta abierta se cancela en MP.
+- Borrar un workspace cancela sus suscripciones en MP; si MP falla responde 503 y no borra.
+- Riesgos aceptados: los workflows en curso terminan tras vencer la prueba; se puede abusar de la prueba con varias cuentas de Google; MP puede exigir que el pagador use el email de su cuenta MP; tras transferir ownership el dueño anterior sigue pagando; deshabilitar un workspace en admin no cancela su suscripción. Revisión final (bajos, aceptados para el lanzamiento): durante la prueba, suscribir Pro con una tarjeta que falla deja límites Pro hasta que vence la prueba; la gracia de 3 días es por workspace y se recicla borrando y recreando; reembolsos y contracargos no acortan `paid_until`; una fila pendiente sin id de MP se cancela solo localmente; un workspace `beta` puede suscribirse y pagar sin cambiar de plan.
+
 ## 6. APIs externas
 
 ### 6.1 Tabla
@@ -482,6 +492,7 @@ Con 2.000 por día alcanza para unas 4 corridas de copys + 6 etiquetados + 2 pil
 | `GOOGLE_PICKER_API_KEY` (restringida por referrer a `APP_ORIGIN` y a la Picker API) | secreto | `wrangler secret` / `.dev.vars` (no va en git: los escáneres de secretos la marcan) |
 | `GOOGLE_CLIENT_SECRET` | secreto | `wrangler secret` |
 | `RESEND_API_KEY` | secreto | `wrangler secret` |
+| `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET` (Mercado Pago; sin ellos el cobro responde 503 `BILLING_UNAVAILABLE`) | secreto | `wrangler secret` / `.dev.vars` |
 | `EMAIL_FROM` | var | `wrangler.jsonc` |
 | `WORKERS_AI_TEXT_MODEL` (`@cf/meta/llama-3.3-70b-instruct-fp8-fast`), `WORKERS_AI_CHAT_MODEL` y `WORKERS_AI_VISION_MODEL` (ambos `@cf/meta/llama-4-scout-17b-16e-instruct`) | var | `wrangler.jsonc` |
 | `WORKERS_AI_DAILY_NEURON_CAP` (9000) | var | `wrangler.jsonc` |

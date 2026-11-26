@@ -7,6 +7,7 @@ const SAFE_METHODS = new Set(["GET", "HEAD"]);
 const SIGNED_CALLBACK_PATHS = new Set([
   "/api/meta/deauthorize",
   "/api/meta/data-deletion",
+  "/api/billing/mercadopago/webhook",
 ]);
 
 export const csrf = createMiddleware<AppEnv>(async (c, next) => {

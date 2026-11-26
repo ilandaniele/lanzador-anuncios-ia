@@ -170,7 +170,13 @@ function useBackend({
       HttpResponse.json({
         user: { id: "u1", email: "a@b.c", name: "Ana", isSuperadmin: false },
         workspaces: [
-          { id: "w1", name: "Mi negocio", role: "editor", status: "active" },
+          {
+            id: "w1",
+            name: "Mi negocio",
+            role: "editor",
+            status: "active",
+            billingBlocked: false,
+          },
         ],
       }),
     ),

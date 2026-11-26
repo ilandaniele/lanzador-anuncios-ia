@@ -442,6 +442,7 @@ describe("POST /api/auth/verify", () => {
           name: "Marca Demo",
           role: "owner",
           status: "active",
+          billingBlocked: false,
         },
       ],
     });
@@ -684,8 +685,20 @@ describe("GET /api/me", () => {
     expect(body.workspaces).toHaveLength(2);
     expect(body.workspaces).toEqual(
       expect.arrayContaining([
-        { id: own, name: "Propio", role: "owner", status: "active" },
-        { id: shared, name: "Ajeno", role: "viewer", status: "disabled" },
+        {
+          id: own,
+          name: "Propio",
+          role: "owner",
+          status: "active",
+          billingBlocked: false,
+        },
+        {
+          id: shared,
+          name: "Ajeno",
+          role: "viewer",
+          status: "disabled",
+          billingBlocked: false,
+        },
       ]),
     );
   });

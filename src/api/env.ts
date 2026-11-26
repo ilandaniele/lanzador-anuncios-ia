@@ -35,6 +35,8 @@ export interface Env {
   TOKEN_ENC_KEY_V1: string;
   GOOGLE_CLIENT_SECRET: string;
   RESEND_API_KEY: string;
+  MP_ACCESS_TOKEN?: string;
+  MP_WEBHOOK_SECRET?: string;
   E2E_SECRET?: string;
   REVIEWER_EMAIL?: string;
   REVIEWER_CODE?: string;

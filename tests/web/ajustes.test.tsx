@@ -79,7 +79,15 @@ const meAs = (role: Role, workspaces = true): Me => ({
     isSuperadmin: false,
   },
   workspaces: workspaces
-    ? [{ id: "w1", name: "Mi negocio", role, status: "active" }]
+    ? [
+        {
+          id: "w1",
+          name: "Mi negocio",
+          role,
+          status: "active",
+          billingBlocked: false,
+        },
+      ]
     : [],
 });
 
@@ -168,6 +176,7 @@ describe("Ajustes navigation by role", () => {
       "IA",
       "Miembros",
       "Cuenta",
+      "Facturación",
       "Peligro",
     ]);
   });

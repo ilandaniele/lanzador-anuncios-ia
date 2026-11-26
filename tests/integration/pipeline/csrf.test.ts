@@ -81,19 +81,20 @@ describe("csrf", () => {
     expect(response.status).toBe(200);
   });
 
-  it.each(["/api/meta/deauthorize", "/api/meta/data-deletion"])(
-    "exempts the Meta callback %s",
-    async (path) => {
-      const response = await app.request(
-        path,
-        { method: "POST" },
-        testEnv({ META_APP_SECRET: "test-app-secret" }),
-      );
+  it.each([
+    "/api/meta/deauthorize",
+    "/api/meta/data-deletion",
+    "/api/billing/mercadopago/webhook",
+  ])("exempts the signed callback %s", async (path) => {
+    const response = await app.request(
+      path,
+      { method: "POST" },
+      testEnv({ META_APP_SECRET: "test-app-secret" }),
+    );
 
-      expect(response.status).toBe(400);
-      expect((await readEnvelope(response)).code).toBe("BAD_SIGNATURE");
-    },
-  );
+    expect(response.status).toBe(400);
+    expect((await readEnvelope(response)).code).toBe("BAD_SIGNATURE");
+  });
 
   it("still checks an exempt path with a trailing slash", async () => {
     await expectCsrfFailed(

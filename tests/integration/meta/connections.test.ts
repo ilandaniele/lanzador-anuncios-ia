@@ -5,6 +5,7 @@ import { HttpResponse, http } from "msw";
 import { afterEach, describe, expect, it } from "vitest";
 import { createApp } from "../../../src/api/app";
 import { bytesToHex, hmacSha256 } from "../../../src/api/lib/hash";
+import { DAY_MS } from "../../../src/api/lib/time";
 import { plans } from "../../../src/db/schema/auth";
 import { creatives } from "../../../src/db/schema/creatives";
 import { metaAssets, metaConnections } from "../../../src/db/schema/meta";
@@ -101,7 +102,7 @@ const limitAdAccounts = async (workspaceId: string, maxAdAccounts: number) => {
     .values({ id: planId, name: planId, maxAdAccounts, createdAt: Date.now() });
   await db
     .update(workspaces)
-    .set({ planId })
+    .set({ planId, trialEndsAt: Date.now() + DAY_MS })
     .where(eq(workspaces.id, workspaceId));
 };
 

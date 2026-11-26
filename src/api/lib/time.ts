@@ -5,6 +5,22 @@ export function now(): number {
   return Date.now();
 }
 
+export function addCalendarMonth(at: number): number {
+  const date = new Date(at);
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth() + 1;
+  const lastDayOfMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  return Date.UTC(
+    year,
+    month,
+    Math.min(date.getUTCDate(), lastDayOfMonth),
+    date.getUTCHours(),
+    date.getUTCMinutes(),
+    date.getUTCSeconds(),
+    date.getUTCMilliseconds(),
+  );
+}
+
 export const toIsoOrNull = (at: number | null) =>
   at === null ? null : new Date(at).toISOString();
 

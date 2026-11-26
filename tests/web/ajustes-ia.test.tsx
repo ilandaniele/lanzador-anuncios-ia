@@ -66,7 +66,13 @@ const me: Me = {
     isSuperadmin: false,
   },
   workspaces: [
-    { id: "w1", name: "Mi negocio", role: "editor", status: "active" },
+    {
+      id: "w1",
+      name: "Mi negocio",
+      role: "editor",
+      status: "active",
+      billingBlocked: false,
+    },
   ],
 };
 

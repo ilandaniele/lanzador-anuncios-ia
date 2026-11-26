@@ -145,7 +145,13 @@ function useBackend({
       HttpResponse.json({
         user: { id: "u1", email: "ana@example.com", name: "Ana" },
         workspaces: [
-          { id: "w1", name: "Mi negocio", role: "viewer", status: "active" },
+          {
+            id: "w1",
+            name: "Mi negocio",
+            role: "viewer",
+            status: "active",
+            billingBlocked: false,
+          },
         ],
       }),
     ),

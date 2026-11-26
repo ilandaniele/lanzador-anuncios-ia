@@ -1,11 +1,15 @@
 import { createMiddleware } from "hono/factory";
+import { isBillingBlocked } from "../../shared/billing";
 import { AppError, notFound } from "../lib/errors";
 import { HOUR_MS, now } from "../lib/time";
+import { toBillingState } from "../repositories/billing-access";
 import { findWorkspaceAccess } from "../repositories/memberships";
 import { touchWorkspaceActivity } from "../repositories/workspaces";
 import type { AppEnv } from "../types";
 
-export const workspace = () =>
+export type WorkspaceOptions = { billingExempt?: boolean };
+
+export const workspace = ({ billingExempt = false }: WorkspaceOptions = {}) =>
   createMiddleware<AppEnv>(async (c, next) => {
     const user = c.get("user");
     if (!user) throw new AppError(401, "UNAUTHENTICATED");
@@ -18,6 +22,10 @@ export const workspace = () =>
     }
 
     const at = now();
+    if (!billingExempt && isBillingBlocked(toBillingState(access), at)) {
+      throw new AppError(402, "PAYMENT_REQUIRED");
+    }
+
     const staleBefore = at - HOUR_MS;
     if (access.lastActivityAt === null || access.lastActivityAt < staleBefore) {
       await touchWorkspaceActivity(c.env.DB, workspaceId, at, staleBefore);

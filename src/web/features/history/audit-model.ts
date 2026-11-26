@@ -22,6 +22,9 @@ const KNOWN_ACTIONS = [
   "settings.update",
   "campaign.protect",
   "campaign.unprotect",
+  "billing.subscription.create",
+  "billing.subscription.update",
+  "billing.subscription.cancel",
 ] as const;
 
 const KNOWN_FIELDS = ["status", "dailyBudgetMinor", "protected"] as const;

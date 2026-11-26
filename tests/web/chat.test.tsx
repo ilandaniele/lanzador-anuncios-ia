@@ -71,7 +71,15 @@ function useBackend({
     http.get("/api/me", () =>
       HttpResponse.json({
         user: { id: "u1", email: "a@b.c", name: "Ana", isSuperadmin: false },
-        workspaces: [{ id: "w1", name: "Mi negocio", role, status: "active" }],
+        workspaces: [
+          {
+            id: "w1",
+            name: "Mi negocio",
+            role,
+            status: "active",
+            billingBlocked: false,
+          },
+        ],
       }),
     ),
     http.get("/api/w/w1", () => HttpResponse.json({ aiUsage: usage })),

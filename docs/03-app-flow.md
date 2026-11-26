@@ -68,7 +68,7 @@ Sin conexión de Meta activa: Lanzador, Métricas y Piloto muestran un estado va
 
 ### Onboarding `/onboarding`
 
-1. **Nombre del workspace** → `POST /api/workspaces`. Solo si el email tiene invitación beta; si no, pantalla "Estás en lista de espera".
+1. **Nombre del workspace** → `POST /api/workspaces`. Cualquier usuario puede crear uno; arranca con 7 días de prueba del plan Starter.
 2. **Conectar Meta** → botón que llama `POST /api/w/:id/meta/connect`, devuelve `{authorizeUrl}` y navega a Facebook Login for Business. Vuelta en `GET /api/meta/oauth/callback` → redirige a `/w/:id/ajustes/conexiones?resultado=ok` (o `?resultado=error&motivo=<code>`).
 3. **Elegir activos:** lista de cuentas publicitarias, páginas, Instagram y píxeles (`GET /api/w/:id/meta/assets`). Checkboxes, **Guardar** → `PATCH /api/w/:id/meta/assets` con `{changes}`. 422 `PLAN_AD_ACCOUNT_LIMIT` si supera el plan.
 4. **Primer producto** (opcional, **Saltar**) → abre el formulario de producto.
@@ -194,7 +194,7 @@ Para después del MVP: elegir columnas y densidad en Métricas; página de atajo
 
 1. Usuario en `/login` escribe email → link por email.
 2. Abre el link → `/ingresar/confirmar#t=<token>` → sesión creada (cookie de 30 días absolutos y 7 de inactividad; rotar no extiende el tope absoluto).
-3. Sin workspace y con invitación beta → onboarding. Sin invitación → lista de espera.
+3. Sin workspace → onboarding. Workspace con la prueba vencida y sin pago → pantalla de pago (el owner elige plan en Mercado Pago; el resto ve un aviso).
 
 No hay contraseñas; "recuperar contraseña" no aplica. Perder acceso al email: sin recuperación en el MVP; soporte manual.
 

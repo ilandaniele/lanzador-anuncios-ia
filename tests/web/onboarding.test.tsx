@@ -112,14 +112,21 @@ function useBackend(initial: Partial<BackendState> = {}) {
     connect: vi.fn(),
     patchAssets: vi.fn(),
     createProduct: vi.fn(),
-    logout: vi.fn(),
   };
   server.use(
     http.get("/api/me", () =>
       HttpResponse.json({
         user,
         workspaces: state.hasWorkspace
-          ? [{ id: "w1", name: "Mi negocio", role: "owner", status: "active" }]
+          ? [
+              {
+                id: "w1",
+                name: "Mi negocio",
+                role: "owner",
+                status: "active",
+                billingBlocked: false,
+              },
+            ]
           : [],
       } satisfies Me),
     ),
@@ -160,10 +167,6 @@ function useBackend(initial: Partial<BackendState> = {}) {
       calls.createProduct(await request.json());
       return HttpResponse.json({ product }, { status: 201 });
     }),
-    http.post("/api/auth/logout", () => {
-      calls.logout();
-      return new HttpResponse(null, { status: 204 });
-    }),
   );
   return { state, calls };
 }
@@ -175,7 +178,6 @@ function renderOnboarding() {
         <Routes>
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/w/:workspaceId/hoy" element={<h1>Pantalla Hoy</h1>} />
-          <Route path="/login" element={<h1>Pantalla Login</h1>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -282,27 +284,5 @@ describe("Onboarding: 4 pasos", () => {
     expect((await screen.findByRole("alert")).textContent).toContain(
       "máximo de workspaces",
     );
-  });
-});
-
-describe("Onboarding: lista de espera", () => {
-  it("shows the waitlist on BETA_INVITE_REQUIRED and only offers Cerrar sesión", async () => {
-    const { calls } = useBackend();
-    server.use(
-      http.post("/api/workspaces", () => fail("BETA_INVITE_REQUIRED", 403)),
-    );
-    renderOnboarding();
-
-    fill(/^Nombre del workspace/, "Mi negocio");
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Crear workspace" }),
-    );
-
-    await screen.findByRole("heading", { name: "Estás en lista de espera" });
-    expect(screen.getAllByRole("button")).toHaveLength(1);
-
-    fireEvent.click(screen.getByRole("button", { name: "Cerrar sesión" }));
-    await screen.findByRole("heading", { name: "Pantalla Login" });
-    expect(calls.logout).toHaveBeenCalledTimes(1);
   });
 });

@@ -51,12 +51,29 @@ describe("plans seed", () => {
     });
   });
 
-  it("has starter and pro inactive", async () => {
+  it("has starter and pro active with their ARS prices and limits", async () => {
     const { results } = await env.DB.prepare(
-      "SELECT id FROM plans WHERE is_active = 0 ORDER BY id",
+      "SELECT id, is_active, price_monthly_minor, currency, max_members, max_ad_accounts FROM plans WHERE id IN ('starter', 'pro') ORDER BY id",
     ).all();
 
-    expect(results).toEqual([{ id: "pro" }, { id: "starter" }]);
+    expect(results).toEqual([
+      {
+        id: "pro",
+        is_active: 1,
+        price_monthly_minor: 8000000,
+        currency: "ARS",
+        max_members: 10,
+        max_ad_accounts: 10,
+      },
+      {
+        id: "starter",
+        is_active: 1,
+        price_monthly_minor: 3000000,
+        currency: "ARS",
+        max_members: 3,
+        max_ad_accounts: 2,
+      },
+    ]);
   });
 });
 

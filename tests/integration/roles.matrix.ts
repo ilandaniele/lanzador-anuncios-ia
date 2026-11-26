@@ -83,4 +83,7 @@ export const ROLE_MATRIX: Record<string, RoleRule> = {
   "DELETE /api/w/:wid/google/connection": "viewer",
   "GET /api/w/:wid/google/picker-token": "editor",
   "POST /api/w/:wid/google/imports": "editor",
+  "GET /api/w/:wid/billing": "owner",
+  "POST /api/w/:wid/billing/subscribe": "owner",
+  "POST /api/w/:wid/billing/cancel": "owner",
 };
