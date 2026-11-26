@@ -6,6 +6,7 @@ import {
 import type { z } from "zod";
 import { PAGINATION } from "../../../shared/constants";
 import type {
+  AddMetaTesterRequest,
   adminWorkspacesPageSchema,
   BetaInviteResponse,
   CreateBetaInviteRequest,
@@ -47,4 +48,10 @@ export const useCreateBetaInvite = () =>
         method: "POST",
         body,
       }),
+  });
+
+export const useAddMetaTester = () =>
+  useMutation({
+    mutationFn: (body: AddMetaTesterRequest) =>
+      apiFetch("/api/admin/meta-testers", { method: "POST", body }),
   });

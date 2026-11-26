@@ -20,6 +20,7 @@ type AuthEnv = Pick<
   "APP_ORIGIN" | "GRAPH_API_VERSION" | "META_APP_ID" | "META_APP_SECRET"
 >;
 
+const appToken = (env: AuthEnv) => `${env.META_APP_ID}|${env.META_APP_SECRET}`;
 const accessTokenSchema = z.object({ access_token: z.string().min(1) });
 
 const debugTokenSchema = z.object({
@@ -70,7 +71,7 @@ export function metaAuthorizeUrl(
   return `${DIALOG_ORIGIN}/${env.GRAPH_API_VERSION}/dialog/oauth?${query}`;
 }
 
-type AuthMethod = "GET" | "DELETE";
+type AuthMethod = "GET" | "POST" | "DELETE";
 
 async function fetchOnce(url: URL, method: AuthMethod, headers: HeadersInit) {
   try {
@@ -160,7 +161,7 @@ export async function debugToken(
     "debug_token",
     { input_token: token },
     debugTokenSchema,
-    { Authorization: `Bearer ${env.META_APP_ID}|${env.META_APP_SECRET}` },
+    { Authorization: `Bearer ${appToken(env)}` },
   );
   return {
     isValid: data.is_valid,
@@ -172,7 +173,7 @@ export async function debugToken(
   };
 }
 
-const revokeSchema = z.object({ success: z.boolean() });
+const successSchema = z.object({ success: z.boolean() });
 
 export async function revokePermissions(
   env: AuthEnv,
@@ -183,9 +184,24 @@ export async function revokePermissions(
     env,
     "me/permissions",
     { appsecret_proof: proof },
-    revokeSchema,
+    successSchema,
     { Authorization: `Bearer ${token}` },
     "DELETE",
+  );
+  return success;
+}
+
+export async function addAppTester(
+  env: AuthEnv,
+  facebookUserId: string,
+): Promise<boolean> {
+  const { success } = await getJson(
+    env,
+    `${env.META_APP_ID}/roles`,
+    { user: facebookUserId, role: "testers" },
+    successSchema,
+    { Authorization: `Bearer ${appToken(env)}` },
+    "POST",
   );
   return success;
 }

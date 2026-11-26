@@ -1,4 +1,5 @@
 import { env } from "cloudflare:workers";
+import { http, HttpResponse } from "msw";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, describe, expect, it } from "vitest";
@@ -24,6 +25,7 @@ import {
   createWorkspace,
   expectError,
 } from "../helpers/factory";
+import { graphUrl, metaFails } from "../helpers/msw/meta";
 import { resendServerError, resendSuccess } from "../helpers/msw/resend";
 import { server } from "../helpers/msw/server";
 import { openLimiter } from "./pipeline/helpers";
@@ -167,6 +169,7 @@ const ADMIN_ROUTES: [string, string, unknown?][] = [
   ["GET", "/api/admin/beta-invites"],
   ["POST", "/api/admin/beta-invites", { email: "someone@example.test" }],
   ["DELETE", `/api/admin/beta-invites/${crypto.randomUUID()}`],
+  ["POST", "/api/admin/meta-testers", { facebookUserId: "100012345678" }],
 ];
 
 describe("admin access", () => {
@@ -858,4 +861,70 @@ describe("DELETE /api/admin/beta-invites/:id", () => {
       "NOT_FOUND",
     );
   });
+});
+
+describe("POST /api/admin/meta-testers", () => {
+  const APP_ID = "1234567890";
+  const metaEnv = { META_APP_ID: APP_ID, META_APP_SECRET: "app_secret_test" };
+  const rolesPath = `${APP_ID}/roles`;
+
+  const addTester = (as: Caller["as"], body: unknown) =>
+    call("/api/admin/meta-testers", { as, method: "POST", body, env: metaEnv });
+
+  it("adds the Facebook user as an app tester with the app token", async () => {
+    const requests: { url: string; authorization: string | null }[] = [];
+    server.use(
+      http.post(graphUrl(rolesPath), ({ request }) => {
+        requests.push({
+          url: request.url,
+          authorization: request.headers.get("Authorization"),
+        });
+        return HttpResponse.json({ success: true });
+      }),
+    );
+    const admin = await superadmin();
+
+    const response = await addTester(admin, {
+      facebookUserId: " 100012345678 ",
+    });
+
+    expect(response.status).toBe(204);
+    expect(requests).toHaveLength(1);
+    const url = new URL(requests[0]!.url);
+    expect(url.searchParams.get("user")).toBe("100012345678");
+    expect(url.searchParams.get("role")).toBe("testers");
+    expect(requests[0]!.authorization).toBe(`Bearer ${APP_ID}|app_secret_test`);
+  });
+
+  it("returns 422 META_TESTER_REJECTED when Meta refuses the user", async () => {
+    server.use(
+      metaFails(rolesPath, {
+        error: {
+          message: "Invalid user id",
+          code: 100,
+          type: "OAuthException",
+        },
+      }),
+    );
+    const admin = await superadmin();
+
+    await expectError(
+      await addTester(admin, { facebookUserId: "100012345678" }),
+      422,
+      "META_TESTER_REJECTED",
+    );
+  });
+
+  it.each([["username"], ["12ab"], ["123"], [""]])(
+    "rejects the id %j without calling Meta",
+    async (facebookUserId) => {
+      const admin = await superadmin();
+
+      await expectError(
+        await addTester(admin, { facebookUserId }),
+        400,
+        "VALIDATION",
+      );
+    },
+  );
 });

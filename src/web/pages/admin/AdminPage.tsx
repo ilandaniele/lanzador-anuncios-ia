@@ -5,6 +5,7 @@ import { AdminHeader } from "../../features/admin/AdminHeader";
 import { CreditsDialog } from "../../features/admin/CreditsDialog";
 import { InviteBetaDialog } from "../../features/admin/InviteBetaDialog";
 import { LoadMoreButton } from "../../features/admin/LoadMoreButton";
+import { MetaTesterDialog } from "../../features/admin/MetaTesterDialog";
 import { StatusActionDialog } from "../../features/admin/StatusActionDialog";
 import { useAdminWorkspaces } from "../../features/admin/use-admin";
 import {
@@ -13,7 +14,8 @@ import {
 } from "../../features/admin/WorkspacesTable";
 import { t } from "../../i18n/es-AR";
 
-type OpenDialog = { kind: "invite" } | WorkspaceAction | null;
+type OpenDialog =
+  { kind: "invite" } | { kind: "metaTester" } | WorkspaceAction | null;
 
 function Admin() {
   const workspaces = useAdminWorkspaces();
@@ -29,9 +31,17 @@ function Admin() {
             <h1 id="admin-titulo" className="text-xl font-semibold">
               {t("admin.title")}
             </h1>
-            <Button onClick={() => setDialog({ kind: "invite" })}>
-              {t("admin.inviteBeta")}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                onClick={() => setDialog({ kind: "metaTester" })}
+              >
+                {t("admin.addMetaTester")}
+              </Button>
+              <Button onClick={() => setDialog({ kind: "invite" })}>
+                {t("admin.inviteBeta")}
+              </Button>
+            </div>
           </div>
           <WorkspacesTable
             workspaces={
@@ -51,6 +61,9 @@ function Admin() {
         </section>
       </main>
       {dialog?.kind === "invite" && <InviteBetaDialog onClose={closeDialog} />}
+      {dialog?.kind === "metaTester" && (
+        <MetaTesterDialog onClose={closeDialog} />
+      )}
       {dialog?.kind === "credits" && (
         <CreditsDialog workspace={dialog.workspace} onClose={closeDialog} />
       )}

@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import {
+  addMetaTesterRequestSchema,
   adminErrorsQuerySchema,
   adminUsageQuerySchema,
   adminWorkspacesQuerySchema,
@@ -11,6 +12,7 @@ import { parseJson, parseQuery } from "../lib/validate";
 import { requireSuperadmin } from "../middleware/require-role";
 import { session } from "../middleware/session";
 import { listAdminErrors } from "../services/admin-errors";
+import { addMetaTester } from "../services/admin-meta-testers";
 import { getAdminUsage } from "../services/admin-usage";
 import {
   listAdminWorkspaces,
@@ -67,5 +69,10 @@ export const adminRoutes = new Hono<AppEnv>()
   })
   .delete("/admin/beta-invites/:id", async (c) => {
     await revokeInvite(c.env.DB, c.req.param("id"));
+    return c.body(null, 204);
+  })
+  .post("/admin/meta-testers", async (c) => {
+    const input = await parseJson(c, addMetaTesterRequestSchema);
+    await addMetaTester(c.env, c.get("user")!, input, c.get("requestId"));
     return c.body(null, 204);
   });

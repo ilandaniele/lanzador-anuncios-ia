@@ -12,3 +12,9 @@ export function restoreErrorMessage(error: unknown): string {
     ? t("admin.errorRestoreExpired")
     : t("errors.generic");
 }
+
+export function metaTesterErrorMessage(error: unknown): string {
+  return error instanceof ApiError && error.code === "META_TESTER_REJECTED"
+    ? t("admin.errorMetaTesterRejected")
+    : t("errors.generic");
+}

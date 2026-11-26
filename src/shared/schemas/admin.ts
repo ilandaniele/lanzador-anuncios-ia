@@ -85,6 +85,14 @@ export type CreateBetaInviteRequest = z.infer<
   typeof createBetaInviteRequestSchema
 >;
 
+export const addMetaTesterRequestSchema = z.object({
+  facebookUserId: z
+    .string()
+    .trim()
+    .regex(/^\d{5,25}$/),
+});
+export type AddMetaTesterRequest = z.infer<typeof addMetaTesterRequestSchema>;
+
 export const adminUsageQuerySchema = paginationQuerySchema.extend({
   month: z
     .string()

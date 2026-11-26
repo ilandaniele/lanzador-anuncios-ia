@@ -227,6 +227,16 @@ const esAR = {
     inviteBetaEmailFailed:
       "Invitación creada. No se pudo enviar el email: avisale que entre con Google en",
     errorAlreadyInvited: "Ese email ya tiene una invitación beta.",
+    addMetaTester: "Agregar tester de Meta",
+    addMetaTesterTitle: "Agregar tester de Meta",
+    addMetaTesterId: "ID numérico de Facebook",
+    addMetaTesterHint:
+      "Le llega una invitación que tiene que aceptar en developers.facebook.com/requests.",
+    addMetaTesterSubmit: "Agregar",
+    addMetaTesterDone:
+      "Tester agregado. Tiene que aceptar en developers.facebook.com/requests",
+    errorMetaTesterRejected:
+      "Meta rechazó ese ID. Revisá que sea el ID numérico de la cuenta de Facebook.",
   },
   adminUsage: {
     title: "Uso de la plataforma",
