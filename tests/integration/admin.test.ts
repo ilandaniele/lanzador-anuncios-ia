@@ -677,10 +677,10 @@ describe("POST /api/admin/beta-invites", () => {
     });
 
     expect(response.status).toBe(201);
-    const { invite, emailSent } = betaInviteResponseSchema.parse(
-      await response.json(),
-    );
+    const { invite, emailSent, metaTesterAdded } =
+      betaInviteResponseSchema.parse(await response.json());
     expect(emailSent).toBe(true);
+    expect(metaTesterAdded).toBeNull();
     expect(Object.keys(invite).sort()).toEqual([
       "email",
       "id",
@@ -927,4 +927,62 @@ describe("POST /api/admin/meta-testers", () => {
       );
     },
   );
+});
+
+describe("POST /api/admin/beta-invites with a Facebook ID", () => {
+  const APP_ID = "1234567890";
+  const metaEnv = { META_APP_ID: APP_ID, META_APP_SECRET: "app_secret_test" };
+  const rolesPath = `${APP_ID}/roles`;
+
+  const inviteWithTester = async (facebookUserId: string) =>
+    call("/api/admin/beta-invites", {
+      as: await superadmin(),
+      method: "POST",
+      body: { email: uniqueEmail(), facebookUserId },
+      env: metaEnv,
+    });
+
+  it("invites by email and adds the Meta tester in one call", async () => {
+    const testerIds: (string | null)[] = [];
+    server.use(
+      resendSuccess(),
+      http.post(graphUrl(rolesPath), ({ request }) => {
+        testerIds.push(new URL(request.url).searchParams.get("user"));
+        return HttpResponse.json({ success: true });
+      }),
+    );
+
+    const response = await inviteWithTester(" 100012345678 ");
+
+    expect(response.status).toBe(201);
+    const body = betaInviteResponseSchema.parse(await response.json());
+    expect(body).toMatchObject({ emailSent: true, metaTesterAdded: true });
+    expect(testerIds).toEqual(["100012345678"]);
+  });
+
+  it("keeps the invite when Meta rejects the Facebook ID", async () => {
+    server.use(
+      resendSuccess(),
+      metaFails(rolesPath, {
+        error: {
+          message: "Invalid user id",
+          code: 100,
+          type: "OAuthException",
+        },
+      }),
+    );
+
+    const response = await inviteWithTester("100012345678");
+
+    expect(response.status).toBe(201);
+    const { invite, metaTesterAdded } = betaInviteResponseSchema.parse(
+      await response.json(),
+    );
+    expect(metaTesterAdded).toBe(false);
+    expect(await betaInviteRow(invite.id)).toMatchObject({ id: invite.id });
+  });
+
+  it("rejects a malformed Facebook ID with 400", async () => {
+    await expectError(await inviteWithTester("abc"), 400, "VALIDATION");
+  });
 });

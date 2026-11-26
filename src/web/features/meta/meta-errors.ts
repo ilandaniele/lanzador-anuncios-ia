@@ -11,6 +11,8 @@ const MESSAGE_KEYS: Partial<Record<ErrorCode, TextKey>> = {
   META_RECONNECT_REQUIRED: "connections.errorReconnectRequired",
   META_RATE_LIMITED: "connections.errorRateLimited",
   RATE_LIMITED: "connections.errorRateLimited",
+  META_TESTER_REJECTED: "connections.errorTesterRejected",
+  META_TESTER_ALREADY_REQUESTED: "connections.errorTesterAlreadyRequested",
 };
 
 export function metaErrorMessage(error: unknown): string {

@@ -18,6 +18,7 @@ const inviteNotice = (emailSent: boolean) =>
 export function InviteBetaDialog({ onClose }: { onClose: () => void }) {
   const [email, setEmail] = useState("");
   const [note, setNote] = useState("");
+  const [facebookUserId, setFacebookUserId] = useState("");
   const invite = useCreateBetaInvite();
   const { notify } = useToast();
 
@@ -25,10 +26,20 @@ export function InviteBetaDialog({ onClose }: { onClose: () => void }) {
     event.preventDefault();
     const trimmedNote = note.trim();
     invite.mutate(
-      { email, ...(trimmedNote && { note: trimmedNote }) },
       {
-        onSuccess: ({ emailSent }) => {
+        email,
+        ...(trimmedNote && { note: trimmedNote }),
+        ...(facebookUserId && { facebookUserId }),
+      },
+      {
+        onSuccess: ({ emailSent, metaTesterAdded }) => {
           notify(inviteNotice(emailSent));
+          if (metaTesterAdded === false) {
+            notify({
+              tone: "info",
+              message: t("admin.inviteBetaMetaTesterFailed"),
+            });
+          }
           onClose();
         },
       },
@@ -55,6 +66,15 @@ export function InviteBetaDialog({ onClose }: { onClose: () => void }) {
           autoComplete="off"
           value={note}
           onChange={(event) => setNote(event.target.value)}
+        />
+        <Input
+          label={t("admin.inviteBetaFacebookId")}
+          hint={t("admin.inviteBetaFacebookIdHint")}
+          inputMode="numeric"
+          pattern="\d{5,25}"
+          autoComplete="off"
+          value={facebookUserId}
+          onChange={(event) => setFacebookUserId(event.target.value.trim())}
         />
         {invite.error && (
           <p role="alert" className="rounded-sm bg-loss-soft p-3 text-loss">

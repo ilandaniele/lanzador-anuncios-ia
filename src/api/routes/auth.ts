@@ -1,12 +1,13 @@
 import { type Context, Hono } from "hono";
 import { getCookie } from "hono/cookie";
+import { addMetaTesterRequestSchema } from "../../shared/schemas/admin";
 import {
   magicLinkRequestSchema,
   reviewerLinkRequestSchema,
   verifyRequestSchema,
 } from "../../shared/schemas/auth";
 import { parseJson } from "../lib/validate";
-import { authRateLimit, requestIp } from "../middleware/rate-limit";
+import { authRateLimit, rateLimit, requestIp } from "../middleware/rate-limit";
 import { session } from "../middleware/session";
 import {
   deliverMagicLink,
@@ -21,6 +22,7 @@ import {
 } from "../services/auth/google-login";
 import { getMe } from "../services/auth/me";
 import { issueReviewerLink } from "../services/auth/reviewer";
+import { requestOwnMetaTester } from "../services/meta-testers";
 import {
   clearSessionCookie,
   destroySession,
@@ -98,4 +100,19 @@ export const authRoutes = new Hono<AppEnv>()
   })
   .get("/me", session({ required: true }), async (c) =>
     c.json(await getMe(c.env.DB, c.get("user")!)),
+  )
+  .post(
+    "/me/meta-tester",
+    session({ required: true }),
+    rateLimit("RL_EXP", (c) => c.get("user")!.id),
+    async (c) => {
+      const input = await parseJson(c, addMetaTesterRequestSchema);
+      await requestOwnMetaTester(
+        c.env,
+        c.get("user")!,
+        input,
+        c.get("requestId"),
+      );
+      return c.body(null, 204);
+    },
   );

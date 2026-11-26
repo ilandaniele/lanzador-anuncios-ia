@@ -18,11 +18,10 @@ import {
   selectBetaInvites,
 } from "../repositories/beta-invites";
 import type { SessionUser } from "../types";
+import { type MetaTesterEnv, tryAddAppTester } from "./meta-testers";
 
-type BetaInviteEnv = Pick<
-  Env,
-  "DB" | "APP_ORIGIN" | "RESEND_API_KEY" | "EMAIL_FROM"
->;
+type BetaInviteEnv = MetaTesterEnv &
+  Pick<Env, "DB" | "APP_ORIGIN" | "RESEND_API_KEY" | "EMAIL_FROM">;
 
 const toBetaInviteDto = (row: BetaInviteRow): BetaInviteDto => ({
   id: row.id,
@@ -61,10 +60,21 @@ async function trySendWelcomeEmail(
   }
 }
 
+function tryAddInvitedTester(
+  env: BetaInviteEnv,
+  facebookUserId: string,
+  requestId: string,
+): Promise<boolean> {
+  return tryAddAppTester(env, facebookUserId).catch(() => {
+    logEvent("warn", "beta_invite.meta_tester_failed", { requestId });
+    return false;
+  });
+}
+
 export async function createBetaInvite(
   env: BetaInviteEnv,
   admin: SessionUser,
-  { email, note }: CreateBetaInviteRequest,
+  { email, note, facebookUserId }: CreateBetaInviteRequest,
   requestId: string,
 ) {
   const invite = await insertBetaInvite(env.DB, {
@@ -76,8 +86,11 @@ export async function createBetaInvite(
   });
   if (!invite) throw conflict("ALREADY_INVITED");
 
-  const emailSent = await trySendWelcomeEmail(env, email, requestId);
-  return { invite: toBetaInviteDto(invite), emailSent };
+  const [emailSent, metaTesterAdded] = await Promise.all([
+    trySendWelcomeEmail(env, email, requestId),
+    facebookUserId ? tryAddInvitedTester(env, facebookUserId, requestId) : null,
+  ]);
+  return { invite: toBetaInviteDto(invite), emailSent, metaTesterAdded };
 }
 
 export async function revokeInvite(db: D1Database, id: string) {

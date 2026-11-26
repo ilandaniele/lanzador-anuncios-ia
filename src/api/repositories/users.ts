@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { users } from "../../db/schema/auth";
 import { memberships, workspaces } from "../../db/schema/workspaces";
@@ -56,4 +56,30 @@ export async function listUserWorkspaces(db: D1Database, userId: string) {
     .from(memberships)
     .innerJoin(workspaces, eq(workspaces.id, memberships.workspaceId))
     .where(eq(memberships.userId, userId));
+}
+
+export async function claimMetaTesterId(
+  db: D1Database,
+  userId: string,
+  facebookUserId: string,
+): Promise<boolean> {
+  const claimed = await drizzle(db)
+    .update(users)
+    .set({ metaTesterFacebookId: facebookUserId })
+    .where(and(eq(users.id, userId), isNull(users.metaTesterFacebookId)))
+    .returning({ id: users.id });
+  return claimed.length > 0;
+}
+
+export async function releaseMetaTesterId(
+  db: D1Database,
+  userId: string,
+  facebookUserId: string,
+) {
+  await drizzle(db)
+    .update(users)
+    .set({ metaTesterFacebookId: null })
+    .where(
+      and(eq(users.id, userId), eq(users.metaTesterFacebookId, facebookUserId)),
+    );
 }

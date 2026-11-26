@@ -1,5 +1,6 @@
 import { Button } from "../../components/Button";
 import { t } from "../../i18n/es-AR";
+import { MetaTesterRequest } from "../meta/MetaTesterRequest";
 import { metaErrorMessage } from "../meta/meta-errors";
 import { useStartConnect } from "../meta/use-meta-connections";
 
@@ -28,6 +29,7 @@ export function ConnectMetaStep({ workspaceId }: { workspaceId: string }) {
           {t("connections.connect")}
         </Button>
       </div>
+      <MetaTesterRequest />
     </div>
   );
 }

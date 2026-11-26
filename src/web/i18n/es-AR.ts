@@ -222,6 +222,11 @@ const esAR = {
     inviteBetaTitle: "Invitar a la beta",
     inviteBetaEmail: "Email",
     inviteBetaNote: "Nota (opcional)",
+    inviteBetaFacebookId: "ID numérico de Facebook (opcional)",
+    inviteBetaFacebookIdHint:
+      "Si lo cargás, también lo sumamos como tester de Meta.",
+    inviteBetaMetaTesterFailed:
+      "Invitación creada, pero Meta rechazó el ID de Facebook. Probá con Agregar tester de Meta.",
     inviteBetaSubmit: "Enviar invitación",
     inviteBetaDone: "Invitación beta enviada",
     inviteBetaEmailFailed:
@@ -711,6 +716,17 @@ const esAR = {
     notConnectedReadOnly:
       "Meta todavía no está conectado. Pedile a un administrador que lo conecte.",
     loadError: "No pudimos cargar las conexiones",
+    testerToggle: "¿Meta te dice que la app no está disponible?",
+    testerIntro:
+      "Mientras la app está en revisión de Meta, solo pueden conectarse los testers. Sumate con tu ID numérico de Facebook (lo sacás en lookup-id.com).",
+    testerId: "ID numérico de Facebook",
+    testerSubmit: "Sumarme como tester",
+    testerDone:
+      "Listo. Aceptá la invitación de Meta y después tocá Conectar con Meta:",
+    errorTesterRejected:
+      "Meta rechazó ese ID. Revisá que sea el ID numérico de tu cuenta de Facebook.",
+    errorTesterAlreadyRequested:
+      "Ya pediste acceso. Aceptá la invitación en developers.facebook.com/requests.",
     connect: "Conectar Meta",
     reconnect: "Reconectar",
     chooseAssets: "Elegir activos",

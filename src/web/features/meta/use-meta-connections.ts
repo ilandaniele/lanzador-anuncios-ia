@@ -7,6 +7,7 @@ import type {
   PatchAssetsRequest,
   assetsListResponseSchema,
 } from "../../../shared/schemas/meta-connections";
+import type { AddMetaTesterRequest } from "../../../shared/schemas/admin";
 import type { MetaConnectResponse } from "../../../shared/schemas/meta-oauth";
 import { apiFetch } from "../../lib/api";
 import { qk } from "../../lib/query-keys";
@@ -101,3 +102,9 @@ export function useDisconnect(workspaceId: string) {
     onSuccess: useInvalidateMeta(workspaceId),
   });
 }
+
+export const useRequestMetaTester = () =>
+  useMutation({
+    mutationFn: (body: AddMetaTesterRequest) =>
+      apiFetch("/api/me/meta-tester", { method: "POST", body }),
+  });

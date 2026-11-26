@@ -74,22 +74,26 @@ export const betaInvitesPageSchema = paginatedSchema(betaInviteSchema);
 export const betaInviteResponseSchema = z.object({
   invite: betaInviteSchema,
   emailSent: z.boolean(),
+  metaTesterAdded: z.boolean().nullable(),
 });
 export type BetaInviteResponse = z.infer<typeof betaInviteResponseSchema>;
+
+const facebookUserIdSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{5,25}$/);
 
 export const createBetaInviteRequestSchema = z.object({
   email: emailSchema,
   note: z.string().trim().min(1).max(NOTE_MAX).optional(),
+  facebookUserId: facebookUserIdSchema.optional(),
 });
 export type CreateBetaInviteRequest = z.infer<
   typeof createBetaInviteRequestSchema
 >;
 
 export const addMetaTesterRequestSchema = z.object({
-  facebookUserId: z
-    .string()
-    .trim()
-    .regex(/^\d{5,25}$/),
+  facebookUserId: facebookUserIdSchema,
 });
 export type AddMetaTesterRequest = z.infer<typeof addMetaTesterRequestSchema>;
 

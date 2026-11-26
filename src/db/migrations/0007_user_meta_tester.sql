@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `meta_tester_facebook_id` text;
